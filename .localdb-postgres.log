@@ -1,0 +1,7 @@
+2026-09-14 22:17:04.543 CST [12696] LOG:  starting PostgreSQL 17.10 on x86_64-windows, compiled by msvc-19.44.35226, 64-bit
+2026-09-14 22:17:04.547 CST [12696] LOG:  listening on IPv6 address "::1", port 54329
+2026-09-14 22:17:04.548 CST [12696] LOG:  listening on IPv4 address "127.0.0.1", port 54329
+2026-09-14 22:17:04.590 CST [20376] LOG:  database system was shut down at 2026-09-14 22:17:02 CST
+2026-09-14 22:17:04.612 CST [12696] LOG:  database system is ready to accept connections
+2026-09-14 22:22:04.587 CST [9152] LOG:  checkpoint starting: time
+2026-09-14 22:24:14.851 CST [9152] LOG:  checkpoint complete: wrote 1200 buffers (7.3%); 0 WAL file(s) added, 0 removed, 0 recycled; write=130.105 s, sync=0.153 s, total=130.265 s; sync files=420, longest=0.001 s, average=0.001 s; distance=6365 kB, estimate=6365 kB; lsn=0/1BA9A20, redo lsn=0/1BA9990
