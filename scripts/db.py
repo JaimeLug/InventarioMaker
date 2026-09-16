@@ -72,7 +72,7 @@ class Cluster:
             if r.returncode != 0:
                 sys.exit(f"No se pudo crear la base en {self.datos}")
         if not self.activo():
-            bitacora = self.datos.parent / f"{self.datos.name}-postgres.log"
+            bitacora = self.datos / "postgres.log"
             r = self._correr("pg_ctl", "start", "-w", "-D", str(self.datos), "-l", str(bitacora),
                              "-o", f"-p {self.puerto} -h localhost")
             if r.returncode != 0:
