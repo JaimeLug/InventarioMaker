@@ -134,7 +134,7 @@ def interpretar_estado(valor) -> str | None:
     if "incomplet" in n:
         return "INCOMPLETO"
     if "danad" in n or "roto" in n:
-        return "DAÑADO"
+        return "DANADO"
     if any(p in n for p in ("sellad", "emplayad", "cerrad")):
         return "SIN_ABRIR"
     if "nuev" in n:

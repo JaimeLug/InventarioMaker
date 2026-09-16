@@ -85,7 +85,7 @@ La cantidad **nunca se edita a mano**. Se calcula a partir de los movimientos. E
 |---|---|---|
 | **Existencia** | Cuántos tiene el laboratorio, estén donde estén | `ALTA + AJUSTE_CONTEO(±) − CONSUMO − PERDIDA − BAJA` |
 | **Prestado** | Cuántos están fuera del taller a nombre de alguien | `PRESTAMO − DEVOLUCION − PERDIDA confirmada de unidades prestadas` (por cada préstamo abierto) |
-| **Fuera de servicio** | Están en el taller pero no se pueden usar | `DAÑO − REPARACION − BAJA de unidades dañadas` |
+| **Fuera de servicio** | Están en el taller pero no se pueden usar | `DANO − REPARACION − BAJA de unidades dañadas` |
 | **Apartado** | Comprometidos en solicitudes aprobadas que aún no se entregan | Suma de las líneas de solicitudes `APROBADA` |
 | **Retenido** | En espera de que el responsable confirme un reporte | Suma de reportes de pérdida, daño o consumo `PENDIENTE` sobre unidades que estaban en el taller |
 
@@ -100,7 +100,7 @@ La cantidad **nunca se edita a mano**. Se calcula a partir de los movimientos. E
 | `DEVOLUCION` | | − | | Docente, Responsable, Sub admin |
 | `CONSUMO` | − | | | Responsable, Sub admin directo. Un docente lo **reporta** y se aplica cuando lo autoriza el responsable o sub admin |
 | `PERDIDA` | − | − si estaba prestado | | Solo al confirmar un reporte (Responsable, Sub admin) |
-| `DAÑO` | | | ＋ | Solo al confirmar un reporte (Responsable, Sub admin) |
+| `DANO` | | | ＋ | Solo al confirmar un reporte (Responsable, Sub admin) |
 | `REPARACION` | | | − | Responsable, Sub admin |
 | `BAJA` | − | | − si era unidad dañada | Responsable, Sub admin |
 | `AJUSTE_CONTEO` | ± | | | Responsable, Sub admin, o el cierre de un inventario periódico |
@@ -841,7 +841,7 @@ flowchart TD
 |---|---|---|
 | **Completa, en buen estado** | `DEVOLUCION` por el total | Prestado baja; disponible sube |
 | **Parcial** | `DEVOLUCION` por lo que regresó | Prestado baja solo por lo devuelto; el resto sigue a nombre del solicitante |
-| **Con daño** | `DEVOLUCION` por lo que regresó + **reporte de daño** `PENDIENTE` | Las unidades dañadas regresan pero quedan **retenidas** (no se pueden prestar) hasta que el responsable confirme el daño (`DAÑO`, fuera de servicio) o lo descarte (vuelven a disponible) |
+| **Con daño** | `DEVOLUCION` por lo que regresó + **reporte de daño** `PENDIENTE` | Las unidades dañadas regresan pero quedan **retenidas** (no se pueden prestar) hasta que el responsable confirme el daño (`DANO`, fuera de servicio) o lo descarte (vuelven a disponible) |
 
 **Caminos de error**
 
@@ -862,7 +862,7 @@ flowchart TD
 | **Inicia** | Docente (reporta) → Responsable o sub admin (confirma o descarta) |
 | **Sesión** | Reportar: N1. Confirmar: N3 |
 | **Pantallas** | Ficha → Reportar problema → (responsable) Bandeja de reportes → Detalle del reporte → Confirmar o descartar |
-| **Se guarda** | `incidencia` en `PENDIENTE` con fotos y nota (**entidad nueva, ver P-8**). Al confirmar: movimiento `PERDIDA` o `DAÑO` ligado al reporte y, si venía de un préstamo, al préstamo |
+| **Se guarda** | `incidencia` en `PENDIENTE` con fotos y nota (**entidad nueva, ver P-8**). Al confirmar: movimiento `PERDIDA` o `DANO` ligado al reporte y, si venía de un préstamo, al préstamo |
 
 ```mermaid
 flowchart TD
@@ -879,7 +879,7 @@ flowchart TD
     G --> H["Responsable abre el reporte"]
     H --> I{"Decisión, N3"}
     I -->|"Confirmar pérdida"| J["Movimiento PERDIDA. Baja la existencia"]
-    I -->|"Confirmar daño"| K["Movimiento DAÑO. Pasa a fuera de servicio"]
+    I -->|"Confirmar daño"| K["Movimiento DANO. Pasa a fuera de servicio"]
     I -->|"Descartar, apareció o no estaba dañado"| L["Reporte DESCARTADO con motivo. Se liberan las unidades"]
     I -->|"Pedir más información"| M["Vuelve al docente con una pregunta"]
     J --> N{"¿Venía de un préstamo?"}
@@ -905,7 +905,7 @@ flowchart TD
 1. Aviso *"Nuevo reporte de daño: Cautín Weller (Laura Gómez)"*. En Inicio: *"2 reportes por revisar"*.
 2. Detalle: fotos, nota, quién lo reporta, préstamo relacionado con su expediente (quién lo tenía, foto de la entrega).
 3. Opciones:
-   - **Confirmar** (N3, contraseña): se crea el movimiento `PERDIDA` o `DAÑO` con `autorizado_por` = responsable. La ficha del artículo muestra la foto del daño en su galería, tipo `DAÑO`.
+   - **Confirmar** (N3, contraseña): se crea el movimiento `PERDIDA` o `DANO` con `autorizado_por` = responsable. La ficha del artículo muestra la foto del daño en su galería, tipo `DANO`.
    - **Descartar**: motivo obligatorio (*"Apareció en el cajón C"*). Las unidades retenidas se liberan.
    - **Pedir información**: pregunta al docente, que la ve en sus avisos.
 4. **Pérdida de algo prestado:** al confirmarla, esas unidades salen del préstamo con la marca *"Perdido — responsable: Juan Pérez"*. Así queda asentado **a nombre de quién se perdió**, aunque el préstamo se cierre.

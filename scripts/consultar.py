@@ -8,6 +8,7 @@ Uso:
   python scripts/consultar.py pendientes [--tipo CONTAR]
   python scripts/consultar.py descuadres              Artículos cuya cantidad no cuadra con sus movimientos
   python scripts/consultar.py csv salidas/inventario.csv
+  python scripts/consultar.py uso                     Espacio ocupado contra el límite del plan gratuito
 
 Con --nube antes del comando consulta Supabase:  python scripts/consultar.py --nube lista
 """
@@ -73,7 +74,7 @@ def resumen(conn) -> None:
     print(f"{'TOTAL':<25}{tot['articulos']:>10}{tot['con_pendientes']:>16}"
           f"{tot['estimados']:>11}{tot['sin_conteo']:>12}{tot['verificados']:>13}")
     abiertos = conn.execute("select count(*) as n from public.tarea_pendiente where not resuelta").fetchone()["n"]
-    descuadres = conn.execute("select count(*) as n from public.v_descuadres").fetchone()["n"]
+    descuadres = conn.execute("select count(*) as n from app.v_descuadres").fetchone()["n"]
     print(f"\nPendientes abiertos: {abiertos}    Descuadres: {descuadres}")
 
 
@@ -161,7 +162,7 @@ def pendientes(conn, tipo: str | None) -> None:
 
 
 def descuadres(conn) -> None:
-    filas = conn.execute("select * from public.v_descuadres order by codigo").fetchall()
+    filas = conn.execute("select * from app.v_descuadres order by codigo").fetchall()
     if not filas:
         print("Todo cuadra: la cantidad de cada artículo coincide con la suma de sus movimientos.")
         return
@@ -181,6 +182,29 @@ def exportar_csv(conn, ruta: Path) -> None:
     print(f"{len(filas)} artículos exportados a {ruta}")
 
 
+LIMITE_BASE_MB = 500      # plan gratuito de Supabase
+LIMITE_ARCHIVOS_MB = 1024
+
+
+def uso(conn) -> None:
+    total = conn.execute("select pg_database_size(current_database()) as b").fetchone()["b"]
+    tablas = conn.execute(
+        """select c.relname as tabla, pg_total_relation_size(c.oid) as bytes
+           from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind = 'r'
+           order by 2 desc""").fetchall()
+    propias = sum(t["bytes"] for t in tablas)
+    print(f"Base de datos: {total / 2**20:.1f} MB de {LIMITE_BASE_MB} MB ({100 * total / 2**20 / LIMITE_BASE_MB:.1f} %)")
+    print(f"  De eso, datos del inventario: {propias / 2**20:.2f} MB (el resto es del sistema)\n")
+    print(f"  {'Tabla':<22}{'Filas':>8}{'Tamaño':>12}")
+    for t in tablas:
+        filas = conn.execute(f"select count(*) as n from public.{t['tabla']}").fetchone()["n"]
+        print(f"  {t['tabla']:<22}{filas:>8}{t['bytes'] / 1024:>9.0f} KB")
+    if conn.execute("select to_regclass('storage.objects') is not null as hay").fetchone()["hay"]:
+        f = conn.execute("select count(*) as n, coalesce(sum((metadata->>'size')::bigint), 0) as b "
+                         "from storage.objects").fetchone()
+        print(f"\nArchivos (fotos): {f['n']} archivos, {f['b'] / 2**20:.1f} MB de {LIMITE_ARCHIVOS_MB} MB")
+
+
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8")
     p = argparse.ArgumentParser(description="Consulta del inventario")
@@ -195,6 +219,7 @@ def main() -> None:
     sub.add_parser("pendientes").add_argument("--tipo")
     sub.add_parser("descuadres")
     sub.add_parser("csv").add_argument("ruta", type=Path)
+    sub.add_parser("uso")
     args = p.parse_args()
 
     with db.conectar(nube=args.nube, row_factory=dict_row) as conn:
@@ -205,6 +230,7 @@ def main() -> None:
             case "pendientes": pendientes(conn, args.tipo.upper() if args.tipo else None)
             case "descuadres": descuadres(conn)
             case "csv": exportar_csv(conn, args.ruta)
+            case "uso": uso(conn)
 
 
 if __name__ == "__main__":

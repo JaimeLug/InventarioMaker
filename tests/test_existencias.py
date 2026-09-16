@@ -79,7 +79,7 @@ def test_perdida_en_el_taller(taller):
 
 def test_dano_reparacion_y_baja_de_danados(taller):
     bd, r, d, a = taller
-    mov(bd, a, "DAÑO", 2, r)
+    mov(bd, a, "DANO", 2, r)
     assert cifras(bd, a, "existencia", "fuera_servicio", "disponible") == (10, 2, 8)
     mov(bd, a, "REPARACION", 1, r)
     assert cifras(bd, a, "fuera_servicio", "disponible") == (1, 9)
@@ -123,7 +123,7 @@ def test_lo_apartado_por_solicitudes_aprobadas_no_se_puede_prestar(taller):
 
 def test_lo_retenido_por_una_incidencia_pendiente_no_se_presta(taller):
     bd, r, d, a = taller
-    insertar(bd, "incidencia", articulo_id=a, tipo="DAÑO", cantidad=3, nota="Cable pelado",
+    insertar(bd, "incidencia", articulo_id=a, tipo="DANO", cantidad=3, nota="Cable pelado",
              en_taller=True, reportada_por=d)
     assert cifras(bd, a, "existencia", "retenido", "disponible") == (10, 3, 7)
     with pytest.raises(Rechazo, match="Solo hay 7 disponibles"):
@@ -215,7 +215,7 @@ def test_escenarios_al_azar_coinciden_con_el_modelo(bd, semilla):
     m = Modelo()
 
     for _ in range(120):
-        op = rnd.choice(["ALTA", "PRESTAMO", "DEVOLUCION", "PERDIDA_PRESTADA", "DAÑO", "REPARACION", "AJUSTE", "BAJA"])
+        op = rnd.choice(["ALTA", "PRESTAMO", "DEVOLUCION", "PERDIDA_PRESTADA", "DANO", "REPARACION", "AJUSTE", "BAJA"])
         q = rnd.randint(1, 6)
         abiertos = [p for p, pend in m.prestamos.items() if pend > 0]
         origen = rnd.choice(abiertos) if abiertos else None
@@ -225,7 +225,7 @@ def test_escenarios_al_azar_coinciden_con_el_modelo(bd, semilla):
             "PRESTAMO": q <= m.en_taller,
             "DEVOLUCION": origen is not None and q <= m.prestamos.get(origen, 0),
             "PERDIDA_PRESTADA": origen is not None and q <= m.prestamos.get(origen, 0),
-            "DAÑO": q <= m.en_taller,
+            "DANO": q <= m.en_taller,
             "REPARACION": q <= m.fuera,
             "AJUSTE": True,
             "BAJA": q <= m.en_taller,
@@ -242,7 +242,7 @@ def test_escenarios_al_azar_coinciden_con_el_modelo(bd, semilla):
                 case "PRESTAMO": nuevo = mov(bd, a, "PRESTAMO", q, r)
                 case "DEVOLUCION": mov(bd, a, "DEVOLUCION", q, r, movimiento_origen_id=origen)
                 case "PERDIDA_PRESTADA": mov(bd, a, "PERDIDA", q, r, movimiento_origen_id=origen)
-                case "DAÑO": mov(bd, a, "DAÑO", q, r)
+                case "DANO": mov(bd, a, "DANO", q, r)
                 case "REPARACION": mov(bd, a, "REPARACION", q, r)
                 case "AJUSTE": mov(bd, a, "AJUSTE_CONTEO", ajuste, r)
                 case "BAJA": mov(bd, a, "BAJA", q, r)
@@ -257,7 +257,7 @@ def test_escenarios_al_azar_coinciden_con_el_modelo(bd, semilla):
                 case "PRESTAMO": m.prestamos[nuevo] = q
                 case "DEVOLUCION": m.prestamos[origen] -= q
                 case "PERDIDA_PRESTADA": m.prestamos[origen] -= q; m.existencia -= q
-                case "DAÑO": m.fuera += q
+                case "DANO": m.fuera += q
                 case "REPARACION": m.fuera -= q
                 case "AJUSTE": m.existencia += ajuste
                 case "BAJA": m.existencia -= q

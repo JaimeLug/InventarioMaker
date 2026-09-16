@@ -3,7 +3,7 @@ import uuid
 
 from psycopg import sql
 
-NOTA_OBLIGATORIA = {"PERDIDA", "DAÑO", "BAJA", "AJUSTE_CONTEO"}
+NOTA_OBLIGATORIA = {"PERDIDA", "DANO", "BAJA", "AJUSTE_CONTEO"}
 
 
 def insertar(conn, tabla: str, **campos):
@@ -50,5 +50,5 @@ def existencias(conn, articulo_id) -> dict:
 
 
 def pendiente_de(conn, prestamo_id) -> int:
-    fila = conn.execute("select pendiente from public.v_prestamos_abiertos where prestamo_id = %s", (prestamo_id,)).fetchone()
+    fila = conn.execute("select pendiente from app.v_prestamos_abiertos where prestamo_id = %s", (prestamo_id,)).fetchone()
     return fila["pendiente"] if fila else 0

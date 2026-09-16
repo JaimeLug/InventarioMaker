@@ -53,7 +53,7 @@ def test_descuadre_se_detecta(base):
     bd.execute("set session_replication_role = replica")   # desactiva disparadores (solo superusuario)
     bd.execute("update articulo set cantidad = 7 where id = %s", (a,))
     bd.execute("set session_replication_role = origin")
-    fila = bd.execute("select * from v_descuadres").fetchone()
+    fila = bd.execute("select * from app.v_descuadres").fetchone()
     assert (fila["codigo"], fila["cantidad_registrada"], fila["existencia"], fila["diferencia"]) == (
         bd.execute("select codigo from articulo where id = %s", (a,)).fetchone()["codigo"], 7, 5, 2)
     assert existencias(bd, a)["cuadra"] is False

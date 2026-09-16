@@ -20,6 +20,7 @@ import sys
 from pathlib import Path
 
 import psycopg
+from psycopg.rows import tuple_row
 
 RAIZ = Path(__file__).resolve().parent.parent
 MIGRACIONES = RAIZ / "supabase" / "migrations"
@@ -91,20 +92,24 @@ class Cluster:
                 conn.execute(f'create database "{nombre}" template "{plantilla}" encoding \'UTF8\'')
 
 
-def aplicar_migraciones(conn: psycopg.Connection, local: bool) -> list[str]:
-    """Aplica en orden las migraciones que falten. Usa la misma tabla de control que el CLI de Supabase."""
+def aplicar_migraciones(conn: psycopg.Connection, local: bool, hasta: str | None = None) -> list[str]:
+    """Aplica en orden las migraciones que falten (hasta cierta versión, si se indica).
+
+    Usa la misma tabla de control que el CLI de Supabase.
+    """
     with conn.transaction():
         if local:
             conn.execute(AJUSTES_LOCALES.read_text(encoding="utf-8"))
         conn.execute("create schema if not exists supabase_migrations")
         conn.execute("create table if not exists supabase_migrations.schema_migrations "
                      "(version text primary key, statements text[], name text)")
-    hechas = {r[0] for r in conn.execute("select version from supabase_migrations.schema_migrations").fetchall()}
+    with conn.cursor(row_factory=tuple_row) as cur:
+        hechas = {r[0] for r in cur.execute("select version from supabase_migrations.schema_migrations").fetchall()}
 
     aplicadas = []
     for archivo in sorted(MIGRACIONES.glob("*.sql")):
         version, _, nombre = archivo.stem.partition("_")
-        if version in hechas:
+        if version in hechas or (hasta is not None and version > hasta):
             continue
         sql = archivo.read_text(encoding="utf-8")
         with conn.transaction():

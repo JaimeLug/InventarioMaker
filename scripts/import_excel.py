@@ -135,7 +135,7 @@ def verificar(conn: psycopg.Connection) -> list[str]:
         lineas.append(f"  {'Categoría':<26}{'Artículos':>10}{'Con pend.':>11}{'Estimados':>11}{'Sin conteo':>12}")
         for cat, art, pend, est, sin in cur.fetchall():
             lineas.append(f"  {cat:<26}{art:>10}{pend:>11}{est:>11}{sin:>12}")
-        descuadres = cur.execute("select count(*) from public.v_descuadres").fetchone()[0]
+        descuadres = cur.execute("select count(*) from app.v_descuadres").fetchone()[0]
         lineas.append(f"  Descuadres entre cantidad y movimientos: {descuadres}")
     return lineas
 

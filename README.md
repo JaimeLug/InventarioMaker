@@ -50,6 +50,7 @@ La importación se puede correr las veces que quieras: no duplica nada. Con `--s
 | `consultar.py pendientes --tipo CONTAR` | Pendientes agrupados por tipo |
 | `consultar.py descuadres` | Artículos cuya cantidad no coincide con sus movimientos (debe salir vacío) |
 | `consultar.py csv salidas/inventario.csv` | Todo el inventario en CSV para abrir en Excel |
+| `consultar.py uso` | Espacio ocupado contra el límite del plan gratuito |
 
 En las cantidades, `~14` es estimada y `?` significa que nunca se contó.
 
@@ -77,6 +78,7 @@ Cada prueba corre en su propia base temporal; no toca tu base local.
 | `scripts/inventario_excel.py` | Lectura e interpretación del Excel |
 | `scripts/import_excel.py` | Importación idempotente |
 | `scripts/consultar.py` | Consulta desde la terminal (mientras llega la app) |
+| `scripts/respaldo.py` | Respaldo y restauración, independientes de Supabase |
 | `tests/` | Pruebas de existencias, integridad e importación |
 
 ## Supabase
@@ -114,3 +116,44 @@ No uses "Direct connection": en el plan gratuito solo funciona por IPv6.
 Después, cualquier consulta con `--nube` antes del comando: `consultar.py --nube lista --categoria FTC`.
 
 `migrar` usa la misma tabla de control que el CLI de Supabase, así que después se puede seguir con `supabase db push` si se prefiere.
+
+**Aviso:** Supabase pausa los proyectos gratuitos tras 7 días sin actividad. No se pierde nada: se reactiva desde el panel con un botón.
+
+## Espacio
+
+```bash
+.venv\Scripts\python scripts\consultar.py --nube uso
+```
+
+Las fotos no se guardan en la base sino en el almacén de archivos (1 GB aparte). Con el inventario actual, los datos ocupan menos de 1 MB de los 500 MB.
+
+## Respaldo
+
+```bash
+.venv\Scripts\python scriptsespaldo.py crear --nube
+```
+
+Genera `respaldos/inventario_<fecha>.zip`: los datos de cada tabla en CSV (se abren en Excel) y un manifiesto con las migraciones con que se creó. La carpeta `respaldos/` no se sube a git porque trae datos personales: guárdala en otro lado (USB, Drive institucional).
+
+Todavía no incluye las fotos; se agregan en la Fase 2, cuando existan.
+
+## Mudarse a otro servidor
+
+El respaldo no depende de Supabase. Para pasar el inventario a cualquier PostgreSQL 15 o superior (un servidor de la escuela, otro proveedor):
+
+```bash
+set PGPASSWORD=contraseña_del_servidor_nuevo
+.venv\Scripts\python scriptsespaldo.py restaurar respaldos\inventario_<fecha>.zip --url postgresql://usuario@servidor:5432/inventario
+```
+
+La base destino debe estar vacía. El script aplica las migraciones, carga los datos, aplica migraciones más nuevas si las hay y verifica filas y cuadre. Para ensayar sin riesgo: `--local NOMBRE` restaura en una base local nueva.
+
+Qué hay que resolver aparte al salir de Supabase:
+
+| Pieza | Qué pasa |
+|---|---|
+| Datos del inventario | Viajan completos |
+| PIN de los docentes | Viajan (están en la tabla `usuario`) |
+| Contraseñas de las cuentas | No viajan: cada usuario las restablece |
+| Fotos | Se guardan como rutas relativas; basta copiar los archivos y cambiar la dirección base del almacén |
+| Inicio de sesión y API | Se reemplazan con Supabase autoalojado (Docker) o equivalentes |

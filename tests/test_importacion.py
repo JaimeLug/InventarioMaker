@@ -107,7 +107,7 @@ def test_altas_iniciales_y_todo_cuadra(importado):
     altas = uno(bd, "select count(*) as n from movimiento where tipo = 'ALTA' and origen = 'IMPORTACION'")["n"]
     con_numero = uno(bd, "select count(*) as n from articulo where not conteo_desconocido")["n"]
     assert altas == con_numero
-    assert uno(bd, "select count(*) as n from v_descuadres")["n"] == 0
+    assert uno(bd, "select count(*) as n from app.v_descuadres")["n"] == 0
     assert uno(bd, "select count(*) as n from movimiento where tipo <> 'ALTA'")["n"] == 0
 
 
