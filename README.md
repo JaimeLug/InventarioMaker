@@ -4,8 +4,8 @@ Control de inventario en tiempo real del Laboratorio Maker. Diseño aprobado en 
 
 | Fase | Contenido | Estado |
 |---|---|---|
-| 1 | Modelo de datos, migraciones e importación desde Excel | **Lista para probar** |
-| 2 | Consulta abierta, acceso con PIN/contraseña, roles, artículos y fotos | Pendiente |
+| 1 | Modelo de datos, migraciones e importación desde Excel | Hecha |
+| 2 | Consulta abierta, acceso con PIN/contraseña, roles, artículos y fotos | **Lista para probar** |
 | 3 | Movimientos y bitácora | Pendiente |
 | 3b | Solicitudes sin cuenta, código de entrega, adeudos | Pendiente |
 | 4 | Pendientes, contenedores, etiquetas QR y escaneo | Pendiente |
@@ -68,6 +68,61 @@ Cada prueba corre en su propia base temporal; no toca tu base local.
 .venv\Scripts\python scripts\db.py detener
 ```
 
+## Fase 2: la app
+
+La app de Flutter está en `app/` (Android y web, una sola base de código).
+
+**Correr la app**
+
+```bash
+cd app
+```
+
+```bash
+flutter run -d chrome
+```
+
+Con el celular conectado por USB (depuración activada): `flutter run -d android`. El APK de prueba queda en `app/build/app/outputs/flutter-apk/app-debug.apk` después de `flutter build apk --debug`.
+
+**Pruebas de la app**
+
+```bash
+cd app
+```
+
+```bash
+flutter test
+```
+
+**Primera cuenta** (una sola vez; las demás se crean desde la app). Pide la contraseña y el PIN en la terminal, sin mostrarlos:
+
+```bash
+.venv\Scripts\python scripts\cuentas.py crear --nombre "Ing. Jaime Santiago Lugo Miranda" --correo tu@correo --rol RESPONSABLE
+```
+
+**Publicar en Supabase** lo que no son migraciones. Necesita `SUPABASE_ACCESS_TOKEN` en `.env`:
+
+```bash
+.venv\Scripts\python scripts\desplegar.py funciones
+```
+
+```bash
+.venv\Scripts\python scripts\desplegar.py auth
+```
+
+`funciones` publica `acceso-pin` y `cuentas` (supabase/functions). `auth` cierra el registro público de cuentas.
+
+**Cómo funciona el acceso**
+
+| Nivel | Cómo se entra | Qué permite | Dónde se hace cumplir |
+|---|---|---|---|
+| Sin sesión | — | Consultar todo el catálogo | Vistas públicas sin nombres de personas |
+| PIN | Nombre + PIN, por la función `acceso-pin` | Acciones de docente (agregar fotos) | La base lee en el token si la sesión se abrió con PIN o contraseña |
+| Contraseña | Correo + contraseña | Todo lo que permita el rol | `app.exigir()` en cada función |
+| Reconfirmar | Volver a escribir la contraseña | Acciones graves (VEX ↔ FTC, cuentas, PIN) | `public.confirmar_contrasena` + `app.exigir_confirmacion()`; vale 5 min y una sola acción |
+
+La jornada dura 8 horas desde que se abrió la sesión (la base lo revisa en cada acción). En web, además, la sesión se cierra tras 30 minutos sin tocar la pantalla.
+
 ## Estructura
 
 | Ruta | Qué es |
@@ -79,7 +134,11 @@ Cada prueba corre en su propia base temporal; no toca tu base local.
 | `scripts/import_excel.py` | Importación idempotente |
 | `scripts/consultar.py` | Consulta desde la terminal (mientras llega la app) |
 | `scripts/respaldo.py` | Respaldo y restauración, independientes de Supabase |
-| `tests/` | Pruebas de existencias, integridad e importación |
+| `tests/` | Pruebas de existencias, integridad, importación y acceso |
+| `app/` | App de Flutter (Android y web) |
+| `supabase/functions/` | Funciones del servidor: acceso con PIN y administración de cuentas |
+| `scripts/cuentas.py` | Crear la primera cuenta desde la terminal |
+| `scripts/desplegar.py` | Publicar funciones y cerrar el registro público |
 
 ## Supabase
 
@@ -130,7 +189,8 @@ Las fotos no se guardan en la base sino en el almacén de archivos (1 GB aparte)
 ## Respaldo
 
 ```bash
-.venv\Scripts\python scriptsespaldo.py crear --nube
+.venv\Scripts\python scripts
+espaldo.py crear --nube
 ```
 
 Genera `respaldos/inventario_<fecha>.zip`: los datos de cada tabla en CSV (se abren en Excel) y un manifiesto con las migraciones con que se creó. La carpeta `respaldos/` no se sube a git porque trae datos personales: guárdala en otro lado (USB, Drive institucional).
@@ -143,7 +203,8 @@ El respaldo no depende de Supabase. Para pasar el inventario a cualquier Postgre
 
 ```bash
 set PGPASSWORD=contraseña_del_servidor_nuevo
-.venv\Scripts\python scriptsespaldo.py restaurar respaldos\inventario_<fecha>.zip --url postgresql://usuario@servidor:5432/inventario
+.venv\Scripts\python scripts
+espaldo.py restaurar respaldos\inventario_<fecha>.zip --url postgresql://usuario@servidor:5432/inventario
 ```
 
 La base destino debe estar vacía. El script aplica las migraciones, carga los datos, aplica migraciones más nuevas si las hay y verifica filas y cuadre. Para ensayar sin riesgo: `--local NOMBRE` restaura en una base local nueva.

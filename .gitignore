@@ -8,3 +8,4 @@ salidas/
 *-postgres.log
 .env
 respaldos/
+supabase/.temp/
