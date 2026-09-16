@@ -8,6 +8,8 @@ Uso:
   python scripts/consultar.py pendientes [--tipo CONTAR]
   python scripts/consultar.py descuadres              Artículos cuya cantidad no cuadra con sus movimientos
   python scripts/consultar.py csv salidas/inventario.csv
+
+Con --nube antes del comando consulta Supabase:  python scripts/consultar.py --nube lista
 """
 from __future__ import annotations
 
@@ -182,6 +184,7 @@ def exportar_csv(conn, ruta: Path) -> None:
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8")
     p = argparse.ArgumentParser(description="Consulta del inventario")
+    p.add_argument("--nube", action="store_true", help="consultar Supabase (datos en .env)")
     sub = p.add_subparsers(dest="comando")
     l = sub.add_parser("lista")
     l.add_argument("--categoria")
@@ -194,7 +197,7 @@ def main() -> None:
     sub.add_parser("csv").add_argument("ruta", type=Path)
     args = p.parse_args()
 
-    with db.conectar(row_factory=dict_row) as conn:
+    with db.conectar(nube=args.nube, row_factory=dict_row) as conn:
         match args.comando:
             case None: resumen(conn)
             case "lista": lista(conn, args)

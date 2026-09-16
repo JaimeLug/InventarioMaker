@@ -1,11 +1,12 @@
 """Importa el Excel del levantamiento inicial a la base de datos.
 
 Uso:
-  python scripts/import_excel.py [archivo.xlsx] [--simular] [--actualizar]
+  python scripts/import_excel.py [archivo.xlsx] [--simular] [--actualizar] [--nube]
 
   --simular     Hace todo y al final deshace: sirve para revisar el informe sin guardar.
   --actualizar  Si el artículo ya existe, actualiza sus datos descriptivos (nombre, marca,
                 observaciones...). Nunca toca cantidades: esas solo cambian con movimientos.
+  --nube        Importa a Supabase (datos en .env) en lugar de la base local.
 
 Es idempotente: correrlo dos veces no duplica artículos, movimientos ni pendientes.
 La llave es la "Ref. original" del Excel (ref_foto).
@@ -145,6 +146,7 @@ def main() -> None:
     p.add_argument("archivo", nargs="?", type=Path, default=EXCEL_POR_DEFECTO)
     p.add_argument("--simular", action="store_true", help="no guarda nada, solo muestra el informe")
     p.add_argument("--actualizar", action="store_true", help="actualiza datos descriptivos de artículos existentes")
+    p.add_argument("--nube", action="store_true", help="importa a Supabase (datos en .env)")
     args = p.parse_args()
 
     if not args.archivo.exists():
@@ -154,7 +156,8 @@ def main() -> None:
     except ValueError as e:
         sys.exit(f"El Excel no tiene el formato esperado: {e}")
 
-    with db.conectar() as conn:
+    print(f"Destino: {db.describir(args.nube)}")
+    with db.conectar(nube=args.nube) as conn:
         try:
             with conn.transaction():
                 inf = importar(conn, articulos, actualizar=args.actualizar)

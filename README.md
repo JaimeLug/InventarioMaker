@@ -79,14 +79,38 @@ Cada prueba corre en su propia base temporal; no toca tu base local.
 | `scripts/consultar.py` | Consulta desde la terminal (mientras llega la app) |
 | `tests/` | Pruebas de existencias, integridad e importación |
 
-## Pasar a Supabase
+## Supabase
 
-Cuando crees el proyecto en Supabase, copia la cadena de conexión (Project Settings → Database) y:
+Proyecto: `eirouznbikpvnuhdmbnm` (West US, Oregon).
+
+Los scripts trabajan **siempre contra la base local**, salvo que les pases `--nube`. Así nunca se le escribe a Supabase por accidente.
+
+**1. Datos de conexión.** `.env` ya existe (copia de `.env.ejemplo`) y está ignorado por git. Llena ahí los tres datos privados:
+
+| Dato | Dónde se saca |
+|---|---|
+| `SUPABASE_DB_HOST` | Botón **Connect** del panel → **Session pooler** |
+| `SUPABASE_DB_PASSWORD` | La contraseña de la base que pusiste al crear el proyecto |
+| `SUPABASE_SECRET_KEY` | Project Settings → API Keys → Secret keys |
+
+No uses "Direct connection": en el plan gratuito solo funciona por IPv6.
+
+**2. Probar la conexión**
 
 ```bash
-set DATABASE_URL=postgresql://postgres:TU_CONTRASEÑA@db.xxxx.supabase.co:5432/postgres
-.venv\Scripts\python scripts\db.py migrar
-.venv\Scripts\python scripts\import_excel.py
+.venv\Scripts\python scripts\db.py --nube url
 ```
+
+**3. Subir las migraciones y el inventario**
+
+```bash
+.venv\Scripts\python scripts\db.py --nube migrar
+```
+
+```bash
+.venv\Scripts\python scripts\import_excel.py --nube
+```
+
+Después, cualquier consulta con `--nube` antes del comando: `consultar.py --nube lista --categoria FTC`.
 
 `migrar` usa la misma tabla de control que el CLI de Supabase, así que después se puede seguir con `supabase db push` si se prefiere.

@@ -1,13 +1,14 @@
 """Base de datos local y migraciones.
 
 Uso:
-  python scripts/db.py iniciar       Crea (si hace falta) y arranca la base local, y aplica migraciones
-  python scripts/db.py migrar        Aplica migraciones pendientes (local, o DATABASE_URL si está definida)
-  python scripts/db.py detener       Detiene la base local
-  python scripts/db.py url           Muestra la dirección de conexión
+  python scripts/db.py iniciar          Crea (si hace falta) y arranca la base local, y aplica migraciones
+  python scripts/db.py migrar           Aplica migraciones pendientes a la base local
+  python scripts/db.py --nube migrar    Aplica migraciones pendientes a Supabase (datos en .env)
+  python scripts/db.py detener          Detiene la base local
+  python scripts/db.py [--nube] url     Muestra a dónde se conecta (sin contraseña)
 
-Con DATABASE_URL definida (por ejemplo la de Supabase), "migrar" trabaja contra esa base
-y NO aplica los ajustes de supabase/local (Supabase ya los trae).
+Por defecto todo trabaja contra la base local. Supabase solo se toca con --nube, para que
+nunca se le escriba por accidente. Con --nube NO se aplican los ajustes de supabase/local.
 """
 from __future__ import annotations
 
@@ -24,6 +25,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 MIGRACIONES = RAIZ / "supabase" / "migrations"
 AJUSTES_LOCALES = RAIZ / "supabase" / "local" / "shims_supabase.sql"
 DATOS_LOCALES = RAIZ / ".localdb"
+ARCHIVO_ENV = RAIZ / ".env"
 PUERTO_LOCAL = 54329
 BASE_LOCAL = "inventario"
 
@@ -113,43 +115,80 @@ def aplicar_migraciones(conn: psycopg.Connection, local: bool) -> list[str]:
     return aplicadas
 
 
-def url_bd() -> str:
-    return os.environ.get("DATABASE_URL") or Cluster().url()
+def leer_env() -> dict[str, str]:
+    """Lee .env (clave=valor). No lo carga al entorno: solo lo usa quien pida --nube."""
+    valores: dict[str, str] = {}
+    if ARCHIVO_ENV.exists():
+        for linea in ARCHIVO_ENV.read_text(encoding="utf-8").splitlines():
+            linea = linea.strip()
+            if not linea or linea.startswith("#") or "=" not in linea:
+                continue
+            clave, _, valor = linea.partition("=")
+            valores[clave.strip()] = valor.strip().strip('"').strip("'")
+    return valores
 
 
-def conectar(**kwargs) -> psycopg.Connection:
+def parametros_nube() -> dict:
+    env = leer_env()
+    requeridas = ("SUPABASE_DB_HOST", "SUPABASE_DB_USER", "SUPABASE_DB_PASSWORD")
+    faltan = [k for k in requeridas if not env.get(k)]
+    if faltan:
+        sys.exit(f"Para conectarse a Supabase faltan datos en .env: {', '.join(faltan)}\n"
+                 "Instrucciones dentro de .env.ejemplo.")
+    # La contraseña va aparte y no dentro de la URL: así no hay que escapar caracteres especiales.
+    return {"host": env["SUPABASE_DB_HOST"], "port": int(env.get("SUPABASE_DB_PORT") or 5432),
+            "user": env["SUPABASE_DB_USER"], "password": env["SUPABASE_DB_PASSWORD"],
+            "dbname": "postgres", "sslmode": "require"}
+
+
+def describir(nube: bool) -> str:
+    if nube:
+        n = parametros_nube()
+        return f"Supabase: {n['user']}@{n['host']}:{n['port']}/{n['dbname']}"
+    return f"Base local: {Cluster().url()}"
+
+
+def conectar(nube: bool = False, **kwargs) -> psycopg.Connection:
+    if nube:
+        try:
+            return psycopg.connect(**parametros_nube(), connect_timeout=15, **kwargs)
+        except psycopg.OperationalError as e:
+            sys.exit(f"No se pudo conectar a Supabase. Revisa los datos de .env.\n({e})")
     try:
-        return psycopg.connect(url_bd(), **kwargs)
+        return psycopg.connect(Cluster().url(), connect_timeout=5, **kwargs)
     except psycopg.OperationalError as e:
-        if "DATABASE_URL" in os.environ:
-            raise
         sys.exit(f"No hay conexión con la base local. Arráncala con:  python scripts/db.py iniciar\n({e})")
 
 
 def main() -> None:
+    sys.stdout.reconfigure(encoding="utf-8")
     p = argparse.ArgumentParser(description="Base de datos local y migraciones")
+    p.add_argument("--nube", action="store_true", help="trabajar contra Supabase (datos en .env)")
     p.add_argument("accion", choices=["iniciar", "migrar", "detener", "url"])
-    accion = p.parse_args().accion
+    args = p.parse_args()
 
-    if accion == "url":
-        print(url_bd())
+    if args.accion == "url":
+        print(describir(args.nube))
+        if args.nube:
+            with conectar(nube=True) as conn:
+                version = conn.execute("show server_version").fetchone()[0]
+            print(f"Conexión correcta (PostgreSQL {version})")
         return
-    if accion == "detener":
+    if args.accion in ("iniciar", "detener") and args.nube:
+        sys.exit(f'"{args.accion}" es solo para la base local.')
+    if args.accion == "detener":
         Cluster().detener()
         print("Base local detenida.")
         return
-
-    remota = "DATABASE_URL" in os.environ
-    if accion == "iniciar":
-        if remota:
-            sys.exit('"iniciar" es solo para la base local. Quita DATABASE_URL o usa "migrar".')
+    if args.accion == "iniciar":
         c = Cluster()
         c.iniciar()
         c.crear_base(BASE_LOCAL)
         print(f"Base local lista en {c.url()}")
 
-    with psycopg.connect(url_bd()) as conn:
-        aplicadas = aplicar_migraciones(conn, local=not remota)
+    print(f"Destino: {describir(args.nube)}")
+    with conectar(nube=args.nube) as conn:
+        aplicadas = aplicar_migraciones(conn, local=not args.nube)
     print("Migraciones aplicadas:" if aplicadas else "No había migraciones pendientes.")
     for a in aplicadas:
         print(f"  {a}")
