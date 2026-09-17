@@ -37,6 +37,8 @@ class Articulo {
     this.minimoReposicion,
     this.prestadoHasta,
     this.fotoPrincipal,
+    this.bajaOficio,
+    this.bajaEnTramite = false,
   });
 
   final String id;
@@ -75,6 +77,11 @@ class Articulo {
   /// Ruta de la foto principal dentro del almacén.
   final String? fotoPrincipal;
 
+  final String? bajaOficio;
+
+  /// Dado de baja, con resguardo y sin número de oficio todavía.
+  final bool bajaEnTramite;
+
   factory Articulo.desdeMapa(Map<String, dynamic> m) => Articulo(
         id: m['id'] as String,
         codigo: m['codigo'] as String,
@@ -109,6 +116,8 @@ class Articulo {
         prestadoHasta: m['prestado_hasta'] == null ? null : DateTime.parse(m['prestado_hasta'] as String),
         pendientesAbiertos: m['pendientes_abiertos'] as int,
         fotoPrincipal: m['foto_principal_url'] as String?,
+        bajaOficio: m['baja_oficio'] as String?,
+        bajaEnTramite: m['baja_en_tramite'] as bool? ?? false,
       );
 
   /// En el Excel "s/m" significa sin marca: no se muestra como si fuera una.

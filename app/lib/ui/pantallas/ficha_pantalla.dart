@@ -8,11 +8,13 @@ import '../../datos/proveedores.dart';
 import '../../datos/repositorio.dart';
 import '../../modelos/articulo.dart';
 import '../../modelos/catalogos.dart';
+import '../../modelos/movimientos.dart';
 import '../../modelos/otros.dart';
 import '../../util/texto.dart';
 import '../tema.dart';
 import '../widgets/comunes.dart';
 import '../widgets/fotos.dart';
+import 'acciones_articulo.dart' as acciones;
 
 /// Ficha del artículo (F-01): fotos, cifras, datos, pendientes e historial.
 class FichaPantalla extends ConsumerWidget {
@@ -33,6 +35,7 @@ class FichaPantalla extends ConsumerWidget {
               tooltip: 'Editar datos',
               onPressed: () => context.push('/articulo/$id/editar'),
             ),
+          if (articulo.value != null) _MenuAdministracion(articulo: articulo.value!),
           const BarraSesion(),
         ],
       ),
@@ -62,6 +65,14 @@ class _Contenido extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.only(bottom: 32),
       children: [
+        if (!a.activo)
+          MaterialBanner(
+            content: Text(a.bajaEnTramite
+                ? 'Dado de baja. En trámite: falta registrar el número de oficio.'
+                : 'Dado de baja${a.bajaOficio == null ? '' : ' (oficio ${a.bajaOficio})'}.'),
+            leading: const Icon(Icons.block),
+            actions: const [SizedBox.shrink()],
+          ),
         _Galeria(articulo: a),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -73,6 +84,7 @@ class _Contenido extends ConsumerWidget {
           ]),
         ),
         _Cifras(articulo: a),
+        if (a.activo) _Acciones(articulo: a),
         const _Titulo('Datos'),
         _Dato('Categoría', [a.categoria.nombre, a.subcategoria].whereType<String>().join(' · ')),
         _Dato('Estado', a.estadoInventario.nombre),
@@ -86,17 +98,6 @@ class _Contenido extends ConsumerWidget {
         _Dato('Observaciones', a.observaciones),
         _Pendientes(articuloId: a.id),
         _Historial(articuloId: a.id),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Card.outlined(
-            child: ListTile(
-              leading: const Icon(Icons.info_outline),
-              title: const Text('Préstamos, devoluciones y reportes'),
-              subtitle: const Text('Se habilitan en la Fase 3.'),
-              textColor: tema.colorScheme.outline,
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -363,6 +364,11 @@ class _Historial extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final sesion = ref.watch(sesionProvider).value;
+    // Con nombres, solo para responsable y sub administración con contraseña.
+    if (sesion != null && sesion.administra && sesion.nivel == NivelSesion.contrasena) {
+      return _HistorialDetallado(articuloId: articuloId);
+    }
     final lista = ref.watch(historialProvider(articuloId)).value ?? const [];
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const _Titulo('Historial'),
@@ -375,5 +381,115 @@ class _Historial extends ConsumerWidget {
           subtitle: Text([fechaHora(m.fecha), if (m.prestadoHasta != null) 'prestado hasta el ${fecha(m.prestadoHasta!)}'].join(' · ')),
         ),
     ]);
+  }
+}
+
+class _Acciones extends ConsumerWidget {
+  const _Acciones({required this.articulo});
+
+  final Articulo articulo;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final a = articulo;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Wrap(spacing: 8, runSpacing: 8, children: [
+        if (a.esConsumible)
+          FilledButton.icon(
+            onPressed: a.prestable && a.disponible > 0 ? () => acciones.registrarUso(context, ref, a) : null,
+            icon: const Icon(Icons.remove_circle_outline),
+            label: const Text('Registrar uso'),
+          )
+        else
+          FilledButton.icon(
+            onPressed: a.prestable && a.disponible > 0 ? () => context.push('/articulo/${a.id}/prestar') : null,
+            icon: const Icon(Icons.outbox),
+            label: const Text('Prestar'),
+          ),
+        if (a.prestado > 0)
+          OutlinedButton.icon(
+            onPressed: () => context.push('/articulo/${a.id}/devolver'),
+            icon: const Icon(Icons.move_to_inbox),
+            label: const Text('Recibir devolución'),
+          ),
+        OutlinedButton.icon(
+          onPressed: () => context.push('/articulo/${a.id}/reportar'),
+          icon: const Icon(Icons.flag_outlined),
+          label: const Text('Reportar problema'),
+        ),
+      ]),
+    );
+  }
+}
+
+class _MenuAdministracion extends ConsumerWidget {
+  const _MenuAdministracion({required this.articulo});
+
+  final Articulo articulo;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sesion = ref.watch(sesionProvider).value;
+    if (sesion == null || !sesion.administra) return const SizedBox.shrink();
+    final a = articulo;
+    return PopupMenuButton<String>(
+      tooltip: 'Administrar',
+      icon: const Icon(Icons.more_vert),
+      onSelected: (opcion) => switch (opcion) {
+        'conteo' => acciones.ajustarConteo(context, ref, a),
+        'reparacion' => acciones.registrarReparacion(context, ref, a),
+        'baja' => acciones.darDeBaja(context, ref, a),
+        'oficio' => acciones.registrarOficio(context, ref, a),
+        _ => acciones.reactivar(context, ref, a),
+      },
+      itemBuilder: (_) => [
+        if (a.activo) ...[
+          const PopupMenuItem(value: 'conteo', child: ListTile(leading: Icon(Icons.pin_outlined), title: Text('Ajustar conteo'))),
+          if (a.fueraServicio > 0)
+            const PopupMenuItem(value: 'reparacion', child: ListTile(leading: Icon(Icons.build_outlined), title: Text('Regresa a servicio'))),
+          const PopupMenuItem(value: 'baja', child: ListTile(leading: Icon(Icons.delete_forever_outlined), title: Text('Dar de baja'))),
+        ] else ...[
+          if (a.bajaEnTramite)
+            const PopupMenuItem(value: 'oficio', child: ListTile(leading: Icon(Icons.description_outlined), title: Text('Registrar oficio'))),
+          if (a.estadoInventario == EstadoInventario.dadoDeBaja)
+            const PopupMenuItem(value: 'reactivar', child: ListTile(leading: Icon(Icons.restore), title: Text('Reactivar'))),
+        ],
+      ],
+    );
+  }
+}
+
+class _HistorialDetallado extends ConsumerWidget {
+  const _HistorialDetallado({required this.articuloId});
+
+  final String articuloId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Se relee junto con el resto de la ficha: depende del historial público para refrescarse.
+    ref.watch(historialProvider(articuloId));
+    return FutureBuilder<List<MovimientoDetallado>>(
+      future: ref.read(repositorioProvider).historialConNombres(articuloId),
+      builder: (context, snap) {
+        final tema = Theme.of(context);
+        final lista = snap.data ?? const <MovimientoDetallado>[];
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const _Titulo('Historial'),
+          if (snap.connectionState != ConnectionState.done) const LinearProgressIndicator(),
+          if (snap.connectionState == ConnectionState.done && lista.isEmpty) const ListTile(title: Text('Sin movimientos todavía.')),
+          for (final m in lista)
+            ListTile(
+              dense: true,
+              leading: Icon(m.conflicto ? Icons.sync_problem : Icons.history, color: m.conflicto ? tema.colorScheme.error : null),
+              title: Text('${m.nombre}${m.cantidad == null ? '' : ' · ${m.cantidad}'}${m.aCargo == null ? '' : ' · a cargo de ${m.aCargo}'}'),
+              subtitle: Text([
+                '${fechaHora(m.fecha)}${m.autorizo == null ? '' : ' · ${m.autorizo}'}',
+                if (m.nota != null) m.nota!,
+              ].join('\n')),
+            ),
+        ]);
+      },
+    );
   }
 }

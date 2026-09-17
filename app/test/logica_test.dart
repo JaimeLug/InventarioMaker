@@ -4,6 +4,7 @@ import 'package:inventario_maker/acceso/sesion.dart';
 import 'package:inventario_maker/datos/errores.dart';
 import 'package:inventario_maker/modelos/articulo.dart';
 import 'package:inventario_maker/modelos/catalogos.dart';
+import 'package:inventario_maker/modelos/movimientos.dart';
 import 'package:inventario_maker/util/texto.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -118,6 +119,35 @@ void main() {
 
     test('credenciales incorrectas en español', () {
       expect(traducir(const AuthException('Invalid login credentials', code: 'invalid_credentials')).mensaje, 'Correo o contraseña incorrectos.');
+    });
+  });
+  group('Movimientos (Fase 3)', () {
+    test('un reporte por revisar se lee con fotos y comentarios', () {
+      final i = Incidencia.desdeMapa({
+        'id': 'i1', 'tipo': 'DANO', 'articulo_id': 'a1', 'codigo': 'A-0079', 'nombre': 'Cautín', 'unidad': 'pieza',
+        'cantidad': 1, 'en_taller': true, 'nota': 'Cable pelado junto al mango', 'sin_foto_justificacion': null,
+        'reportada_por': 'Laura Gómez', 'reportada_en': '2026-09-18T15:00:00+00:00', 'a_cargo': 'Juan Pérez (Alumno, 5°B)',
+        'fotos': ['incidencias/i1/1.jpg'],
+        'comentarios': [{'autor': 'Jaime Lugo', 'texto': '¿Desde cuándo?', 'en': '2026-09-18T16:00:00+00:00'}],
+      });
+      expect(i.nombreTipo, 'Daño');
+      expect(i.nombreEstado, 'En revisión');
+      expect(i.fotos, ['incidencias/i1/1.jpg']);
+      expect(i.comentarios.single.autor, 'Jaime Lugo');
+    });
+
+    test('un préstamo de "mis préstamos" sabe si está a mi nombre', () {
+      final p = PrestamoListado.desdeMapa({
+        'prestamo_id': 'p1', 'articulo_id': 'a1', 'codigo': 'A-0101', 'nombre': 'Impresora', 'unidad': 'pieza',
+        'pendiente': 1, 'vence_en': '2026-09-18T21:00:00+00:00', 'vencido': false, 'a_mi_nombre': false,
+        'a_cargo': 'Juan Pérez (Alumno, 5°B)', 'grupo': 'g1',
+      });
+      expect((p.aMiNombre, p.extensiones, p.aCargo), (false, 0, 'Juan Pérez (Alumno, 5°B)'));
+    });
+
+    test('la extensión de préstamo tiene nombre en el historial', () {
+      expect(nombresMovimiento['EXTENSION'], 'Extensión de préstamo');
+      expect(motivosAjuste['NO_SE_ENCONTRO'], 'No se encontró');
     });
   });
 }

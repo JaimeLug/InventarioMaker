@@ -29,11 +29,25 @@ final sesionProvider = FutureProvider<Sesion?>((ref) async {
   return sesion;
 });
 
+/// Préstamos vencidos: el número es público (sin nombres) para la franja del Inicio.
+final vencidosProvider = FutureProvider<int>((ref) => ref.watch(repositorioProvider).vencidosContar());
+
+/// Reportes y consumos por revisar (solo cuenta para responsable y sub administración).
+final porRevisarProvider = FutureProvider<int>((ref) async {
+  final sesion = await ref.watch(sesionProvider.future);
+  if (sesion == null || !sesion.administra) return 0;
+  return ref.watch(repositorioProvider).porRevisarContar();
+});
+
 /// Después de cambiar algo de un artículo, se vuelve a leer todo lo que lo muestra.
-void refrescarArticulo(WidgetRef ref, String id) {
-  ref.invalidate(articulosProvider);
-  ref.invalidate(articuloProvider(id));
-  ref.invalidate(fotosProvider(id));
-  ref.invalidate(historialProvider(id));
-  ref.invalidate(pendientesProvider(id));
+void refrescarArticulo(WidgetRef ref, String id) => refrescarArticuloEn(ref.container, id);
+
+void refrescarArticuloEn(ProviderContainer c, String id) {
+  c.invalidate(articulosProvider);
+  c.invalidate(articuloProvider(id));
+  c.invalidate(fotosProvider(id));
+  c.invalidate(historialProvider(id));
+  c.invalidate(pendientesProvider(id));
+  c.invalidate(vencidosProvider);
+  c.invalidate(porRevisarProvider);
 }

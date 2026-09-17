@@ -16,6 +16,7 @@
    - [F-02 Gate de escritura: pedir acceso y retomar la acción](#f-02-gate-de-escritura-pedir-acceso-y-retomar-la-acción)
    - [F-03 Escaneo de QR: artículo contra contenedor](#f-03-escaneo-de-qr-artículo-contra-contenedor)
    - [F-04 Alumno sin cuenta pide material prestado](#f-04-alumno-sin-cuenta-pide-material-prestado)
+   - [F-04b Verificación de identidad del solicitante](#f-04b-verificación-de-identidad-del-solicitante)
    - [F-05 Maestro sin cuenta pide material](#f-05-maestro-sin-cuenta-pide-material)
    - [F-06 Responsable aprueba, rechaza y entrega una solicitud](#f-06-responsable-aprueba-rechaza-y-entrega-una-solicitud)
    - [F-07 Préstamo directo de un docente con cuenta](#f-07-préstamo-directo-de-un-docente-con-cuenta)
@@ -50,6 +51,8 @@
 | Pérdidas, daños y consumos por confirmar | Tabla nueva `incidencia`. Todas aparecen en el Excel para Contraloría (F-19) |
 | Vigencia del código de entrega | La elige quien aprueba: **1 h 30 min** (por defecto), hasta el fin de la jornada o **hasta 24 h** si se recoge al día siguiente |
 | Nombres de quién tiene el material | Solo los ven el **responsable y sub administración**. Alumnos, público y quien no inició sesión ven "Prestado hasta 18/09", sin nombre |
+| Verificación de identidad del solicitante | Aprobada el 2026-09-17: identificación con foto obligatoria al entregar, ficha verificada, datos de contacto bloqueados, correo institucional con aviso "¿no fuiste tú?", una solicitud pendiente a la vez (F-04b) |
+| Fotos de identificación de alumnos | **Solo las ven el responsable y sub administración. Nunca salen del sistema**: ni reportes, ni Excel, ni actas, ni respaldos, ni botón de descarga |
 | Choques sin conexión | Propuesta completa en F-17, **pendiente de tu visto bueno** |
 
 ### Niveles de acceso (así interpreté "PIN solo para docente, contraseña para acciones graves")
@@ -96,7 +99,7 @@ La cantidad **nunca se edita a mano**. Se calcula a partir de los movimientos. E
 | Movimiento | Existencia | Prestado | Fuera de servicio | Quién lo puede generar |
 |---|---|---|---|---|
 | `ALTA` | ＋ | | | Responsable, Sub admin |
-| `PRESTAMO` | | ＋ | | Docente, Responsable, Sub admin; también se genera al cerrar una entrega con código (código, firma y foto) |
+| `PRESTAMO` | | ＋ | | Docente, Responsable, Sub admin; también se genera al cerrar una entrega con código (código, identificación y foto) |
 | `DEVOLUCION` | | − | | Docente, Responsable, Sub admin |
 | `CONSUMO` | − | | | Responsable, Sub admin directo. Un docente lo **reporta** y se aplica cuando lo autoriza el responsable o sub admin |
 | `PERDIDA` | − | − si estaba prestado | | Solo al confirmar un reporte (Responsable, Sub admin) |
@@ -127,7 +130,7 @@ stateDiagram-v2
     PENDIENTE --> RECHAZADA: Responsable rechaza con motivo
     PENDIENTE --> CANCELADA: Solicitante se arrepiente
     PENDIENTE --> CANCELADA: Sin respuesta en 3 días hábiles
-    APROBADA --> ENTREGADO: Se cierra la entrega con código, firma y foto
+    APROBADA --> ENTREGADO: Se cierra la entrega con código, identificación y foto
     APROBADA --> CANCELADA: Solicitante se arrepiente
     APROBADA --> CANCELADA: No pasó a recoger en 2 días hábiles
     APROBADA --> CANCELADA: Responsable cancela antes de entregar
@@ -249,10 +252,13 @@ Entre paréntesis va el nivel de acceso mínimo (sección 0).
 | **Solicitudes** | | | | |
 | Crear solicitud de préstamo | ✅ | ✅ | ✅ | ✅ |
 | Cancelar su propia solicitud antes de la entrega | ✅ con su enlace | — | — | — |
-| Capturar el código de entrega, firmar | ✅ el solicitante | — | — | — |
+| Capturar el código de entrega | ✅ el solicitante | — | — | — |
 | Avisar "voy a devolver" | ✅ | — | — | — |
 | Aprobar, rechazar o cancelar una solicitud | ❌ | ❌ | ✅ (N2) | ✅ (N2) |
 | Generar un código de entrega nuevo | ❌ | ❌ | ✅ (N2) | ✅ (N2) |
+| Tomar y ver la foto de identificación de un alumno | ❌ | ❌ | ✅ (N2) | ✅ (N2) |
+| Marcar una ficha de solicitante como verificada | ❌ | ✅ en préstamo directo, en persona (N1) | ✅ (N2) | ✅ (N2) |
+| Cambiar teléfono o correo de un solicitante | ❌ | ❌ | ✅ (N2) | ✅ (N2) |
 | Desbloquear a un solicitante con adeudo | ❌ | ❌ | ✅ (N3) | ✅ (N3) |
 | **Movimientos** | | | | |
 | Préstamo directo (a sí mismo o a un solicitante presente) | ❌ | ✅ (N1) | ✅ (N1) | ✅ (N1) |
@@ -532,7 +538,7 @@ flowchart TD
     T1 --> S
     T -->|"Expirado"| T2["El código venció. Pide uno nuevo al responsable"]
     T2 --> R
-    T -->|"Válido"| U["Firma en pantalla o foto de credencial"]
+    T -->|"Válido"| U["El responsable toma foto de una identificación con foto del alumno"]
     U --> U2["El responsable toma foto del material y cierra la entrega"]
     U2 --> V["Solicitud ENTREGADO. Movimientos de préstamo creados"]
     V --> W["Comprobante: folio, artículos, fecha de devolución, a nombre de quién, quién autorizó"]
@@ -555,7 +561,7 @@ flowchart TD
 9. **Entrega en el laboratorio** (lado del responsable en F-06):
    1. El responsable abre la solicitud y toca **Entregar**; su pantalla muestra el código de 6 dígitos generado al aprobar (vigente de 1 h 30 min a 24 h, según lo que eligió el responsable). El código **nunca se le envía al alumno**: solo lo ve en la pantalla del responsable en el momento de la entrega.
    2. El alumno abre su solicitud en **su propio celular** y teclea el código. Si no trae celular, lo teclea en el dispositivo del laboratorio con su folio y matrícula.
-   3. Firma con el dedo en la pantalla, **o** el responsable toma foto de su credencial.
+   3. El responsable toma foto de **una identificación con foto** (credencial de transporte, documento escolar con foto u otra). Si la ficha estaba *sin verificar*, en ese momento el responsable la marca como verificada (F-04b).
    4. El responsable toma **foto del material** tal como se entrega.
 10. **Comprobante.** Folio, fecha y hora, artículos y cantidades, fecha comprometida de devolución, *"A cargo de: nombre, matrícula, grupo"* y *"Autorizó: Jaime Lugo"*. Botones **Guardar PDF** y **Enviar a mi correo**.
 
@@ -579,6 +585,33 @@ flowchart TD
 
 ---
 
+### F-04b Verificación de identidad del solicitante
+
+> Aprobada el 2026-09-17. Responde a: *"yo nunca pedí esto, otro lo pidió a mi nombre"*.
+
+**Principio: pedir no compromete a nadie; recibir sí.** Una solicitud no saca material ni deja nada a nombre de nadie. El material queda a cargo del alumno **solo en la entrega**, en persona, y la entrega exige identificarse. Las medidas de abajo cierran los huecos antes de ese momento y dejan evidencia después.
+
+| # | Medida | Qué evita |
+|---|---|---|
+| 1 | **Identificación con foto obligatoria en cada entrega.** Los alumnos no tienen credencial escolar con foto: sirve credencial de transporte, documento escolar con foto u otra. Quien entrega elige el tipo y toma la foto. **No hay firma en pantalla**: la identificación es la evidencia | Que recoja alguien distinto al de la ficha |
+| 2 | **Ficha verificada.** Una ficha creada desde la solicitud pública nace *sin verificar*. En la primera entrega, el responsable compara la identificación con nombre y matrícula y la marca como verificada (queda con su nombre y fecha). Mientras no lo esté, la aprobación la muestra en amarillo. Las fichas que crea un docente en persona (préstamo directo, Fase 3) nacen verificadas por ese docente | Registrar la matrícula de otro alumno con datos propios |
+| 3 | **Datos de contacto bloqueados.** Si la matrícula ya existe, desde la solicitud pública no se cambia teléfono ni correo. Solo el responsable o sub administración, en persona | "Apropiarse" de la ficha de otro |
+| 4 | **Correo institucional con aviso.** El correo de la ficha debe ser del dominio de la escuela (ver P-15). En cada solicitud y cada entrega le llega al alumno: *"Se pidió material a tu nombre (folio LM-0057). Si no fuiste tú, toca aquí."* Ese botón cancela la solicitud (si no se ha entregado) y manda una alerta al responsable | Que el dueño real no se entere |
+| 5 | **Una solicitud pendiente a la vez** por solicitante | Saturar la ficha de otro con solicitudes |
+
+**Privacidad de las fotos de identificación** (son datos de menores de edad):
+
+| Regla | Cómo se cumple |
+|---|---|
+| Solo las ven el **responsable del laboratorio** y **sub administración** | Almacén privado aparte. Se muestran con un enlace temporal dentro de la app, únicamente a esas cuentas y con contraseña |
+| Quien la toma no la vuelve a ver si no tiene ese rol | Se puede subir, pero no consultar |
+| **Nunca salen del sistema** | No aparecen en el Excel para Contraloría, ni en actas PDF, ni en exportaciones, ni en el respaldo `.zip`. La app no tiene botón de descargar ni de compartir |
+| Queda registro de quién las consulta | Cada vez que alguien abre una, se anota en la bitácora |
+
+Límite honesto: ninguna app puede impedir que alguien le tome foto a la pantalla con otro celular. Por eso cada consulta queda registrada con nombre y hora.
+
+---
+
 ### F-05 Maestro sin cuenta pide material
 
 Es **el mismo flujo que F-04**. Estas son las únicas diferencias:
@@ -592,7 +625,7 @@ Es **el mismo flujo que F-04**. Estas son las únicas diferencias:
 | Motivo | Opciones de alumno | Añade *"Para uso en mi clase con el grupo…"* y pide el grupo |
 | Adeudos y bloqueo | Igual | **Igual.** Un maestro con préstamo vencido también queda bloqueado |
 | Responsabilidad | Del alumno | **Del maestro, de forma personal.** Aunque el material lo usen sus alumnos, el responsable nominal es el maestro. La app no permite repartir la responsabilidad entre varias personas |
-| Aprobación, código, firma, comprobante | Igual | Igual |
+| Aprobación, código, identificación, comprobante | Igual | Igual |
 
 ```mermaid
 flowchart LR
@@ -600,7 +633,7 @@ flowchart LR
     B --> C["Clave de empleado, área, teléfono, correo"]
     C --> D["Motivo: uso en clase con grupo X"]
     D --> E["Plazo hasta 30 días"]
-    E --> F["Resto idéntico a F-04: aprobación, código, firma, comprobante"]
+    E --> F["Resto idéntico a F-04: aprobación, código, identificación, comprobante"]
 ```
 
 ---
@@ -611,8 +644,8 @@ flowchart LR
 |---|---|
 | **Inicia** | Responsable o sub admin |
 | **Sesión** | N2 (contraseña) para aprobar, rechazar y generar código |
-| **Pantallas** | Aviso → Bandeja de solicitudes → Detalle de la solicitud → Aprobar o rechazar → Entrega (código, firma, foto) → Confirmación |
-| **Se guarda** | Estado de la solicitud, `autorizada_por`, `autorizada_en`, `motivo_rechazo`; cada `codigo_entrega` generado; al entregar: `firma_url`, `foto_entrega_url`, movimientos `PRESTAMO` |
+| **Pantallas** | Aviso → Bandeja de solicitudes → Detalle de la solicitud → Aprobar o rechazar → Entrega (código, identificación, foto) → Confirmación |
+| **Se guarda** | Estado de la solicitud, `autorizada_por`, `autorizada_en`, `motivo_rechazo`; cada `codigo_entrega` generado; al entregar: foto de la identificación (almacén privado), `foto_entrega_url`, movimientos `PRESTAMO` |
 
 ```mermaid
 sequenceDiagram
@@ -647,11 +680,8 @@ sequenceDiagram
     S->>AS: Teclea el código
     AS->>SV: Canjear código
     SV->>SV: Valida vigencia, un solo uso, existencias
-    SV-->>AS: Pide firma
-    S->>AS: Firma o foto de credencial
-    AS->>SV: Sube firma
-    SV-->>AR: Código usado, falta foto de entrega
-    R->>AR: Toma foto del material
+    SV-->>AR: Código usado, faltan fotos
+    R->>AR: Toma foto de la identificación y del material
     AR->>SV: Sube foto y cierra la entrega
     SV->>SV: Crea PRESTAMO por línea y marca ENTREGADO
     SV-->>AS: Comprobante
@@ -687,10 +717,10 @@ sequenceDiagram
 6. **Entregar**, cuando el solicitante está presente:
    1. En *Por entregar* toca la solicitud → **Entregar**.
    2. Pantalla grande con el **código de 6 dígitos** y el tiempo que le queda de vigencia. Si ya venció, botón **Generar código nuevo** (1 h 30 min).
-   3. El solicitante lo teclea en su dispositivo. La pantalla del responsable cambia sola a *"Código aceptado. Esperando firma…"*.
-   4. Cuando llega la firma, se le pide al responsable la **foto del material entregado**. Es obligatoria para cerrar la entrega (ver P-6).
+   3. El solicitante lo teclea en su dispositivo. La pantalla del responsable cambia sola a *"Código aceptado. Toma las fotos."*
+   4. Se le pide al responsable la **foto de la identificación con foto** del alumno y la **foto del material entregado**. Las dos son obligatorias para cerrar la entrega (ver P-6 y F-04b).
    5. Al subir la foto **se cierra la entrega y en ese momento se crean los préstamos**. Aparece *"Entregado. Préstamo a nombre de Juan Pérez, autorizado por Jaime Lugo."*
-   6. **Aunque el alumno tuviera el código antes de tiempo, no se lleva nada "en papel":** sin firma y sin foto del responsable no se crea ningún préstamo.
+   6. **Aunque el alumno tuviera el código antes de tiempo, no se lleva nada "en papel":** sin las fotos que toma el responsable no se crea ningún préstamo.
 7. **Entrega en el mismo dispositivo** (el alumno no trae celular): en la pantalla del código, **Capturar aquí**. La pantalla cambia a modo solicitante, que pide folio + matrícula + código. El código lo sigue tecleando el alumno, no el responsable.
 
 **Qué se aprobó y qué se entregó.** La aprobación **no** crea movimientos de préstamo: solo aparta. Canjear el código tampoco. Los movimientos `PRESTAMO` se crean **al cerrar la entrega**, es decir, cuando ya hay código válido, firma (o credencial) y se sube la foto del material. Hasta ese momento, las piezas siguen como *apartadas*, no como *prestadas*. Cada uno lleva:
@@ -708,7 +738,7 @@ Así queda asentado que **aprobar no traslada la responsabilidad** al que aprueb
 | Ya no hay existencias al aprobar | La línea aparece en rojo con *"Solo hay 1 disponible"*. Se puede aprobar parcial (con nota) o rechazar |
 | El solicitante quedó bloqueado entre que pidió y que se aprueba | Advertencia: *"Este solicitante tiene un préstamo vencido desde…"*. El botón **Aprobar** se desactiva hasta que se ponga al corriente o se le desbloquee (N3) |
 | El código expira | Botón **Generar código nuevo**. El anterior queda en la bitácora como `EXPIRADO` |
-| El solicitante no llega a firmar | La entrega no se cierra. Si el código ya se usó pero no hay firma en 15 min, se pregunta al responsable si **tomar foto de credencial en su lugar** o **anular la entrega** (el código queda usado, pero no se crean préstamos) |
+| El alumno no trae identificación con foto | La entrega no se cierra. El código queda usado y se ofrece **anular la entrega** (no se crean préstamos); el material sigue apartado hasta que vuelva con identificación |
 | Se va la señal a la mitad | El código **requiere conexión en ambos lados**: sin ella no se puede hacer esta entrega. Alternativa: préstamo directo (F-07) a nombre del solicitante, que queda en cola. Ver P-7 |
 | Responsable sin sesión N2 | Gate F-02 pidiendo contraseña |
 | Dos responsables abren la misma solicitud | El segundo que intenta aprobar o rechazar ve *"Esta solicitud ya fue aprobada por … hace 1 min"* |
@@ -735,7 +765,7 @@ flowchart TD
     D -->|"Para un alumno o maestro presente"| F["Busca por matrícula o nombre, o crea ficha rápida"]
     F --> F1{"¿El solicitante está bloqueado?"}
     F1 -->|"Sí"| F2["No se puede. Tiene adeudo vencido"]
-    F1 -->|"No"| F3["Firma del solicitante en pantalla, opcional"]
+    F1 -->|"No"| F3["La ficha queda verificada por el docente, que lo tiene enfrente"]
     E --> G["Opcional: fecha de devolución, nota, foto"]
     F3 --> G
     G --> H["Guardar"]
@@ -755,13 +785,14 @@ flowchart TD
    - Cantidad, 1 por defecto.
    - **Para quién:** *"Para mí (Laura Gómez)"* ya viene seleccionado.
    - Fecha de devolución: hoy al final de la jornada por defecto; se puede cambiar.
+   - **Extender:** después, quien prestó (o el responsable) puede extender la fecha con un motivo. Los movimientos no se editan: la extensión se guarda aparte y queda en el historial.
 3. **Confirmar** → *"Listo"*. Tres toques.
 4. **Deshacer (10 segundos):** si se equivocó, el botón Deshacer crea una `DEVOLUCION` ligada con la nota *"Deshecho por el usuario"*. **No borra nada.** Pasados los 10 segundos, la corrección es una devolución normal.
 
 **Variante: prestar a un alumno presente sin pasar por solicitud**
 - En *Para quién* elige **Otra persona** → busca por matrícula o nombre. Si no existe, **ficha rápida**: nombre, tipo, matrícula y grupo (teléfono opcional).
 - Se revisa si está bloqueado.
-- Firma opcional del alumno en la pantalla del docente.
+- Búsqueda **solo por matrícula exacta** (nadie puede recorrer la lista de alumnos). La ficha rápida pide correo `@prepasoficiales.net` y nace verificada por el docente.
 - El movimiento queda con `autorizado_por` = docente y `responsable_solicitante_id` = alumno.
 - No genera folio de solicitud. Sí genera **comprobante** (con número de préstamo) que se puede enviar al correo del alumno.
 
@@ -1428,7 +1459,7 @@ flowchart TD
     F --> G["Quién lo pidió, cuándo, folio"]
     F --> H["Quién aprobó y cuándo"]
     F --> I["Código usado, hora del canje, códigos expirados o anulados"]
-    F --> J["Firma o credencial y foto de la entrega"]
+    F --> J["Identificación con foto, solo R y S; foto de la entrega"]
     F --> K["Devoluciones parciales, quién las recibió, estado"]
     F --> L["Reportes de pérdida o daño ligados"]
 ```
@@ -1441,7 +1472,7 @@ flowchart TD
 | Solicitud | Folio LM-0057, creada 10/09 08:12, motivo *"Proyecto de física"* |
 | **Autorizó** | Jaime Lugo, 10/09 09:30 |
 | Código de entrega | Usado 10/09 11:05. Antes: 1 código expirado (10:20) |
-| Firma y foto | Firma del alumno · foto del material entregado |
+| Identidad y entrega | Foto de la identificación (solo responsable y sub administración) · foto del material entregado |
 | Devoluciones | 12/09: 1 de 2, recibió Laura Gómez, estado *Bien* |
 | Pendiente | 1 multímetro, vencido desde 17/09 |
 
@@ -1521,6 +1552,8 @@ Cada hoja lleva en el encabezado: *"Fecha de corte: 14/09/2026 13:05 · Generado
 | **P-6** | Foto del material al entregar una solicitud | **Obligatoria** para cerrar la entrega | Opcional |
 | **P-9** | Baja de equipo con número de resguardo | Pide número de oficio o acta; si no hay, queda *"Baja en trámite"* | Permitir baja sin oficio |
 | **P-10** | Otras vigencias | Solicitud aprobada sin recoger: 2 días hábiles. Solicitud sin respuesta: 3 días hábiles. Plazo máximo: alumno 14 días, maestro 30 | Los valores que prefieras |
+| **P-14** | **Cuánto tiempo se guardan las fotos de identificación** | Mientras el alumno tenga algo prestado y hasta el fin del ciclo escolar en que devolvió; después se eliminan. Sería la única excepción a "nada se borra", y la eliminación queda en la bitácora | Guardarlas siempre |
+| **P-15** | **Dominio del correo institucional** de los alumnos (ej. `@prepa13.edu.mx`) | Exigirlo en la ficha del solicitante | Aceptar cualquier correo |
 | **P-12** | Identificar a un solicitante que ya existe sin exponer sus datos | Matrícula + últimos 4 dígitos del teléfono | Solo matrícula (más fácil, pero cualquiera puede pedir a nombre de otro) |
 
 ---

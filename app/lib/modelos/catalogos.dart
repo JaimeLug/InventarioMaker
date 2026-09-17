@@ -104,6 +104,7 @@ const nombresMovimiento = {
   'ALTA': 'Alta',
   'BAJA': 'Baja',
   'AJUSTE_CONTEO': 'Ajuste de conteo',
+  'EXTENSION': 'Extensión de préstamo',
 };
 
 const nombresTarea = {
@@ -119,3 +120,34 @@ const nombresTarea = {
 };
 
 const unidadesComunes = ['pieza', 'caja', 'bolsa', 'juego', 'paquete', 'rollo', 'estuche', 'kit'];
+
+enum TipoSolicitante {
+  alumno('ALUMNO', 'Alumno'),
+  maestro('MAESTRO', 'Maestro'),
+  otro('OTRO', 'Otro');
+
+  const TipoSolicitante(this.codigo, this.nombre);
+  final String codigo;
+  final String nombre;
+
+  static TipoSolicitante desde(String codigo) => values.firstWhere((v) => v.codigo == codigo);
+}
+
+/// Motivos del ajuste de conteo (F-13).
+const motivosAjuste = {
+  'CONTEO_FISICO': 'Conteo físico',
+  'ERROR_CAPTURA': 'Error de captura inicial',
+  'APARECIO': 'Apareció',
+  'NO_SE_ENCONTRO': 'No se encontró',
+};
+
+/// Motivos de baja (F-14).
+const motivosBaja = {
+  'IRREPARABLE': 'Irreparable',
+  'OBSOLETO': 'Obsoleto',
+  'PERDIDA_CONFIRMADA': 'Pérdida confirmada',
+  'DONACION': 'Donación o transferencia',
+  'OTRO': 'Otro',
+};
+
+const dominioCorreoAlumnos = 'prepasoficiales.net';

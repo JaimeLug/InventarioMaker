@@ -32,21 +32,26 @@ class BarraSesion extends ConsumerWidget {
           : PopupMenuButton<String>(
               tooltip: 'Tu sesión',
               onSelected: (opcion) async {
-                switch (opcion) {
-                  case 'mi-cuenta':
-                    context.push('/mi-cuenta');
-                  case 'cuentas':
-                    context.push('/cuentas');
-                  case 'salir':
-                    await ref.read(repositorioProvider).salir();
-                    ref.invalidate(sesionProvider);
+                if (opcion == 'salir') {
+                  await ref.read(repositorioProvider).salir();
+                  ref.invalidate(sesionProvider);
+                } else if (context.mounted) {
+                  context.push('/$opcion');
                 }
               },
               itemBuilder: (_) => [
                 PopupMenuItem(enabled: false, child: Text('${s.nombre}\n${s.rol.nombre}')),
-                const PopupMenuItem(value: 'mi-cuenta', child: ListTile(leading: Icon(Icons.person_outline), title: Text('Mi cuenta'))),
-                if (s.administra)
+                const PopupMenuItem(value: 'mis-prestamos', child: ListTile(leading: Icon(Icons.outbox_outlined), title: Text('Mis préstamos'))),
+                const PopupMenuItem(value: 'mis-reportes', child: ListTile(leading: Icon(Icons.flag_outlined), title: Text('Mis reportes'))),
+                if (s.administra) ...[
+                  const PopupMenuItem(value: 'por-revisar', child: ListTile(leading: Icon(Icons.fact_check_outlined), title: Text('Por revisar'))),
+                  const PopupMenuItem(
+                      value: 'prestamos-abiertos', child: ListTile(leading: Icon(Icons.schedule), title: Text('Préstamos abiertos'))),
                   const PopupMenuItem(value: 'cuentas', child: ListTile(leading: Icon(Icons.group_outlined), title: Text('Cuentas'))),
+                ],
+                if (s.rol == Rol.subadmin)
+                  const PopupMenuItem(value: 'bitacora', child: ListTile(leading: Icon(Icons.history_edu), title: Text('Bitácora'))),
+                const PopupMenuItem(value: 'mi-cuenta', child: ListTile(leading: Icon(Icons.person_outline), title: Text('Mi cuenta'))),
                 const PopupMenuItem(value: 'salir', child: ListTile(leading: Icon(Icons.logout), title: Text('Cerrar sesión'))),
               ],
               child: Padding(

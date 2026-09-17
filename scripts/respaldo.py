@@ -19,7 +19,11 @@ Para --url, la contraseña se toma de la variable de entorno PGPASSWORD si no va
 No incluye:
   * Las contraseñas de Supabase Auth. Al mudarse fuera de Supabase hay que restablecerlas;
     los PIN sí viajan (están en la tabla usuario).
-  * Los archivos de fotos. Se agregan al respaldo en la Fase 2, cuando existan.
+  * Las fotos de identificación de alumnos (privado/identificaciones/). Son datos de menores:
+    solo las ven el responsable y sub administración y NUNCA salen del sistema.
+
+Fotos: con --nube se bajan las del catálogo y las privadas de daños y pérdidas (archivos/ en el .zip).
+La base local no tiene almacén de archivos, así que un respaldo local no las incluye.
 """
 from __future__ import annotations
 
@@ -28,7 +32,10 @@ import csv
 import io
 import json
 import sys
+import urllib.parse
+import urllib.request
 import zipfile
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -40,6 +47,9 @@ import db
 
 CARPETA_RESPALDOS = db.RAIZ / "respaldos"
 FORMATO = 1
+ALMACENES = ("fotos", "privado")
+# Regla de privacidad: estas carpetas nunca salen del sistema, ni en respaldos.
+CARPETAS_EXCLUIDAS = ("identificaciones/",)
 
 
 def _filas(conn, consulta, params=None) -> list[tuple]:
@@ -69,12 +79,36 @@ def _versiones_repo() -> list[str]:
     return [a.stem.partition("_")[0] for a in sorted(db.MIGRACIONES.glob("*.sql"))]
 
 
-def crear(conn: psycopg.Connection, carpeta: Path, origen: str) -> Path:
+def archivos_del_almacen(conn) -> list[tuple[str, str]]:
+    """(almacén, ruta) de las fotos que sí se respaldan."""
+    if not _escalar(conn, "select to_regclass('storage.objects') is not null"):
+        return []
+    filas = _filas(conn, "select bucket_id, name from storage.objects where bucket_id = any(%s) order by 1, 2", (list(ALMACENES),))
+    return [(b, n) for b, n in filas if not n.startswith(CARPETAS_EXCLUIDAS)]
+
+
+def descargador_supabase() -> Callable[[str, str], bytes]:
+    env = db.leer_env()
+    url, secreta = env.get("SUPABASE_URL"), env.get("SUPABASE_SECRET_KEY")
+    if not url or not secreta:
+        sys.exit("Para respaldar las fotos faltan SUPABASE_URL o SUPABASE_SECRET_KEY en .env")
+
+    def bajar(almacen: str, ruta: str) -> bytes:
+        destino = f"{url}/storage/v1/object/{almacen}/{urllib.parse.quote(ruta)}"
+        solicitud = urllib.request.Request(destino, headers={"apikey": secreta, "Authorization": f"Bearer {secreta}"})
+        with urllib.request.urlopen(solicitud, timeout=60) as r:
+            return r.read()
+    return bajar
+
+
+def crear(conn: psycopg.Connection, carpeta: Path, origen: str,
+          descargar: Callable[[str, str], bytes] | None = None) -> Path:
     carpeta.mkdir(parents=True, exist_ok=True)
     ahora = datetime.now(timezone.utc)
     archivo = carpeta / f"inventario_{ahora.astimezone():%Y-%m-%d_%H%M%S}.zip"
     manifiesto = {"formato": FORMATO, "creado_en": ahora.isoformat(), "origen": origen,
-                  "migraciones": [], "tablas": {}, "secuencias": {}, "usuarios_auth": 0}
+                  "migraciones": [], "tablas": {}, "secuencias": {}, "usuarios_auth": 0,
+                  "archivos": 0, "archivos_excluidos": list(CARPETAS_EXCLUIDAS)}
 
     with conn.transaction(), zipfile.ZipFile(archivo, "w", zipfile.ZIP_DEFLATED) as z:
         # Todo desde la misma foto instantánea de la base, aunque alguien esté escribiendo.
@@ -106,6 +140,11 @@ def crear(conn: psycopg.Connection, carpeta: Path, origen: str) -> Path:
                 "select schemaname, sequencename, last_value from pg_sequences "
                 "where schemaname in ('public', 'app') and last_value is not null order by 1, 2"):
             manifiesto["secuencias"][f"{esquema}.{nombre}"] = valor
+
+        if descargar is not None:
+            for almacen, ruta in archivos_del_almacen(conn):
+                z.writestr(f"archivos/{almacen}/{ruta}", descargar(almacen, ruta))
+                manifiesto["archivos"] += 1
 
         z.writestr("manifiesto.json", json.dumps(manifiesto, ensure_ascii=False, indent=2))
     return archivo
@@ -185,11 +224,13 @@ def main() -> None:
     if args.accion == "crear":
         print(f"Origen: {db.describir(args.nube)}")
         with db.conectar(nube=args.nube) as conn:
-            archivo = crear(conn, args.carpeta, "supabase" if args.nube else "local")
+            archivo = crear(conn, args.carpeta, "supabase" if args.nube else "local",
+                            descargador_supabase() if args.nube else None)
         m = json.loads(zipfile.ZipFile(archivo).read("manifiesto.json"))
         print(f"Respaldo creado: {archivo}  ({archivo.stat().st_size / 1024:.0f} KB)")
         print(f"  Migraciones: {len(m['migraciones'])}   Artículos: {m['tablas'].get('articulo')}   "
-              f"Movimientos: {m['tablas'].get('movimiento')}   Pendientes: {m['tablas'].get('tarea_pendiente')}")
+              f"Movimientos: {m['tablas'].get('movimiento')}   Pendientes: {m['tablas'].get('tarea_pendiente')}   "
+              f"Fotos: {m['archivos']}")
         return
 
     if not args.archivo.exists():

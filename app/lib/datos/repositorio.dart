@@ -8,6 +8,7 @@ import '../acceso/sesion.dart';
 import '../configuracion.dart';
 import '../modelos/articulo.dart';
 import '../modelos/catalogos.dart';
+import '../modelos/movimientos.dart';
 import '../modelos/otros.dart';
 import 'errores.dart';
 
@@ -194,4 +195,198 @@ class Repositorio {
           codigo: datos['codigo'] as String?, detalle: datos['detalle'] as String?);
     }
   }
+
+  // --- Movimientos (Fase 3) ------------------------------------------------------------
+  List<Map<String, dynamic>> _filas(Object? r) => [for (final m in (r as List)) Map<String, dynamic>.from(m as Map)];
+
+  Future<int> vencidosContar() async => await _c.rpc('vencidos_contar') as int;
+
+  Future<int> porRevisarContar() async => await _c.rpc('por_revisar_contar') as int;
+
+  /// F-07. Devuelve el grupo del préstamo (para deshacer).
+  Future<String> prestar({
+    required List<({String articuloId, int cantidad})> lineas,
+    required String comando,
+    String? responsableUsuario,
+    String? responsableSolicitante,
+    DateTime? fechaCompromiso,
+    String? nota,
+  }) async {
+    final r = await _c.rpc('prestamo_registrar', params: {
+      'p_lineas': [for (final l in lineas) {'articulo_id': l.articuloId, 'cantidad': l.cantidad}],
+      'p_responsable_usuario': responsableUsuario,
+      'p_responsable_solicitante': responsableSolicitante,
+      'p_fecha_compromiso': fechaCompromiso?.toUtc().toIso8601String(),
+      'p_nota': nota,
+      'p_comando': comando,
+    });
+    return (r as Map)['grupo'] as String;
+  }
+
+  Future<void> deshacerPrestamo(String grupo) => _c.rpc('prestamo_deshacer', params: {'p_grupo': grupo});
+
+  Future<void> extenderPrestamo(String prestamoId, DateTime fecha, String motivo) => _c.rpc('prestamo_extender',
+      params: {'p_prestamo': prestamoId, 'p_fecha': fecha.toUtc().toIso8601String(), 'p_motivo': motivo});
+
+  Future<List<PrestamoAbierto>> prestamosDeArticulo(String articuloId) async =>
+      _filas(await _c.rpc('prestamos_de_articulo', params: {'p_articulo': articuloId})).map(PrestamoAbierto.desdeMapa).toList();
+
+  Future<List<PrestamoListado>> misPrestamos() async => _filas(await _c.rpc('mis_prestamos')).map(PrestamoListado.desdeMapa).toList();
+
+  Future<List<PrestamoListado>> prestamosAbiertos() async =>
+      _filas(await _c.rpc('prestamos_abiertos_listar')).map(PrestamoListado.desdeMapa).toList();
+
+  Future<List<SolicitanteEncontrado>> buscarSolicitante(String matricula) async =>
+      _filas(await _c.rpc('solicitante_buscar', params: {'p_matricula': matricula})).map(SolicitanteEncontrado.desdeMapa).toList();
+
+  Future<String> crearSolicitante({
+    required String nombre,
+    required TipoSolicitante tipo,
+    required String matricula,
+    required String grupo,
+    required String correo,
+    String? telefono,
+  }) async =>
+      await _c.rpc('solicitante_crear_rapido', params: {
+        'p_nombre': nombre,
+        'p_tipo': tipo.codigo,
+        'p_matricula': matricula,
+        'p_grupo': grupo,
+        'p_correo': correo,
+        'p_telefono': telefono,
+      }) as String;
+
+  /// Fotos de daños y pérdidas: almacén privado, en la carpeta incidencias/ID del reporte.
+  Future<List<Map<String, String>>> subirFotosPrivadas(String incidenciaId, List<FotoNueva> fotos) async {
+    final rutas = <Map<String, String>>[];
+    for (final f in fotos) {
+      if (f.rutaSubida == null) {
+        final ruta = 'incidencias/$incidenciaId/${DateTime.now().toUtc().millisecondsSinceEpoch}_${_uuid.v4().substring(0, 8)}.jpg';
+        await _c.storage
+            .from('privado')
+            .uploadBinary(ruta, f.bytes, fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: false));
+        f.rutaSubida = ruta;
+      }
+      rutas.add({'ruta': f.rutaSubida!});
+    }
+    return rutas;
+  }
+
+  /// Enlace temporal (5 minutos) a una foto privada. Solo funciona para quien tiene permiso.
+  Future<String> urlPrivada(String ruta) => _c.storage.from('privado').createSignedUrl(ruta, 300);
+
+  /// F-08. Una línea por préstamo.
+  Future<void> devolver({
+    required String comando,
+    required String prestamoId,
+    required int regresan,
+    int danadas = 0,
+    String? incidenciaDanoId,
+    String? notaDano,
+    List<FotoNueva> fotosDano = const [],
+    bool faltantePerdido = false,
+    String? incidenciaPerdidaId,
+    String? notaPerdida,
+    List<FotoNueva> fotosPerdida = const [],
+    String? sinFotoPerdida,
+  }) async {
+    final linea = <String, dynamic>{'prestamo_id': prestamoId, 'regresan': regresan, 'danadas': danadas};
+    if (danadas > 0) {
+      linea.addAll({
+        'incidencia_dano_id': incidenciaDanoId,
+        'nota_dano': notaDano,
+        'fotos_dano': await subirFotosPrivadas(incidenciaDanoId!, fotosDano),
+      });
+    }
+    if (faltantePerdido) {
+      linea.addAll({
+        'faltante': 'PERDIDO',
+        'incidencia_perdida_id': incidenciaPerdidaId,
+        'nota_perdida': notaPerdida,
+        'fotos_perdida': await subirFotosPrivadas(incidenciaPerdidaId!, fotosPerdida),
+        'sin_foto_perdida': sinFotoPerdida,
+      });
+    }
+    await _c.rpc('devolucion_registrar', params: {'p_lineas': [linea], 'p_comando': comando});
+  }
+
+  /// F-09. [id] lo genera la pantalla una vez: reintentar no duplica.
+  Future<void> reportar({
+    required String id,
+    required String articuloId,
+    required String tipo,
+    required int cantidad,
+    required String nota,
+    required List<FotoNueva> fotos,
+    String? prestamoId,
+    String? sinFoto,
+  }) async {
+    await _c.rpc('incidencia_reportar', params: {
+      'p_id': id,
+      'p_articulo': articuloId,
+      'p_tipo': tipo,
+      'p_cantidad': cantidad,
+      'p_prestamo': prestamoId,
+      'p_nota': nota,
+      'p_fotos': await subirFotosPrivadas(id, fotos),
+      'p_sin_foto': sinFoto,
+    });
+  }
+
+  /// F-10. Devuelve true si se aplicó; false si quedó por autorizar.
+  Future<bool> registrarUso(String articuloId, int cantidad, String? nota, String comando) async {
+    final r = await _c.rpc('consumo_registrar',
+        params: {'p_articulo': articuloId, 'p_cantidad': cantidad, 'p_nota': nota, 'p_comando': comando});
+    return (r as Map)['aplicado'] as bool;
+  }
+
+  Future<List<Incidencia>> porRevisar() async => _filas(await _c.rpc('por_revisar')).map(Incidencia.desdeMapa).toList();
+
+  Future<List<Incidencia>> misReportes() async => _filas(await _c.rpc('mis_reportes')).map(Incidencia.desdeMapa).toList();
+
+  Future<void> resolverIncidencias(List<String> ids, {required bool confirmar, String? motivo}) => _c.rpc('incidencia_resolver',
+      params: {'p_ids': ids, 'p_decision': confirmar ? 'CONFIRMAR' : 'DESCARTAR', 'p_motivo': motivo});
+
+  Future<void> comentarIncidencia(String id, String texto) =>
+      _c.rpc('incidencia_comentar', params: {'p_incidencia': id, 'p_texto': texto});
+
+  Future<void> reparar(String articuloId, int cantidad, String? nota) =>
+      _c.rpc('reparacion_registrar', params: {'p_articulo': articuloId, 'p_cantidad': cantidad, 'p_nota': nota});
+
+  Future<({int diferencia, EstadoInventario estado})> ajustarConteo(
+      String articuloId, int enTaller, String motivo, String? nota) async {
+    final r = Map<String, dynamic>.from(await _c.rpc('ajuste_conteo',
+        params: {'p_articulo': articuloId, 'p_en_taller': enTaller, 'p_motivo': motivo, 'p_nota': nota}) as Map);
+    return (diferencia: r['diferencia'] as int, estado: EstadoInventario.desde(r['estado'] as String));
+  }
+
+  /// [cantidad] null = baja total. Devuelve si la baja quedó "en trámite" (resguardo sin oficio).
+  Future<bool> darDeBaja(String articuloId,
+      {int? cantidad,
+      bool deFueraDeServicio = false,
+      required String motivo,
+      required String justificacion,
+      String? oficio}) async {
+    final r = await _c.rpc('baja_registrar', params: {
+      'p_articulo': articuloId,
+      'p_cantidad': cantidad,
+      'p_de_fuera_de_servicio': deFueraDeServicio,
+      'p_motivo': motivo,
+      'p_justificacion': justificacion,
+      'p_oficio': oficio,
+    });
+    return (r as Map)['en_tramite'] as bool;
+  }
+
+  Future<void> registrarOficioBaja(String articuloId, String oficio) =>
+      _c.rpc('baja_registrar_oficio', params: {'p_articulo': articuloId, 'p_oficio': oficio});
+
+  Future<void> reactivar(String articuloId, int cantidad, String justificacion) => _c.rpc('articulo_reactivar',
+      params: {'p_articulo': articuloId, 'p_cantidad': cantidad, 'p_justificacion': justificacion});
+
+  Future<List<MovimientoDetallado>> historialConNombres(String articuloId) async =>
+      _filas(await _c.rpc('historial_articulo', params: {'p_articulo': articuloId})).map(MovimientoDetallado.desdeMapa).toList();
+
+  Future<List<EventoBitacora>> bitacora({int? antes}) async =>
+      _filas(await _c.rpc('bitacora_listar', params: {'p_antes': antes, 'p_limite': 100})).map(EventoBitacora.desdeMapa).toList();
 }

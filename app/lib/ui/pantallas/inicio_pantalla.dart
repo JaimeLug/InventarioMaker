@@ -54,7 +54,7 @@ class _InicioPantallaState extends ConsumerState<InicioPantalla> {
     final articulos = ref.watch(articulosProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Inventario Maker'), actions: const [BarraSesion()]),
+      appBar: AppBar(title: const Text('Inventario Maker'), actions: const [_BotonPorRevisar(), BarraSesion()]),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/articulo/nuevo'),
         icon: const Icon(Icons.add),
@@ -62,7 +62,11 @@ class _InicioPantallaState extends ConsumerState<InicioPantalla> {
       ),
       body: Centrado(
         child: RefreshIndicator(
-          onRefresh: () => ref.refresh(articulosProvider.future),
+          onRefresh: () {
+            ref.invalidate(vencidosProvider);
+            ref.invalidate(porRevisarProvider);
+            return ref.refresh(articulosProvider.future);
+          },
           child: CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
@@ -81,6 +85,7 @@ class _InicioPantallaState extends ConsumerState<InicioPantalla> {
                   ),
                 ),
               ),
+              const SliverToBoxAdapter(child: _FranjaVencidos()),
               SliverToBoxAdapter(
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -205,6 +210,48 @@ class _Renglon extends StatelessWidget {
           ]),
         ]),
       ),
+    );
+  }
+}
+
+/// Regla de negocio 4: préstamos vencidos a la vista. El número lo ve cualquiera; los nombres, solo quien administra.
+class _FranjaVencidos extends ConsumerWidget {
+  const _FranjaVencidos();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final n = ref.watch(vencidosProvider).value ?? 0;
+    if (n == 0) return const SizedBox.shrink();
+    final administra = ref.watch(sesionProvider).value?.administra ?? false;
+    final colores = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Material(
+        color: colores.errorContainer,
+        borderRadius: BorderRadius.circular(12),
+        child: ListTile(
+          leading: Icon(Icons.warning_amber, color: colores.onErrorContainer),
+          title: Text('$n préstamo${n == 1 ? '' : 's'} vencido${n == 1 ? '' : 's'} sin regresar',
+              style: TextStyle(color: colores.onErrorContainer, fontWeight: FontWeight.w600)),
+          trailing: administra ? Icon(Icons.chevron_right, color: colores.onErrorContainer) : null,
+          onTap: administra ? () => context.push('/prestamos-abiertos') : null,
+        ),
+      ),
+    );
+  }
+}
+
+class _BotonPorRevisar extends ConsumerWidget {
+  const _BotonPorRevisar();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final n = ref.watch(porRevisarProvider).value ?? 0;
+    if (n == 0) return const SizedBox.shrink();
+    return IconButton(
+      tooltip: 'Por revisar',
+      onPressed: () => context.push('/por-revisar'),
+      icon: Badge(label: Text('$n'), child: const Icon(Icons.fact_check_outlined)),
     );
   }
 }

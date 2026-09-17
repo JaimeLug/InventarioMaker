@@ -114,3 +114,24 @@ def test_respaldo_y_restauracion_en_una_base_nueva(cluster, url_base, tmp_path):
     finally:
         with psycopg.connect(cluster.url("postgres"), autocommit=True) as conn:
             conn.execute(f'drop database "{nombre}" with (force)')
+
+
+def test_el_respaldo_incluye_fotos_pero_nunca_identificaciones(url_base, tmp_path):
+    import zipfile
+    with psycopg.connect(url_base, autocommit=True, row_factory=dict_row) as bd:
+        for almacen, ruta in (("fotos", "articulos/a1/principal.jpg"), ("privado", "incidencias/i1/dano.jpg"),
+                              ("privado", "identificaciones/s1/credencial.jpg")):
+            bd.execute("insert into storage.objects (bucket_id, name) values (%s, %s)", (almacen, ruta))
+    pedidos = []
+
+    def descargar(almacen, ruta):
+        pedidos.append(ruta)
+        return b"jpg"
+
+    with psycopg.connect(url_base) as conn:
+        archivo = respaldo.crear(conn, tmp_path, "prueba", descargar)
+    nombres = zipfile.ZipFile(archivo).namelist()
+    assert "archivos/fotos/articulos/a1/principal.jpg" in nombres
+    assert "archivos/privado/incidencias/i1/dano.jpg" in nombres
+    assert not any("identificaciones" in n for n in nombres)
+    assert "identificaciones/s1/credencial.jpg" not in pedidos        # ni siquiera se descarga

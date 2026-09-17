@@ -65,6 +65,9 @@ class Requisito {
   static const administracionConfirmada =
       Requisito(Nivel.contrasena, roles: {Rol.responsable, Rol.subadmin}, confirmar: true);
 
+  /// Bitácora completa: solo sub administración con contraseña.
+  static const subadministracion = Requisito(Nivel.contrasena, roles: {Rol.subadmin});
+
   /// N3 para cualquier cuenta (cambiar su propio PIN).
   static const propiaConfirmada = Requisito(Nivel.contrasena, confirmar: true);
 }

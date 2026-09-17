@@ -5,8 +5,8 @@ Control de inventario en tiempo real del Laboratorio Maker. Diseño aprobado en 
 | Fase | Contenido | Estado |
 |---|---|---|
 | 1 | Modelo de datos, migraciones e importación desde Excel | Hecha |
-| 2 | Consulta abierta, acceso con PIN/contraseña, roles, artículos y fotos | **Lista para probar** |
-| 3 | Movimientos y bitácora | Pendiente |
+| 2 | Consulta abierta, acceso con PIN/contraseña, roles, artículos y fotos | Hecha |
+| 3 | Movimientos y bitácora | Hecha |
 | 3b | Solicitudes sin cuenta, código de entrega, adeudos | Pendiente |
 | 4 | Pendientes, contenedores, etiquetas QR y escaneo | Pendiente |
 | 5 | Reportes, Excel para Contraloría y acta PDF | Pendiente |
@@ -123,6 +123,23 @@ flutter test
 
 La jornada dura 8 horas desde que se abrió la sesión (la base lo revisa en cada acción). En web, además, la sesión se cierra tras 30 minutos sin tocar la pantalla.
 
+## Fase 3: movimientos
+
+| Qué | Dónde en la app | Quién |
+|---|---|---|
+| Prestar (uno o varios artículos, a ti o a un alumno o maestro) | Ficha → **Prestar** | Cualquier cuenta, con PIN |
+| Deshacer un préstamo recién hecho | Aviso de 10 segundos después de prestar | Quien lo registró |
+| Extender la fecha de devolución | Mis préstamos o Préstamos abiertos → **Extender** | Quien prestó, responsable, sub administración |
+| Recibir devolución (total, parcial, con daño, con faltantes perdidos) | Ficha → **Recibir devolución** | Cualquier cuenta, con PIN |
+| Reportar pérdida o daño | Ficha → **Reportar problema** | Cualquier cuenta, con PIN |
+| Registrar uso de un consumible | Ficha → **Registrar uso** | Docente: queda por autorizar. Responsable con contraseña: se aplica |
+| Confirmar o descartar reportes y autorizar consumos | Inicio → **Por revisar** | Responsable, sub administración (reconfirmando contraseña) |
+| Ajustar conteo, regresar a servicio, dar de baja, reactivar, oficio | Ficha → menú ⋮ | Responsable, sub administración |
+| Historial con nombres | Ficha (entrando con contraseña) | Responsable, sub administración |
+| Bitácora completa | Menú de tu nombre → **Bitácora** | Sub administración |
+
+Configuración nueva (tabla `configuracion`): `hora_fin_jornada` (15:00), `dominio_correo_alumnos` (prepasoficiales.net), `prestamo_directo_max_dias` (30).
+
 ## Estructura
 
 | Ruta | Qué es |
@@ -134,7 +151,7 @@ La jornada dura 8 horas desde que se abrió la sesión (la base lo revisa en cad
 | `scripts/import_excel.py` | Importación idempotente |
 | `scripts/consultar.py` | Consulta desde la terminal (mientras llega la app) |
 | `scripts/respaldo.py` | Respaldo y restauración, independientes de Supabase |
-| `tests/` | Pruebas de existencias, integridad, importación y acceso |
+| `tests/` | Pruebas de existencias, integridad, importación, acceso y movimientos |
 | `app/` | App de Flutter (Android y web) |
 | `supabase/functions/` | Funciones del servidor: acceso con PIN y administración de cuentas |
 | `scripts/cuentas.py` | Crear la primera cuenta desde la terminal |
@@ -195,7 +212,7 @@ espaldo.py crear --nube
 
 Genera `respaldos/inventario_<fecha>.zip`: los datos de cada tabla en CSV (se abren en Excel) y un manifiesto con las migraciones con que se creó. La carpeta `respaldos/` no se sube a git porque trae datos personales: guárdala en otro lado (USB, Drive institucional).
 
-Todavía no incluye las fotos; se agregan en la Fase 2, cuando existan.
+Con `--nube` también baja las fotos del catálogo y las de daños y pérdidas. **Nunca incluye las fotos de identificación de alumnos**: son datos de menores y no salen del sistema.
 
 ## Mudarse a otro servidor
 

@@ -304,7 +304,10 @@ def test_docente_con_pin_agrega_fotos_pero_no_cambia_la_principal(bd, cuentas):
     assert (f["es_principal"], f["tomada_por"], f["tipo"]) == (False, d, "PLACA_SERIE")
 
     otra = archivo(bd, f"articulos/{aid}/otra.jpg")
-    with rechazo("PT403", "NIVEL_CONTRASENA"), como(bd, d, nivel="PIN"):
+    # Un docente nunca cambia la principal: se le dice que su cuenta no puede, no se le pide contraseña.
+    with rechazo("PT403", "ROL"), como(bd, d, nivel="PIN"):
+        rpc(bd, "foto_agregar", p_articulo=aid, p_ruta=otra, p_tipo="GENERAL", p_principal=True)
+    with rechazo("PT403", "NIVEL_CONTRASENA"), como(bd, cuentas["responsable"], nivel="PIN"):
         rpc(bd, "foto_agregar", p_articulo=aid, p_ruta=otra, p_tipo="GENERAL", p_principal=True)
     with rechazo("P0001", contiene="reporte o una entrega"), como(bd, d, nivel="PIN"):
         rpc(bd, "foto_agregar", p_articulo=aid, p_ruta=otra, p_tipo="DANO", p_principal=False)
