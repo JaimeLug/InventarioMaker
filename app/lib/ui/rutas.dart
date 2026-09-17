@@ -22,6 +22,7 @@ import 'pantallas/prestamo_pantalla.dart';
 import 'pantallas/prestamos_pantallas.dart';
 import 'pantallas/reporte_pantalla.dart';
 import 'pantallas/reportes_pantallas.dart';
+import 'pantallas/sin_conexion_pantallas.dart';
 import 'pantallas/revision_pantallas.dart';
 import 'pantallas/solicitud_publica_pantallas.dart';
 import 'pantallas/solicitudes_pantallas.dart';
@@ -67,6 +68,9 @@ final rutasProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/revision-kit/:id', builder: (_, e) => RevisionKitPantalla(id: e.pathParameters['id']!)),
       GoRoute(path: '/acta-inventario/:id', builder: (_, e) => ActaInventarioPantalla(id: e.pathParameters['id']!)),
       GoRoute(path: '/acta-entrega', builder: (_, _) => const ActaEntregaPantalla()),
+      // Fase 6: sin conexión
+      GoRoute(path: '/sin-conexion', builder: (_, _) => const SinConexionPantalla()),
+      GoRoute(path: '/conflictos', builder: (_, _) => const ConflictosPantalla()),
       GoRoute(path: '/mis-prestamos', builder: (_, _) => const MisPrestamosPantalla()),
       GoRoute(path: '/mis-reportes', builder: (_, _) => const MisReportesPantalla()),
       GoRoute(path: '/por-revisar', builder: (_, _) => const PorRevisarPantalla()),

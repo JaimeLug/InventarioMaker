@@ -1320,7 +1320,7 @@ flowchart TD
 
 ### F-17 Trabajo sin conexión y conflictos al sincronizar
 
-> **Propuesta pendiente de tu visto bueno.** Pediste que la propusiera porque es lo que más te ha costado en otra aplicación con Supabase.
+> **Construido en la Fase 6 (aprobado el 2026-09-17).** Solo en el celular (Android). Sin conexión no se envían solicitudes sin cuenta; el préstamo directo sin señal solo es para alumnos que ya pidieron antes; se guardan miniaturas de todo el catálogo y las fotos grandes ya abiertas; la cola nunca se borra sola y avisa a las 24 h.
 
 | | |
 |---|---|

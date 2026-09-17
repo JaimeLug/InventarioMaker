@@ -53,6 +53,9 @@ dependencies:
   excel: ^4.0.6
   file_saver: ^0.3.1
   http: ^1.4.0
+  path_provider: ^2.1.5
+  connectivity_plus: '>=6.1.0 <6.2.0' # 7.x pide compilar con Android 16 (API 36)
+  image: ^4.3.0
 
 dev_dependencies:
   flutter_test:

@@ -232,7 +232,7 @@ class _GaleriaState extends ConsumerState<_Galeria> {
                 onTap: () => _verCompleta(context, lista[i]),
                 child: Container(
                   color: Colors.black,
-                  child: Image.network(lista[i].url, fit: BoxFit.contain,
+                  child: FotoConCopia(ruta: lista[i].ruta, url: lista[i].url, fit: BoxFit.contain,
                       errorBuilder: (_, _, _) => const Center(child: Icon(Icons.broken_image, color: Colors.white54, size: 48))),
                 ),
               ),
@@ -264,7 +264,7 @@ class _GaleriaState extends ConsumerState<_Galeria> {
       builder: (_) => Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white, title: Text(foto.tipo.nombre)),
-        body: InteractiveViewer(maxScale: 6, child: Center(child: Image.network(foto.url))),
+        body: InteractiveViewer(maxScale: 6, child: Center(child: FotoConCopia(ruta: foto.ruta, url: foto.url, fit: BoxFit.contain))),
       ),
     ));
   }

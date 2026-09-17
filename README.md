@@ -7,11 +7,11 @@ Control de inventario en tiempo real del Laboratorio Maker. Diseño aprobado en 
 | 1 | Modelo de datos, migraciones e importación desde Excel | Hecha |
 | 2 | Consulta abierta, acceso con PIN/contraseña, roles, artículos y fotos | Hecha |
 | 3 | Movimientos y bitácora | Hecha |
-| 3b | Solicitudes sin cuenta, código de entrega, adeudos | **Lista para probar** |
+| 3b | Solicitudes sin cuenta, código de entrega, adeudos | Hecha |
 | 4a | Contenedores, etiquetas QR, escaneo y acomodo | Hecha |
-| 4b | Pendientes del levantamiento, desglose de kits, inventario periódico | **Lista para probar** |
-| 5 | Reportes, Excel para Contraloría y acta PDF | Pendiente |
-| 6 | Trabajo sin conexión y ajustes de móvil | Pendiente |
+| 4b | Pendientes del levantamiento, desglose de kits, inventario periódico | Hecha |
+| 5 | Reportes, Excel para Contraloría y acta PDF | Hecha |
+| 6 | Trabajo sin conexión (celular) | **Lista para probar** |
 
 ## Fase 1: cómo probarla
 
@@ -251,6 +251,21 @@ Menú → **Reportes** (responsable y sub administración). Todo se arma en el d
 | Acta de entrega-recepción | Solo sub administración. Folio `AER-AAAA-NNN`, inventario completo y pendientes en anexos, firmas editables |
 
 El periodo por omisión es el ciclo escolar (1 de agosto al 31 de julio). El encabezado (escuela, programa, laboratorio) se cambia en **Ajustes**; el lugar del logo ya está reservado. Las fotos de identificaciones nunca entran en un reporte.
+
+## Fase 6: trabajo sin conexión (solo en el celular)
+
+La app guarda en el celular el catálogo, contenedores, pendientes, préstamos abiertos, inventarios abiertos y las miniaturas de las fotos (se actualiza cada 15 minutos con señal). Sin señal:
+
+| Funciona | No funciona (necesita el servidor) |
+|---|---|
+| Buscar, ver fichas y fotos ya vistas, escanear QR | Entrar por primera vez, solicitudes sin cuenta |
+| Préstamo directo (a alumnos que ya pidieron antes, por matrícula), devolución, reporte de daño o pérdida, registrar uso | Aprobar y entregar solicitudes |
+| Contar (suelto o en inventario periódico), notas y fotos en pendientes | Altas, ediciones, ajustes, bajas, aplicar conteos, cerrar inventarios, reportes |
+
+- **Indicador** junto a la sesión: verde en línea, gris sin conexión, naranja por enviar, rojo por resolver o con más de 24 h sin enviar. Al tocarlo: **Por enviar**, **Por resolver** y **Enviados**.
+- Todo entra al servidor por `comando_sin_conexion`: se aplica una sola vez aunque llegue repetido. Si el material ya se movió en físico (dos préstamos de la última pieza) se acepta **con conflicto**, se crea el pendiente "Contar físicamente" y se avisa. Si es imposible (devolver dos veces) va a *Por resolver*.
+- Se envía a nombre de quien lo capturó: si la sesión venció, la app pide que entre esa misma persona.
+- Menú → **Conflictos sin conexión** (responsable y sub administración). Lo recibido más de 72 h después queda marcado "Registrado tarde".
 
 ## Estructura
 

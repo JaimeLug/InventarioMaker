@@ -51,3 +51,17 @@ ErrorApp traducir(Object error) {
   }
   return ErrorApp('Algo salió mal: $texto');
 }
+
+/// Falla de red (sin señal, servidor inalcanzable o sin respuesta): lo capturado se puede guardar para después.
+bool esFaltaDeConexion(Object error) {
+  if (error is ErrorApp) return error.mensaje == _sinConexion;
+  if (error is AuthRetryableFetchException) return true;
+  final texto = error.toString();
+  return texto.contains('SocketException') ||
+      texto.contains('Failed host lookup') ||
+      texto.contains('ClientException') ||
+      texto.contains('TimeoutException') ||
+      texto.contains('Connection closed') ||
+      texto.contains('HandshakeException') ||
+      texto.contains('Network is unreachable');
+}

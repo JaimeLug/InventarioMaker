@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../sin_conexion/cola.dart';
 import '../../datos/local.dart';
 import '../../datos/proveedores.dart';
 import '../../modelos/articulo.dart';
@@ -90,6 +91,23 @@ class _InicioPantallaState extends ConsumerState<InicioPantalla> {
           },
           child: CustomScrollView(
             slivers: [
+              if (ColaSinConexion.instancia != null)
+                SliverToBoxAdapter(
+                  child: ListenableBuilder(
+                    listenable: ColaSinConexion.instancia!,
+                    builder: (context, _) {
+                      final cola = ColaSinConexion.instancia!;
+                      if (!cola.sinSenal) return const SizedBox.shrink();
+                      return Container(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: Text(cola.datosDe == null
+                            ? 'Sin conexión. No hay datos guardados en este celular todavía.'
+                            : 'Sin conexión. Datos de ${fechaHora(cola.datosDe!)}: las cantidades pueden haber cambiado.'),
+                      );
+                    },
+                  ),
+                ),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),

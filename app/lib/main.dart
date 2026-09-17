@@ -12,6 +12,7 @@ import 'configuracion.dart';
 import 'datos/avisos_celular.dart';
 import 'datos/proveedores.dart';
 import 'datos/repositorio.dart';
+import 'sin_conexion/cola.dart';
 import 'ui/rutas.dart';
 import 'ui/tema.dart';
 
@@ -21,7 +22,10 @@ Future<void> main() async {
   await initializeDateFormatting('es_MX');
   await Supabase.initialize(url: Configuracion.supabaseUrl, publishableKey: Configuracion.supabaseLlavePublica);
   await AvisosCelular.iniciar();
-  runApp(const ProviderScope(child: InventarioApp()));
+  final contenedor = ProviderContainer();
+  // En el celular: cola de lo capturado sin señal y copia de lo necesario para trabajar sin ella (F-17).
+  await ColaSinConexion.iniciar(descargarDatos: () => contenedor.read(repositorioProvider).descargarParaSinConexion());
+  runApp(UncontrolledProviderScope(container: contenedor, child: const InventarioApp()));
 }
 
 class InventarioApp extends ConsumerStatefulWidget {
@@ -31,11 +35,14 @@ class InventarioApp extends ConsumerStatefulWidget {
   ConsumerState<InventarioApp> createState() => _InventarioAppState();
 }
 
-class _InventarioAppState extends ConsumerState<InventarioApp> {
+class _InventarioAppState extends ConsumerState<InventarioApp> with WidgetsBindingObserver {
   StreamSubscription<AuthState>? _cambiosDeSesion;
   Timer? _inactividad;
   String? _registradoPara;
   final _mensajes = GlobalKey<ScaffoldMessengerState>();
+  int _porEnviar = ColaSinConexion.instancia?.porEnviar.length ?? 0;
+  int _porResolver = ColaSinConexion.instancia?.porResolver.length ?? 0;
+  int _enviados = ColaSinConexion.instancia?.enviados.length ?? 0;
 
   @override
   void initState() {
@@ -66,6 +73,45 @@ class _InventarioAppState extends ConsumerState<InventarioApp> {
       },
     );
     _reiniciarInactividad();
+    WidgetsBinding.instance.addObserver(this);
+    ColaSinConexion.instancia?.addListener(_alCambiarCola);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState estado) {
+    if (estado == AppLifecycleState.resumed) ColaSinConexion.instancia?.alReanudar();
+  }
+
+  /// Avisos de la cola: lo que se guardó sin señal, lo que se envió con conflicto y lo que no se pudo aplicar.
+  void _alCambiarCola() {
+    final cola = ColaSinConexion.instancia!;
+    final mensajes = _mensajes.currentState;
+    if (cola.porEnviar.length > _porEnviar) {
+      mensajes?.showSnackBar(const SnackBar(
+          content: Text('Sin señal: quedó guardado en este celular y se enviará solo al volver la conexión.'), duration: Duration(seconds: 6)));
+    }
+    if (cola.porResolver.length > _porResolver) {
+      mensajes?.showSnackBar(SnackBar(
+        content: const Text('Algo capturado sin señal no se pudo aplicar. Revísalo.'),
+        duration: const Duration(seconds: 8),
+        action: SnackBarAction(label: 'Ver', onPressed: () => ref.read(rutasProvider).push('/sin-conexion')),
+      ));
+    }
+    if (cola.enviados.length > _enviados) {
+      final nuevos = cola.enviados.take(cola.enviados.length - _enviados).toList();
+      final conflictos = nuevos.where((e) => e.conflicto != null).length;
+      mensajes?.showSnackBar(SnackBar(
+        content: Text(conflictos == 0
+            ? 'Se envió lo capturado sin señal (${nuevos.length}).'
+            : 'Se envió lo capturado sin señal. $conflictos con conflicto: el responsable va a revisar el conteo.'),
+        duration: const Duration(seconds: 6),
+      ));
+      ref.invalidate(articulosProvider);
+      ref.invalidate(pendientesAbiertosProvider);
+    }
+    _porEnviar = cola.porEnviar.length;
+    _porResolver = cola.porResolver.length;
+    _enviados = cola.enviados.length;
   }
 
   /// En web (computadoras compartidas) la sesión se cierra tras un rato sin uso.
@@ -81,6 +127,8 @@ class _InventarioAppState extends ConsumerState<InventarioApp> {
   @override
   void dispose() {
     _cambiosDeSesion?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    ColaSinConexion.instancia?.removeListener(_alCambiarCola);
     _inactividad?.cancel();
     super.dispose();
   }

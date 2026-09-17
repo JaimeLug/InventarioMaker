@@ -9,6 +9,8 @@ import '../../datos/proveedores.dart';
 import '../../datos/repositorio.dart';
 import '../../modelos/articulo.dart';
 import '../../modelos/catalogos.dart';
+import '../../sin_conexion/cola.dart';
+import '../pantallas/sin_conexion_pantallas.dart';
 import '../tema.dart';
 
 /// En la barra superior: "Entrar", o con qué cuenta y nivel se está firmando.
@@ -18,6 +20,10 @@ class BarraSesion extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sesion = ref.watch(sesionProvider);
+    return Row(mainAxisSize: MainAxisSize.min, children: [const IndicadorConexion(), _sesion(context, ref, sesion)]);
+  }
+
+  Widget _sesion(BuildContext context, WidgetRef ref, AsyncValue<Sesion?> sesion) {
     return sesion.when(
       loading: () => const Padding(padding: EdgeInsets.all(16), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
       error: (_, _) => IconButton(icon: const Icon(Icons.sync_problem), tooltip: 'Reintentar', onPressed: () => ref.invalidate(sesionProvider)),
@@ -49,6 +55,7 @@ class BarraSesion extends ConsumerWidget {
                 const PopupMenuItem(value: 'conteos', child: ListTile(leading: Icon(Icons.pin_outlined), title: Text('Conteos'))),
                 const PopupMenuItem(value: 'inventarios', child: ListTile(leading: Icon(Icons.fact_check_outlined), title: Text('Inventarios'))),
                 if (s.administra) ...[
+                  const PopupMenuItem(value: 'conflictos', child: ListTile(leading: Icon(Icons.sync_problem), title: Text('Conflictos sin conexión'))),
                   const PopupMenuItem(value: 'reportes', child: ListTile(leading: Icon(Icons.summarize_outlined), title: Text('Reportes'))),
                   const PopupMenuItem(value: 'solicitudes', child: ListTile(leading: Icon(Icons.inbox_outlined), title: Text('Solicitudes'))),
                   const PopupMenuItem(value: 'adeudos', child: ListTile(leading: Icon(Icons.assignment_ind_outlined), title: Text('Adeudos'))),
@@ -98,8 +105,10 @@ class Miniatura extends ConsumerWidget {
     if (ruta == null) return vacio;
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
-      child: Image.network(
-        ref.read(repositorioProvider).urlFoto(ruta!),
+      child: FotoConCopia(
+        ruta: ruta!,
+        url: ref.read(repositorioProvider).urlFoto(ruta!),
+        miniatura: true,
         width: tamano,
         height: tamano,
         fit: BoxFit.cover,
@@ -169,6 +178,50 @@ class Cargando<T> extends StatelessWidget {
           ]),
         ),
       ),
+    );
+  }
+}
+
+/// Foto del catálogo que también se ve sin señal: la completa si ya se abrió antes, o su miniatura guardada.
+class FotoConCopia extends StatelessWidget {
+  const FotoConCopia({
+    super.key,
+    required this.ruta,
+    required this.url,
+    this.miniatura = false,
+    this.fit = BoxFit.cover,
+    this.width,
+    this.height,
+    this.cacheWidth,
+    this.errorBuilder,
+  });
+
+  final String ruta;
+  final String url;
+  final bool miniatura;
+  final BoxFit fit;
+  final double? width;
+  final double? height;
+  final int? cacheWidth;
+  final ImageErrorWidgetBuilder? errorBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    final cola = ColaSinConexion.instancia;
+    final copia = cola == null ? null : (miniatura ? cola.miniatura(ruta) ?? cola.fotoGrande(ruta) : cola.fotoGrande(ruta) ?? cola.miniatura(ruta));
+    Widget deArchivo() => Image.file(copia!, fit: fit, width: width, height: height, cacheWidth: cacheWidth);
+    if (cola != null && cola.sinSenal && copia != null) return deArchivo();
+    return Image.network(
+      url,
+      fit: fit,
+      width: width,
+      height: height,
+      cacheWidth: cacheWidth,
+      frameBuilder: (context, child, cuadro, _) {
+        if (cuadro != null && !miniatura) cola?.guardarFotoVista(ruta, url);
+        return child;
+      },
+      errorBuilder: (context, error, pila) => copia != null ? deArchivo() : (errorBuilder?.call(context, error, pila) ?? const SizedBox.shrink()),
     );
   }
 }
