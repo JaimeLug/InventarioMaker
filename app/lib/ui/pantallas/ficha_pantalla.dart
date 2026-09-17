@@ -13,11 +13,14 @@ import '../../modelos/otros.dart';
 import '../../util/texto.dart';
 import '../tema.dart';
 import '../widgets/comunes.dart';
+import '../widgets/formularios.dart';
 import '../widgets/fotos.dart';
 import '../../acceso/hoja_acceso.dart';
 import '../../datos/local.dart';
 import 'acciones_articulo.dart' as acciones;
 import 'contenedores_pantallas.dart' show elegirContenedor;
+import 'pendientes_pantallas.dart' show abrirPendiente, contarArticulo;
+import '../../datos/avisos_disponible.dart';
 
 /// Ficha del artículo (F-01): fotos, cifras, datos, pendientes e historial.
 class FichaPantalla extends ConsumerWidget {
@@ -403,15 +406,18 @@ class _Pendientes extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final lista = ref.watch(pendientesProvider(articuloId)).value ?? const [];
-    if (lista.isEmpty) return const SizedBox.shrink();
+    final abiertos = (ref.watch(pendientesAbiertosProvider).value ?? const []).where((p) => p.articuloId == articuloId).toList();
+    final articulo = ref.watch(articuloProvider(articuloId)).value;
+    if (abiertos.isEmpty || articulo == null) return const SizedBox.shrink();
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       const _Titulo('Pendientes por verificar'),
-      for (final p in lista)
+      for (final p in abiertos)
         ListTile(
           leading: Icon(Icons.flag_outlined, color: p.prioridadAlta ? Avisos.sinClasificar : Avisos.pendiente),
-          title: Text(p.nombre),
+          title: Text(nombresTarea[p.tipo] ?? p.tipo),
           subtitle: Text(p.descripcion),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => abrirPendiente(context, ref, p, articulo),
         ),
     ]);
   }
@@ -457,6 +463,19 @@ class _Acciones extends ConsumerWidget {
     if (!sesion.isLoading && sesion.value == null) {
       final enCarrito = ref.watch(carritoProvider).any((l) => l.articuloId == a.id);
       final sePide = a.prestable && a.disponible > 0 && !a.esConsumible;
+      if (!sePide && !a.esConsumible && a.prestado + a.apartado + a.fueraServicio > 0) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
+            FilledButton.tonalIcon(
+              onPressed: () => pedirAvisoDisponible(context, ref, a),
+              icon: const Icon(Icons.notifications_active_outlined),
+              label: const Text('Avísame cuando regrese'),
+            ),
+            TextButton(onPressed: () => pedirAcceso(context, descripcion: 'prestar o recibir material'), child: const Text('Soy docente')),
+          ]),
+        );
+      }
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
@@ -504,8 +523,33 @@ class _Acciones extends ConsumerWidget {
           icon: const Icon(Icons.flag_outlined),
           label: const Text('Reportar problema'),
         ),
+        OutlinedButton.icon(
+          onPressed: () => contarArticulo(context, ref, a),
+          icon: const Icon(Icons.pin_outlined),
+          label: const Text('Contar'),
+        ),
       ]),
     );
+  }
+}
+
+Future<void> _marcarPrestable(BuildContext context, WidgetRef ref, Articulo a) async {
+  String? motivo;
+  if (!a.noSePresta) {
+    motivo = await pedirTexto(context,
+        titulo: 'No se presta', etiqueta: 'Por qué *', ayuda: 'Ej. Solo son las cajas vacías; equipo fijo del laboratorio', boton: 'Guardar');
+    if (motivo == null) return;
+  }
+  if (!context.mounted) return;
+  try {
+    final hecho = await conAcceso<bool>(context, ref,
+        descripcion: a.noSePresta ? 'permitir que se preste' : 'marcar que no se presta', requisito: Requisito.administracion, accion: () async {
+      await ref.read(repositorioProvider).marcarPrestable(a.id, a.noSePresta, motivo);
+      return true;
+    });
+    if (hecho == true && context.mounted) refrescarArticulo(ref, a.id);
+  } on Object catch (e) {
+    if (context.mounted) avisarError(context, e);
   }
 }
 
@@ -526,12 +570,20 @@ class _MenuAdministracion extends ConsumerWidget {
         'conteo' => acciones.ajustarConteo(context, ref, a),
         'reparacion' => acciones.registrarReparacion(context, ref, a),
         'baja' => acciones.darDeBaja(context, ref, a),
+        'desglose' => context.push('/desglose/${a.id}'),
+        'prestable' => _marcarPrestable(context, ref, a),
         'oficio' => acciones.registrarOficio(context, ref, a),
         _ => acciones.reactivar(context, ref, a),
       },
       itemBuilder: (_) => [
         if (a.activo) ...[
           const PopupMenuItem(value: 'conteo', child: ListTile(leading: Icon(Icons.pin_outlined), title: Text('Ajustar conteo'))),
+          const PopupMenuItem(value: 'desglose', child: ListTile(leading: Icon(Icons.unarchive_outlined), title: Text('Abrir y desglosar'))),
+          PopupMenuItem(
+              value: 'prestable',
+              child: ListTile(
+                  leading: Icon(a.noSePresta ? Icons.outbox : Icons.do_not_disturb_on_outlined),
+                  title: Text(a.noSePresta ? 'Permitir que se preste' : 'Marcar que no se presta'))),
           if (a.fueraServicio > 0)
             const PopupMenuItem(value: 'reparacion', child: ListTile(leading: Icon(Icons.build_outlined), title: Text('Regresa a servicio'))),
           const PopupMenuItem(value: 'baja', child: ListTile(leading: Icon(Icons.delete_forever_outlined), title: Text('Dar de baja'))),

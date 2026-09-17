@@ -4,6 +4,7 @@ import '../acceso/sesion.dart';
 import '../modelos/articulo.dart';
 import '../modelos/contenedores.dart';
 import '../modelos/otros.dart';
+import '../modelos/pendientes.dart';
 import 'repositorio.dart';
 
 /// El catálogo completo. Son pocos cientos de renglones: se baja una vez y se filtra en el dispositivo.
@@ -40,6 +41,9 @@ final porRevisarProvider = FutureProvider<int>((ref) async {
   return ref.watch(repositorioProvider).porRevisarContar();
 });
 
+/// Pendientes abiertos del levantamiento (públicos, como el catálogo).
+final pendientesAbiertosProvider = FutureProvider<List<PendienteAbierto>>((ref) => ref.watch(repositorioProvider).pendientesAbiertos());
+
 /// Todos los contenedores (activos y desactivados); se filtran en el dispositivo.
 final contenedoresProvider = FutureProvider<List<Contenedor>>((ref) => ref.watch(repositorioProvider).contenedores());
 
@@ -68,6 +72,7 @@ void refrescarArticuloEn(ProviderContainer c, String id) {
   c.invalidate(articulosProvider);
   c.invalidate(articuloProvider(id));
   c.invalidate(contenedoresProvider);
+  c.invalidate(pendientesAbiertosProvider);
   c.invalidate(fotosProvider(id));
   c.invalidate(historialProvider(id));
   c.invalidate(pendientesProvider(id));

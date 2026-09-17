@@ -8,7 +8,10 @@ import '../tema.dart';
 /// Escáner (F-03): lee el QR de un artículo o contenedor. Si la cámara no está disponible o la etiqueta
 /// no lee, se escribe el código que va impreso bajo el QR.
 class EscanearPantalla extends StatefulWidget {
-  const EscanearPantalla({super.key});
+  const EscanearPantalla({super.key, this.devolver = false});
+
+  /// En lugar de abrir lo escaneado, regresa el código a la pantalla anterior (inventario).
+  final bool devolver;
 
   @override
   State<EscanearPantalla> createState() => _EscanearPantallaState();
@@ -35,7 +38,11 @@ class _EscanearPantallaState extends State<EscanearPantalla> {
       return;
     }
     _yendo = true;
-    context.pushReplacement('/q/$codigo');
+    if (widget.devolver) {
+      context.pop(codigo);
+    } else {
+      context.pushReplacement('/q/$codigo');
+    }
   }
 
   @override

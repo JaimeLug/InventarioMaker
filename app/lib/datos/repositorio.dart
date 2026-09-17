@@ -11,6 +11,7 @@ import '../modelos/catalogos.dart';
 import '../modelos/contenedores.dart';
 import '../modelos/movimientos.dart';
 import '../modelos/otros.dart';
+import '../modelos/pendientes.dart';
 import '../modelos/solicitudes.dart';
 import 'errores.dart';
 
@@ -376,6 +377,9 @@ class Repositorio {
     return (r as Map)['en_tramite'] as bool;
   }
 
+  Future<void> marcarPrestable(String articuloId, bool prestable, String? motivo) =>
+      _c.rpc('articulo_marcar_prestable', params: {'p_articulo': articuloId, 'p_prestable': prestable, 'p_motivo': motivo});
+
   Future<void> registrarOficioBaja(String articuloId, String oficio) =>
       _c.rpc('baja_registrar_oficio', params: {'p_articulo': articuloId, 'p_oficio': oficio});
 
@@ -597,4 +601,129 @@ class Repositorio {
         'p_lineas': [for (final e in regresanPorPrestamo.entries) {'prestamo_id': e.key, 'regresan': e.value}],
         'p_comando': comando,
       });
+
+  // --- Pendientes, conteos, desglose e inventario (Fase 4b) --------------------------------------
+  Future<List<PendienteAbierto>> pendientesAbiertos() async {
+    final filas = await _c
+        .from('tarea_pendiente')
+        .select('id, articulo_id, tipo, descripcion, prioridad, creada_en')
+        .eq('resuelta', false)
+        .order('prioridad', ascending: false)
+        .order('creada_en', ascending: true);
+    return filas.map(PendienteAbierto.desdeMapa).toList();
+  }
+
+  Future<List<AportePendiente>> aportesDePendiente(String tareaId) async =>
+      _filas(await _c.rpc('pendiente_aportes', params: {'p_tarea': tareaId})).map(AportePendiente.desdeMapa).toList();
+
+  Future<void> aportarAPendiente(String tareaId, String articuloId, String nota, FotoNueva? foto) async {
+    final ruta = foto == null ? null : await subirFoto(articuloId, foto);
+    await _c.rpc('pendiente_aportar', params: {'p_tarea': tareaId, 'p_nota': nota, 'p_foto': ruta});
+  }
+
+  Future<void> resolverPendiente(String tareaId, Map<String, dynamic> datos) =>
+      _c.rpc('pendiente_resolver', params: {'p_tarea': tareaId, 'p_datos': datos});
+
+  /// Sube la foto de la placa a la carpeta del artículo (se usa al resolver "registrar serie").
+  Future<String> subirFotoArticulo(String articuloId, FotoNueva foto) => subirFoto(articuloId, foto);
+
+  Future<({int sistema, int diferencia})> proponerConteo(String articuloId, int enTaller, String? nota) async {
+    final m = _mapa(await _c.rpc('conteo_proponer', params: {'p_articulo': articuloId, 'p_en_taller': enTaller, 'p_nota': nota}));
+    return (sistema: m['sistema'] as int, diferencia: m['diferencia'] as int);
+  }
+
+  Future<List<ConteoPorAplicar>> conteosPorAplicar() async =>
+      _filas(await _c.rpc('conteos_por_aplicar')).map(ConteoPorAplicar.desdeMapa).toList();
+
+  Future<({int aplicados, int ajustes})> aplicarConteos(List<String> ids, Map<String, String> notas) async {
+    final m = _mapa(await _c.rpc('conteos_aplicar', params: {'p_ids': ids, 'p_notas': notas}));
+    return (aplicados: m['aplicados'] as int, ajustes: m['ajustes'] as int);
+  }
+
+  Future<void> descartarConteos(List<String> ids, String motivo) =>
+      _c.rpc('conteos_descartar', params: {'p_ids': ids, 'p_motivo': motivo});
+
+  Future<List<PlantillaKit>> plantillasKit() async {
+    final filas = await _c.from('plantilla_kit').select('id, nombre, sku, categoria, nota').eq('activa', true).order('nombre', ascending: true);
+    return filas.map(PlantillaKit.desdeMapa).toList();
+  }
+
+  Future<Desglose> iniciarDesglose(String articuloId, int unidades, String? plantillaId) async => Desglose.desdeMapa(
+      _mapa(await _c.rpc('desglose_iniciar', params: {'p_articulo': articuloId, 'p_unidades': unidades, 'p_plantilla': plantillaId})));
+
+  Future<Desglose> guardarDesglose(Desglose d) async => Desglose.desdeMapa(_mapa(await _c.rpc('desglose_guardar', params: {
+        'p_id': d.id,
+        'p_unidades': d.unidades,
+        'p_lineas': [for (final l in d.lineas) l.aMapa()],
+        'p_nota': d.nota,
+      })));
+
+  Future<List<Map<String, dynamic>>> desglosesDeArticulo(String articuloId) async =>
+      _filas(await _c.rpc('desgloses_de_articulo', params: {'p_articulo': articuloId}));
+
+  Future<Desglose> detalleDesglose(String id) async => Desglose.desdeMapa(_mapa(await _c.rpc('desglose_detalle', params: {'p_id': id})));
+
+  Future<({int creados, int sumados, int faltantes})> terminarDesglose(String id, String destino) async {
+    final m = _mapa(await _c.rpc('desglose_terminar', params: {'p_id': id, 'p_destino': destino}));
+    return (creados: m['creados'] as int, sumados: m['sumados'] as int, faltantes: m['faltantes'] as int);
+  }
+
+  Future<void> cancelarDesglose(String id) => _c.rpc('desglose_cancelar', params: {'p_id': id});
+
+  Future<List<InventarioResumen>> inventarios() async =>
+      _filas(await _c.rpc('inventarios_listar')).map(InventarioResumen.desdeMapa).toList();
+
+  Future<String> abrirInventario(String nombre, Map<String, dynamic> alcance) async =>
+      await _c.rpc('inventario_abrir', params: {'p_nombre': nombre, 'p_alcance': alcance}) as String;
+
+  Future<List<ArticuloDeInventario>> articulosDeInventario(String id) async =>
+      _filas(await _c.rpc('inventario_articulos', params: {'p_inventario': id})).map(ArticuloDeInventario.desdeMapa).toList();
+
+  Future<void> contarEnInventario(String id, String articuloId, int cantidad, {String? contenedorId, String? nota}) => _c.rpc(
+      'inventario_contar',
+      params: {'p_inventario': id, 'p_articulo': articuloId, 'p_cantidad': cantidad, 'p_contenedor': contenedorId, 'p_nota': nota});
+
+  Future<void> registrarHallazgo(String id, String descripcion, {String? contenedorId, String? articuloId, int? cantidad, FotoNueva? foto}) async {
+    String? ruta;
+    if (foto != null) {
+      ruta = foto.rutaSubida ??
+          'inventarios/$id/${DateTime.now().toUtc().millisecondsSinceEpoch}_${_uuid.v4().substring(0, 8)}.jpg';
+      if (foto.rutaSubida == null) {
+        await _c.storage.from(Configuracion.almacenFotos).uploadBinary(ruta, foto.bytes,
+            fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: false));
+        foto.rutaSubida = ruta;
+      }
+    }
+    await _c.rpc('inventario_hallazgo_registrar', params: {
+      'p_inventario': id,
+      'p_descripcion': descripcion,
+      'p_contenedor': contenedorId,
+      'p_articulo': articuloId,
+      'p_cantidad': cantidad,
+      'p_foto': ruta,
+    });
+  }
+
+  Future<List<DiferenciaInventario>> diferenciasDeInventario(String id) async =>
+      _filas(await _c.rpc('inventario_diferencias', params: {'p_inventario': id})).map(DiferenciaInventario.desdeMapa).toList();
+
+  Future<void> decidirEnInventario(String id, String articuloId, String decision, String? nota) => _c.rpc('inventario_decidir',
+      params: {'p_inventario': id, 'p_articulo': articuloId, 'p_decision': decision, 'p_nota': nota});
+
+  Future<List<Hallazgo>> hallazgosDeInventario(String id) async =>
+      _filas(await _c.rpc('inventario_hallazgos', params: {'p_inventario': id})).map(Hallazgo.desdeMapa).toList();
+
+  Future<void> resolverHallazgo(String id, String decision, String? nota) =>
+      _c.rpc('inventario_hallazgo_resolver', params: {'p_id': id, 'p_decision': decision, 'p_nota': nota});
+
+  Future<Map<String, dynamic>> cerrarInventario(String id) async => _mapa(await _c.rpc('inventario_cerrar', params: {'p_inventario': id}));
+
+  /// "Avísame cuando regrese": por la función pública (freno por red).
+  Future<String> avisarmeCuandoRegrese(String articuloId, String correo, String dispositivo) async {
+    final r = await _c.functions.invoke('solicitud-publica',
+        body: {'accion': 'avisarme', 'articulo_id': articuloId, 'correo': correo, 'dispositivo': dispositivo});
+    final m = _mapa(r.data);
+    if (m['ok'] != true) throw ErrorApp(m['mensaje'] as String? ?? 'No se pudo registrar el aviso.');
+    return m['mensaje'] as String;
+  }
 }

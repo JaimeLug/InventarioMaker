@@ -45,6 +45,9 @@ class BarraSesion extends ConsumerWidget {
                 const PopupMenuItem(value: 'mis-reportes', child: ListTile(leading: Icon(Icons.flag_outlined), title: Text('Mis reportes'))),
                 const PopupMenuItem(value: 'avisos', child: ListTile(leading: Icon(Icons.notifications_outlined), title: Text('Avisos'))),
                 const PopupMenuItem(value: 'contenedores', child: ListTile(leading: Icon(Icons.inventory_2_outlined), title: Text('Contenedores'))),
+                const PopupMenuItem(value: 'pendientes', child: ListTile(leading: Icon(Icons.flag_outlined), title: Text('Pendientes'))),
+                const PopupMenuItem(value: 'conteos', child: ListTile(leading: Icon(Icons.pin_outlined), title: Text('Conteos'))),
+                const PopupMenuItem(value: 'inventarios', child: ListTile(leading: Icon(Icons.fact_check_outlined), title: Text('Inventarios'))),
                 if (s.administra) ...[
                   const PopupMenuItem(value: 'solicitudes', child: ListTile(leading: Icon(Icons.inbox_outlined), title: Text('Solicitudes'))),
                   const PopupMenuItem(value: 'adeudos', child: ListTile(leading: Icon(Icons.assignment_ind_outlined), title: Text('Adeudos'))),

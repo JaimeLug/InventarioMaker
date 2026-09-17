@@ -6,6 +6,7 @@ import 'package:inventario_maker/modelos/articulo.dart';
 import 'package:inventario_maker/modelos/catalogos.dart';
 import 'package:inventario_maker/modelos/contenedores.dart';
 import 'package:inventario_maker/modelos/movimientos.dart';
+import 'package:inventario_maker/modelos/pendientes.dart';
 import 'package:inventario_maker/modelos/solicitudes.dart';
 import 'package:inventario_maker/util/etiquetas_pdf.dart';
 import 'package:inventario_maker/util/texto.dart';
@@ -241,6 +242,35 @@ void main() {
       expect(RegExp(r'/Type\s*/Page[^s]').allMatches(texto).length, 2);   // 30 por hoja: 31 ocupan 2
       final empezada = await generarEtiquetas(etiquetas.take(2).toList(), FormatoEtiqueta.chica, 'https://x.pages.dev', empezarEn: 30);
       expect(RegExp(r'/Type\s*/Page[^s]').allMatches(String.fromCharCodes(empezada)).length, 2);
+    });
+  });
+
+  group('Pendientes, desglose e inventario (Fase 4b)', () {
+    test('el faltante de un renglón del desglose', () {
+      expect(LineaDesglose(descripcion: 'Servo', esperada: 8, encontrada: 5).faltante, 3);
+      expect(LineaDesglose(descripcion: 'Servo', esperada: 8, encontrada: 9).faltante, 0);
+      expect(LineaDesglose(descripcion: 'Tornillería', encontrada: 1).faltante, 0);      // "varios": no hay faltante
+      expect(LineaDesglose(descripcion: 'Servo', esperada: 2).faltante, 2);
+      final m = LineaDesglose(descripcion: 'Motor', encontrada: 1, esConsumible: true).aMapa();
+      expect((m['descripcion'], m['encontrada'], m['es_consumible']), ('Motor', 1, true));
+    });
+
+    test('qué diferencias faltan por decidir antes de cerrar', () {
+      DiferenciaInventario d(Map<String, dynamic> x) => DiferenciaInventario.desdeMapa(
+          {'articulo_id': 'a', 'codigo': 'A-1', 'nombre': 'x', 'contados': 1, 'diferencia': 0, 'conflicto': false, ...x});
+      expect(d({}).pendiente, isFalse);                                  // coincide
+      expect(d({'diferencia': -2}).pendiente, isTrue);
+      expect(d({'diferencia': -2, 'decision': 'AJUSTE'}).pendiente, isFalse);
+      expect(d({'conflicto': true, 'decision': 'AJUSTE'}).pendiente, isTrue);
+      expect(d({'contados': 0, 'diferencia': null}).pendiente, isFalse);  // no contado: no bloquea el cierre
+    });
+
+    test('la diferencia de un conteo es contra lo que había al contar', () {
+      final c = ConteoPorAplicar.desdeMapa({
+        'id': 'c', 'articulo_id': 'a', 'codigo': 'A-1', 'nombre': 'Llaves', 'en_taller': 7, 'sistema': 8,
+        'contado_por': 'Ruth', 'contado_en': '2026-09-17T15:00:00Z', 'mio': false,
+      });
+      expect(c.diferencia, -1);
     });
   });
 }

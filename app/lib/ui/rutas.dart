@@ -8,6 +8,9 @@ import 'pantallas/avisos_ajustes_pantallas.dart';
 import 'pantallas/bitacora_pantalla.dart';
 import 'pantallas/codigo_pantalla.dart';
 import 'pantallas/contenedores_pantallas.dart';
+import 'pantallas/desglose_pantalla.dart';
+import 'pantallas/inventario_pantallas.dart';
+import 'pantallas/pendientes_pantallas.dart';
 import 'pantallas/escanear_pantalla.dart';
 import 'pantallas/etiquetas_pantalla.dart';
 import 'pantallas/cuentas_pantalla.dart';
@@ -45,7 +48,13 @@ final rutasProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/contenedor/:codigo', builder: (_, e) => ContenedorPantalla(codigo: e.pathParameters['codigo']!.toUpperCase())),
       GoRoute(path: '/contenedor/:codigo/editar', builder: (_, e) => ContenedorFormPantalla(codigo: e.pathParameters['codigo']!.toUpperCase())),
       GoRoute(path: '/contenedor/:codigo/devolver', builder: (_, e) => DevolverVariosPantalla(codigo: e.pathParameters['codigo']!.toUpperCase())),
-      GoRoute(path: '/escanear', builder: (_, _) => const EscanearPantalla()),
+      GoRoute(path: '/escanear', builder: (_, e) => EscanearPantalla(devolver: e.uri.queryParameters['devolver'] == '1')),
+      // Fase 4b: pendientes, conteos, desglose e inventario periódico
+      GoRoute(path: '/pendientes', builder: (_, _) => const PendientesPantalla()),
+      GoRoute(path: '/conteos', builder: (_, _) => const ConteosPantalla()),
+      GoRoute(path: '/desglose/:id', builder: (_, e) => DesglosePantalla(articuloId: e.pathParameters['id']!)),
+      GoRoute(path: '/inventarios', builder: (_, _) => const InventariosPantalla()),
+      GoRoute(path: '/inventario/:id', builder: (_, e) => InventarioPantalla(id: e.pathParameters['id']!)),
       GoRoute(
         path: '/etiquetas',
         builder: (_, e) => EtiquetasPantalla(codigos: (e.uri.queryParameters['codigos'] ?? '').split(',').where((c) => c.isNotEmpty).toList()),

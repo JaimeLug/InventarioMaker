@@ -1547,6 +1547,7 @@ Cada hoja lleva en el encabezado: *"Fecha de corte: 14/09/2026 13:05 · Generado
 | **P-8** | Tabla nueva de incidencias | Aprobada, con el nombre `incidencia`. Todas las incidencias salen en el Excel para Contraloría (F-19) |
 | **P-11** | Código de entrega | Se genera al aprobar. La vigencia la elige quien aprueba: 1 h 30 min (por defecto), fin de la jornada o hasta 24 h. Si vence, se genera otro con un toque. Nunca se le envía al solicitante |
 | **P-13** | Docentes y nombres | Un docente ve el nombre **solo del préstamo que está recibiendo** (F-08). No ve la lista de adeudos por persona (F-18) |
+| **P-4** | ¿Los docentes cuentan? | **Sí** (2026-09-17): cuentan en pendientes y en el inventario periódico; sus conteos quedan por autorizar y los aplica el responsable o sub administración |
 | **P-6** | Foto del material al entregar | Obligatoria (Fase 3b) |
 | **P-10** | Vigencias | Sin recoger: 2 días hábiles. Sin respuesta: 3 días hábiles. Sin confirmar el correo: 24 h. Alumno: 7 días por defecto, máximo 14. Maestro: máximo 30. Los cambia sub administración en *Ajustes* |
 | **P-12** | Identificar a quien ya existe | **Enlace al correo registrado** en lugar de los últimos 4 dígitos del teléfono (2026-09-16) |
@@ -1559,7 +1560,6 @@ Cada hoja lleva en el encabezado: *"Fecha de corte: 14/09/2026 13:05 · Generado
 |---|---|---|---|
 | **P-7** | **Choques sin conexión** | La propuesta completa está en F-17: se envían intenciones y no tablas; una sola puerta con bloqueo por artículo; identificador único contra duplicados; sin conexión solo lo que se suma; y bajada por número de orden. Si el material salió en físico se acepta y se marca como conflicto; si es imposible en físico, se rechaza | Rechazar todo choque y resolverlo a mano |
 | **P-2** | Artículos importados sin número (`varias`, `varios`, `1 contenedor lleno`) | No se prestan hasta contarlos | Permitir préstamo con advertencia |
-| **P-4** | ¿Los docentes pueden ayudar a contar en un inventario periódico? | No, solo R y S | Sí, pero sus conteos quedan como "propuestos" hasta que R o S los validen |
 | **P-5** | Sesión abierta en un celular que otro toma | En Android dura la jornada y siempre muestra *"Firmando como…"*; en web vence a los 30 min de inactividad | Pedir PIN en **cada** acción (más seguro, más lento) |
 | **P-9** | Baja de equipo con número de resguardo | Pide número de oficio o acta; si no hay, queda *"Baja en trámite"* | Permitir baja sin oficio |
 

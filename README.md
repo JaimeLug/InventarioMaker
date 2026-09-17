@@ -8,8 +8,8 @@ Control de inventario en tiempo real del Laboratorio Maker. Diseño aprobado en 
 | 2 | Consulta abierta, acceso con PIN/contraseña, roles, artículos y fotos | Hecha |
 | 3 | Movimientos y bitácora | Hecha |
 | 3b | Solicitudes sin cuenta, código de entrega, adeudos | **Lista para probar** |
-| 4a | Contenedores, etiquetas QR, escaneo y acomodo | **Lista para probar** |
-| 4b | Pendientes del levantamiento, desglose de kits, inventario periódico | Pendiente |
+| 4a | Contenedores, etiquetas QR, escaneo y acomodo | Hecha |
+| 4b | Pendientes del levantamiento, desglose de kits, inventario periódico | **Lista para probar** |
 | 5 | Reportes, Excel para Contraloría y acta PDF | Pendiente |
 | 6 | Trabajo sin conexión y ajustes de móvil | Pendiente |
 
@@ -214,6 +214,29 @@ Compila, publica y guarda la dirección en la configuración (la usan los QR y l
 
 **Hojas de etiquetas:** carta de 30 etiquetas de 2⅝ × 1 pulgadas (Avery 5160 o genérica compatible) o de 10 de 4 × 2 pulgadas (Avery 5163), para gabinetes. Imprime al 100 % ("tamaño real", sin ajustar a la página). Con **Empezar en la etiqueta número** se aprovecha una hoja ya usada.
 
+## Fase 4b: pendientes, conteos, desglose e inventario periódico
+
+| Qué | Dónde en la app | Quién |
+|---|---|---|
+| Ver los pendientes del levantamiento (por tipo, categoría o ubicación) | Menú → **Pendientes**, o en la ficha | Cualquiera |
+| Aportar nota o foto a un pendiente | Tocar el pendiente | Cualquier cuenta |
+| Resolver un pendiente (serie, etiquetado, vacío, faltante, VEX/FTC…) | Tocar el pendiente | Responsable, sub administración |
+| Contar un artículo | Ficha → **Contar**, o Menú → **Conteos** | Cualquier cuenta; queda por aplicar |
+| Aplicar conteos en lote (una sola contraseña) | Menú → **Conteos** | Responsable, sub administración |
+| Desglosar un kit (con o sin lista de contenido de fábrica) | Pendiente "Abrir y revisar", o ficha → menú ⋮ → **Abrir y desglosar** | Responsable, sub administración |
+| Inventario periódico: abrir, contar (por contenedor o lista), hallazgos, diferencias y cierre | Menú → **Inventarios** | Abrir, decidir y cerrar: responsable y sub administración. Contar y hallazgos: cualquier cuenta |
+| Avísame cuando regrese | Ficha de un artículo sin disponibles (sin sesión) | Cualquiera, con su correo |
+
+**Verificado** significa lo mismo en todo el sistema: contado (sin `~`), sin pendientes, con foto principal y con ubicación. La app lo marca sola en cuanto se cumple.
+
+**Levantamiento 3** (última importación desde Excel). Ya se aplicó en Supabase; el script queda para mudanzas o una base nueva:
+
+```bash
+.venv\Scripts\python scripts\levantamiento3.py --nube --simular
+```
+
+Actualiza la hoja VEX (5 artículos existentes y 12 nuevos; lo que viene "por caja" queda como contenido del kit A-0105) y carga las listas de contenido de fábrica como plantillas para el desglose.
+
 ## Estructura
 
 | Ruta | Qué es |
@@ -225,7 +248,7 @@ Compila, publica y guarda la dirección en la configuración (la usan los QR y l
 | `scripts/import_excel.py` | Importación idempotente |
 | `scripts/consultar.py` | Consulta desde la terminal (mientras llega la app) |
 | `scripts/respaldo.py` | Respaldo y restauración, independientes de Supabase |
-| `tests/` | Pruebas de existencias, integridad, importación, acceso, movimientos y solicitudes |
+| `tests/` | Pruebas de existencias, integridad, importación, acceso, movimientos, solicitudes, contenedores, pendientes e inventario |
 | `app/` | App de Flutter (Android y web) |
 | `supabase/functions/` | Funciones del servidor: acceso con PIN, cuentas, solicitudes públicas y avisos (correo y celular) |
 | `scripts/cuentas.py` | Crear la primera cuenta desde la terminal |

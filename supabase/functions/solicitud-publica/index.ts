@@ -13,7 +13,15 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return respuesta({ ok: false, mensaje: "Método no permitido" }, 405);
 
-  let s: { accion?: string; datos?: Record<string, unknown>; dispositivo?: string; folio?: string; matricula?: string };
+  let s: {
+    accion?: string;
+    datos?: Record<string, unknown>;
+    dispositivo?: string;
+    folio?: string;
+    matricula?: string;
+    articulo_id?: string;
+    correo?: string;
+  };
   try {
     s = await req.json();
   } catch {
@@ -52,6 +60,23 @@ Deno.serve(async (req) => {
     }
     // Siempre la misma respuesta: no revela si el folio y la matrícula existen.
     return respuesta({ ok: true, mensaje: "Si los datos coinciden, te enviamos el enlace a tu correo. Revisa también la carpeta de correo no deseado (spam)." });
+  }
+
+  // "Avísame cuando regrese" (Fase 4b): un correo cuando el artículo vuelve a estar disponible.
+  if (s.accion === "avisarme") {
+    if (!s.articulo_id || !s.correo) return rechazo("Escribe tu correo.");
+    const { data, error } = await admin.rpc("aviso_disponible_crear", {
+      p_articulo: s.articulo_id,
+      p_correo: s.correo,
+      p_ip: red(req),
+      p_dispositivo: dispositivo,
+    });
+    if (error) {
+      if (error.code === "P0001") return rechazo(error.message);
+      console.error("aviso_disponible_crear", error);
+      return respuesta({ ok: false, mensaje: "No se pudo registrar el aviso. Intenta de nuevo." }, 500);
+    }
+    return respuesta({ ok: true, mensaje: data.mensaje });
   }
 
   return rechazo("Acción desconocida.");

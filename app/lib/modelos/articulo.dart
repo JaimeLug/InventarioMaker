@@ -41,6 +41,8 @@ class Articulo {
     this.fotoPrincipal,
     this.bajaOficio,
     this.bajaEnTramite = false,
+    this.noSePresta = false,
+    this.noSePrestaMotivo,
   });
 
   final String id;
@@ -86,6 +88,10 @@ class Articulo {
   /// Dado de baja, con resguardo y sin número de oficio todavía.
   final bool bajaEnTramite;
 
+  /// Se inventaría pero no sale del laboratorio (empaques vacíos, equipo fijo).
+  final bool noSePresta;
+  final String? noSePrestaMotivo;
+
   factory Articulo.desdeMapa(Map<String, dynamic> m) => Articulo(
         id: m['id'] as String,
         codigo: m['codigo'] as String,
@@ -124,6 +130,8 @@ class Articulo {
         fotoPrincipal: m['foto_principal_url'] as String?,
         bajaOficio: m['baja_oficio'] as String?,
         bajaEnTramite: m['baja_en_tramite'] as bool? ?? false,
+        noSePresta: m['no_se_presta'] as bool? ?? false,
+        noSePrestaMotivo: m['no_se_presta_motivo'] as String?,
       );
 
   /// En el Excel "s/m" significa sin marca: no se muestra como si fuera una.
@@ -139,6 +147,7 @@ class Articulo {
   /// Qué decir en lugar del número cuando no se puede prestar.
   String get disponibilidad {
     if (estadoInventario == EstadoInventario.sinClasificar) return 'Sin clasificar: no usar';
+    if (noSePresta) return 'No se presta';
     if (conteoDesconocido) return 'Se presta hasta contarlo';
     if (!prestable) return 'No disponible';
     if (disponible <= 0) return 'Nada disponible';

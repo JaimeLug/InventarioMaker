@@ -26,6 +26,7 @@ class _InicioPantallaState extends ConsumerState<InicioPantalla> {
   bool _sinFoto = false;
   bool _porContar = false;
   bool _sinUbicacion = false;
+  String? _rama;
 
   @override
   void dispose() {
@@ -37,6 +38,7 @@ class _InicioPantallaState extends ConsumerState<InicioPantalla> {
     final palabras = normalizar(_busqueda.text).split(' ').where((p) => p.isNotEmpty).toList();
     return todos.where((a) {
       if (_categoria != null && a.categoria != _categoria) return false;
+      if (_rama != null && a.subcategoria != _rama) return false;
       if (_conPendientes && a.pendientesAbiertos == 0) return false;
       if (_disponibles && (!a.prestable || a.disponible <= 0)) return false;
       if (_sinFoto && a.fotoPrincipal != null) return false;
@@ -49,6 +51,7 @@ class _InicioPantallaState extends ConsumerState<InicioPantalla> {
   void _limpiar() => setState(() {
         _busqueda.clear();
         _categoria = null;
+        _rama = null;
         _conPendientes = _disponibles = _sinFoto = _porContar = _sinUbicacion = false;
       });
 
@@ -109,19 +112,20 @@ class _InicioPantallaState extends ConsumerState<InicioPantalla> {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   child: Row(children: [
-                    ChoiceChip(label: const Text('Todas'), selected: _categoria == null, onSelected: (_) => setState(() => _categoria = null)),
+                    ChoiceChip(label: const Text('Todas'), selected: _categoria == null, onSelected: (_) => setState(() => [_categoria = null, _rama = null])),
                     for (final c in Categoria.values)
                       Padding(
                         padding: const EdgeInsets.only(left: 8),
                         child: ChoiceChip(
                           label: Text(c.nombre),
                           selected: _categoria == c,
-                          onSelected: (s) => setState(() => _categoria = s ? c : null),
+                          onSelected: (s) => setState(() => [_categoria = s ? c : null, _rama = null]),
                         ),
                       ),
                   ]),
                 ),
               ),
+              if (_categoria == Categoria.vex) SliverToBoxAdapter(child: _Ramas(articulos: articulos.value ?? const [], rama: _rama, alElegir: (r) => setState(() => _rama = r))),
               SliverToBoxAdapter(
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -184,6 +188,32 @@ class _InicioPantallaState extends ConsumerState<InicioPantalla> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Ramas de VEX (V5, EDR, Campo…): solo filtro; son compatibles entre sí.
+class _Ramas extends StatelessWidget {
+  const _Ramas({required this.articulos, required this.rama, required this.alElegir});
+
+  final List<Articulo> articulos;
+  final String? rama;
+  final ValueChanged<String?> alElegir;
+
+  @override
+  Widget build(BuildContext context) {
+    final ramas = {for (final a in articulos) if (a.categoria == Categoria.vex && a.subcategoria != null) a.subcategoria!}.toList()..sort();
+    if (ramas.isEmpty) return const SizedBox.shrink();
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Row(children: [
+        for (final r in ramas)
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(label: Text(r), selected: rama == r, onSelected: (s) => alElegir(s ? r : null)),
+          ),
+      ]),
     );
   }
 }
