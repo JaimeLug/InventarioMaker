@@ -718,6 +718,41 @@ class Repositorio {
 
   Future<Map<String, dynamic>> cerrarInventario(String id) async => _mapa(await _c.rpc('inventario_cerrar', params: {'p_inventario': id}));
 
+  // --- Fase 5: reportes (se arman en el dispositivo) --------------------------------
+  static String _dia(DateTime d) => '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  Future<Map<String, dynamic>> encabezadoReporte() async => _mapa(await _c.rpc('reporte_encabezado'));
+
+  Future<List<Map<String, dynamic>>> reportePrestamosAbiertos() async => _filas(await _c.rpc('reporte_prestamos_abiertos'));
+
+  Future<List<Map<String, dynamic>>> reporteIncidencias(DateTime desde, DateTime hasta) async =>
+      _filas(await _c.rpc('reporte_incidencias', params: {'p_desde': _dia(desde), 'p_hasta': _dia(hasta)}));
+
+  Future<List<Map<String, dynamic>>> reporteBajas(DateTime desde, DateTime hasta) async =>
+      _filas(await _c.rpc('reporte_bajas', params: {'p_desde': _dia(desde), 'p_hasta': _dia(hasta)}));
+
+  Future<List<Map<String, dynamic>>> reporteMovimientos(DateTime desde, DateTime hasta) async =>
+      _filas(await _c.rpc('reporte_movimientos', params: {'p_desde': _dia(desde), 'p_hasta': _dia(hasta)}));
+
+  Future<List<Map<String, dynamic>>> reporteFaltantesKits() async => _filas(await _c.rpc('reporte_faltantes_kits'));
+
+  Future<Map<String, dynamic>> reporteInventarioPeriodico(String id) async =>
+      _mapa(await _c.rpc('reporte_inventario_periodico', params: {'p_inventario': id}));
+
+  /// Deja constancia en la bitácora; las actas regresan su folio.
+  Future<String?> registrarReporte(String tipo, String formato, Map<String, dynamic> parametros) async =>
+      await _c.rpc('reporte_registrar', params: {'p_tipo': tipo, 'p_formato': formato, 'p_parametros': parametros}) as String?;
+
+  Future<List<Map<String, dynamic>>> revisionesKit() async => _filas(await _c.rpc('revisiones_kit'));
+
+  Future<Map<String, dynamic>> crearRevisionKit(String plantillaId, int kits, String? nombre) async => _mapa(
+      await _c.rpc('revision_kit_crear', params: {'p_plantilla': plantillaId, 'p_kits': kits, 'p_nombre': nombre, 'p_articulo': null}));
+
+  Future<Map<String, dynamic>> detalleRevisionKit(String id) async => _mapa(await _c.rpc('revision_kit_detalle', params: {'p_id': id}));
+
+  Future<Map<String, dynamic>> guardarRevisionKit(String id, int kits, List<Map<String, dynamic>> lineas, String? nota) async =>
+      _mapa(await _c.rpc('revision_kit_guardar', params: {'p_id': id, 'p_kits': kits, 'p_lineas': lineas, 'p_nota': nota}));
+
   /// "Avísame cuando regrese": por la función pública (freno por red).
   Future<String> avisarmeCuandoRegrese(String articuloId, String correo, String dispositivo) async {
     final r = await _c.functions.invoke('solicitud-publica',

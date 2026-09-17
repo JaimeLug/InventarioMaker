@@ -67,6 +67,9 @@ const _ajustes = [
   ('plazo_max_alumno_dias', 'Máximo de días para alumnos', ''),
   ('plazo_max_maestro_dias', 'Máximo de días para maestros', ''),
   ('url_app', 'Dirección de la app web', 'Los enlaces de los correos apuntan aquí.'),
+  ('nombre_escuela', 'Nombre de la escuela', 'Va en el encabezado de los reportes y actas.'),
+  ('programa_escuela', 'Programa', 'Segunda línea del encabezado de los reportes.'),
+  ('nombre_laboratorio', 'Nombre del laboratorio', ''),
 ];
 
 /// Ajustes que cambia sub administración (con contraseña reconfirmada).
@@ -94,7 +97,7 @@ class AjustesPantalla extends ConsumerWidget {
       );
       if (h != null) nuevo = '${h.hour.toString().padLeft(2, '0')}:${h.minute.toString().padLeft(2, '0')}';
     } else {
-      final texto = await pedirTexto(context, titulo: titulo, etiqueta: clave == 'url_app' ? 'https://…' : 'Días', boton: 'Guardar');
+      final texto = await pedirTexto(context, titulo: titulo, etiqueta: clave == 'url_app' ? 'https://…' : (clave.startsWith('nombre_') || clave == 'programa_escuela' ? 'Nombre' : 'Días'), boton: 'Guardar');
       if (texto != null) nuevo = clave == 'url_app' ? texto : int.tryParse(texto) ?? texto;
     }
     if (nuevo == null || !context.mounted) return;

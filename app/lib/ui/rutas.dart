@@ -21,6 +21,7 @@ import 'pantallas/mi_cuenta_pantalla.dart';
 import 'pantallas/prestamo_pantalla.dart';
 import 'pantallas/prestamos_pantallas.dart';
 import 'pantallas/reporte_pantalla.dart';
+import 'pantallas/reportes_pantallas.dart';
 import 'pantallas/revision_pantallas.dart';
 import 'pantallas/solicitud_publica_pantallas.dart';
 import 'pantallas/solicitudes_pantallas.dart';
@@ -59,6 +60,13 @@ final rutasProvider = Provider<GoRouter>((ref) {
         path: '/etiquetas',
         builder: (_, e) => EtiquetasPantalla(codigos: (e.uri.queryParameters['codigos'] ?? '').split(',').where((c) => c.isNotEmpty).toList()),
       ),
+      // Fase 5: reportes y actas
+      GoRoute(path: '/reportes', builder: (_, _) => const ReportesPantalla()),
+      GoRoute(path: '/consulta-rapida', builder: (_, _) => const ConsultaRapidaPantalla()),
+      GoRoute(path: '/revisiones-kit', builder: (_, _) => const RevisionesKitPantalla()),
+      GoRoute(path: '/revision-kit/:id', builder: (_, e) => RevisionKitPantalla(id: e.pathParameters['id']!)),
+      GoRoute(path: '/acta-inventario/:id', builder: (_, e) => ActaInventarioPantalla(id: e.pathParameters['id']!)),
+      GoRoute(path: '/acta-entrega', builder: (_, _) => const ActaEntregaPantalla()),
       GoRoute(path: '/mis-prestamos', builder: (_, _) => const MisPrestamosPantalla()),
       GoRoute(path: '/mis-reportes', builder: (_, _) => const MisReportesPantalla()),
       GoRoute(path: '/por-revisar', builder: (_, _) => const PorRevisarPantalla()),

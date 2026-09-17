@@ -144,6 +144,40 @@ def tareas(cur, articulo_id, a, informe: dict) -> None:
         informe["tareas"] += cur.rowcount
 
 
+def revision_control_power(cur, libro, informe: dict) -> None:
+    """Lo encontrado de la lista Control & Power (hoja BOM) queda como revisión de kit: no mueve el inventario."""
+    if cur.execute("select to_regclass('public.revision_kit')").fetchone()[0] is None:
+        return   # la base todavía no tiene la Fase 5
+    plantilla = cur.execute("select id from public.plantilla_kit where nombre = 'REV Control & Power Bundle'").fetchone()
+    if plantilla is None or cur.execute("select 1 from public.revision_kit where plantilla_id = %s", (plantilla[0],)).fetchone():
+        return
+    ws = libro["BOM Control & Power Bundle"]
+    kits, renglones, dentro = 3, [], False
+    for valores in ws.iter_rows(values_only=True):
+        c0 = texto(valores[0]) if valores else ""
+        if c0.startswith("N.º de bundles") and isinstance(valores[1], (int, float)):
+            kits = int(valores[1])
+        if c0 == "SKU":
+            dentro = True
+            continue
+        if dentro and c0.upper().startswith("RESUMEN"):
+            break
+        if dentro and c0 and isinstance(valores[2], (int, float)):
+            renglones.append((c0, valores[4], texto(valores[6]) if len(valores) > 6 else None))
+    rid = uid("revision", "control-power")
+    cur.execute("""insert into public.revision_kit (id, plantilla_id, nombre, kits, nota) values (%s, %s, %s, %s, %s)""",
+                (rid, plantilla[0], "Control & Power Bundle (levantamiento 3)", kits,
+                 "Según las 3 cajas vacías de Driver Hub; confirmar con facturas"))
+    for sku, encontrada, nota in renglones:
+        linea = cur.execute("select id from public.plantilla_kit_linea where plantilla_id = %s and sku = %s", (plantilla[0], sku)).fetchone()
+        if linea is None:
+            continue
+        no_aplica = not isinstance(encontrada, (int, float))
+        cur.execute("insert into public.revision_kit_linea (revision_id, plantilla_linea_id, encontrada, no_aplica, nota) values (%s, %s, %s, %s, %s)",
+                    (rid, linea[0], None if no_aplica else int(encontrada), no_aplica, nota))
+    informe["plantillas"].append(f"Revisión: Control & Power Bundle, {kits} kits, {len(renglones)} renglones")
+
+
 def origen(f: dict) -> dict:
     return {"levantamiento": 3, "hoja": "VEX", "n": f["N.º"], **{k: (None if v is None else str(v)) for k, v in f.items() if k}}
 
@@ -216,6 +250,7 @@ def aplicar(conn, archivo: Path) -> dict:
 
         for p in [*plantillas_bom(libro), plantilla_vex(filas)]:
             cargar_plantilla(cur, p, informe)
+        revision_control_power(cur, libro, informe)
 
         descuadres = cur.execute("select count(*) from app.v_descuadres").fetchone()[0]
         if descuadres:

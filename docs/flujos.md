@@ -1501,6 +1501,8 @@ La pantalla muestra con letra clara: **"El material está a cargo de Juan Pérez
 | **Pantallas** | Reportes → Elegir reporte y periodo → Vista previa → Descargar |
 | **Se guarda** | En la bitácora: quién generó el reporte, cuándo, de qué periodo y con qué **fecha de corte**. El archivo no se guarda en el servidor |
 
+> **Construido en la Fase 5.** Cambios respecto a esta propuesta, aprobados el 2026-09-17: no hay vista previa (se descarga directo en Excel o PDF, a elegir); se agregó la hoja **Faltantes de kits** y la **Consulta rápida**; el Excel lleva **Código** como primera columna; las actas llevan folio (`AER-` y `AIP-`) y firmas editables; el periodo por omisión es el ciclo escolar de agosto a julio.
+
 **Aclaración de nombres.** La tabla `incidencia` (antes la llamaba "reporte") es el **registro interno** de cada pérdida, daño o consumo por autorizar. Los **reportes** de este flujo son los documentos que salen de la app, como el Excel para la Contraloría. Toda incidencia aparece en esos reportes: nada se queda solo dentro de la app.
 
 ```mermaid

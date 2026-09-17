@@ -237,6 +237,21 @@ Compila, publica y guarda la dirección en la configuración (la usan los QR y l
 
 Actualiza la hoja VEX (5 artículos existentes y 12 nuevos; lo que viene "por caja" queda como contenido del kit A-0105) y carga las listas de contenido de fábrica como plantillas para el desglose.
 
+## Fase 5: reportes y actas
+
+Menú → **Reportes** (responsable y sub administración). Todo se arma en el dispositivo y se descarga en **Excel o PDF**; en el servidor solo queda anotado en la bitácora quién lo generó, cuándo y con qué filtros.
+
+| Qué | Contenido |
+|---|---|
+| Inventario (Contraloría) | `Resumen` y una pestaña por categoría con las columnas del Excel original, con **Código** al inicio y la ruta del contenedor en Ubicación. Además: Préstamos abiertos, Pérdidas y daños, Bajas, Movimientos y Faltantes de kits. PDF sin fotos, o con miniaturas si se elige |
+| Préstamos abiertos, Pérdidas y daños, Bajas, Movimientos, Faltantes de kits | Cada uno por separado. De alumnos solo sale nombre, matrícula y grupo |
+| Consulta rápida | Vencidos, consumibles en su mínimo y lo que falta verificar por categoría (en pantalla) |
+| Revisiones de kits | Lo encontrado de cada kit contra su lista de fábrica; alimenta Faltantes de kits y no cambia existencias |
+| Acta de inventario periódico | Folio `AIP-AAAA-NNN`, resultado del conteo, reportes de pérdida, hallazgos y firmas editables |
+| Acta de entrega-recepción | Solo sub administración. Folio `AER-AAAA-NNN`, inventario completo y pendientes en anexos, firmas editables |
+
+El periodo por omisión es el ciclo escolar (1 de agosto al 31 de julio). El encabezado (escuela, programa, laboratorio) se cambia en **Ajustes**; el lugar del logo ya está reservado. Las fotos de identificaciones nunca entran en un reporte.
+
 ## Estructura
 
 | Ruta | Qué es |
