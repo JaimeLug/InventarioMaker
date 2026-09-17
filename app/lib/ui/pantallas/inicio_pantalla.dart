@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../datos/local.dart';
 import '../../datos/proveedores.dart';
 import '../../modelos/articulo.dart';
 import '../../modelos/catalogos.dart';
@@ -54,17 +55,25 @@ class _InicioPantallaState extends ConsumerState<InicioPantalla> {
     final articulos = ref.watch(articulosProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Inventario Maker'), actions: const [_BotonPorRevisar(), BarraSesion()]),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/articulo/nuevo'),
-        icon: const Icon(Icons.add),
-        label: const Text('Nuevo artículo'),
+      appBar: AppBar(
+        title: const Text('Inventario Maker'),
+        actions: const [_BotonesPublicos(), _BotonSolicitudes(), _BotonAvisos(), _BotonPorRevisar(), BarraSesion()],
       ),
+      // Dar de alta es de administración; sin sesión, el botón no confunde a los alumnos.
+      floatingActionButton: (ref.watch(sesionProvider).value?.administra ?? false)
+          ? FloatingActionButton.extended(
+              onPressed: () => context.push('/articulo/nuevo'),
+              icon: const Icon(Icons.add),
+              label: const Text('Nuevo artículo'),
+            )
+          : null,
       body: Centrado(
         child: RefreshIndicator(
           onRefresh: () {
             ref.invalidate(vencidosProvider);
             ref.invalidate(porRevisarProvider);
+            ref.invalidate(solicitudesContarProvider);
+            ref.invalidate(avisosSinLeerProvider);
             return ref.refresh(articulosProvider.future);
           },
           child: CustomScrollView(
@@ -237,6 +246,60 @@ class _FranjaVencidos extends ConsumerWidget {
           onTap: administra ? () => context.push('/prestamos-abiertos') : null,
         ),
       ),
+    );
+  }
+}
+
+/// Sin cuenta: "Mi solicitud" (si hay algo en el carrito) y "Mis solicitudes".
+class _BotonesPublicos extends ConsumerWidget {
+  const _BotonesPublicos();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final carrito = ref.watch(carritoProvider).length;
+    final sesion = ref.watch(sesionProvider).value;
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      if (carrito > 0)
+        IconButton(
+          tooltip: 'Mi solicitud',
+          onPressed: () => context.push('/solicitud'),
+          icon: Badge(label: Text('$carrito'), child: const Icon(Icons.shopping_basket_outlined)),
+        ),
+      if (sesion == null)
+        IconButton(tooltip: 'Mis solicitudes', onPressed: () => context.push('/mis-solicitudes'), icon: const Icon(Icons.receipt_long_outlined)),
+    ]);
+  }
+}
+
+class _BotonSolicitudes extends ConsumerWidget {
+  const _BotonSolicitudes();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!(ref.watch(sesionProvider).value?.administra ?? false)) return const SizedBox.shrink();
+    final n = ref.watch(solicitudesContarProvider).value ?? 0;
+    return IconButton(
+      tooltip: 'Solicitudes',
+      onPressed: () async {
+        await context.push('/solicitudes');
+        ref.invalidate(solicitudesContarProvider);
+      },
+      icon: Badge(isLabelVisible: n > 0, label: Text('$n'), child: const Icon(Icons.inbox_outlined)),
+    );
+  }
+}
+
+class _BotonAvisos extends ConsumerWidget {
+  const _BotonAvisos();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final n = ref.watch(avisosSinLeerProvider).value ?? 0;
+    if (n == 0) return const SizedBox.shrink();
+    return IconButton(
+      tooltip: 'Avisos',
+      onPressed: () => context.push('/avisos'),
+      icon: Badge(label: Text('$n'), child: const Icon(Icons.notifications_outlined)),
     );
   }
 }

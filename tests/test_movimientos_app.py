@@ -111,8 +111,8 @@ def test_ficha_rapida_de_alumno_y_prestamo_a_su_nombre(lab):
     assert [(p["a_cargo"], p["autorizo"]) for p in abiertos] == [("Juan Pérez Chan (Alumno, 5°B)", "Laura Gómez")]
     assert [p["a_mi_nombre"] for p in tabla(bd, d, "mis_prestamos", nivel="PIN")] == [False]
 
-    bd.execute("update solicitante set bloqueado = true where id = %s", (juan,))
-    with rechazo("P0001", contiene="pendiente de devolver"):
+    bd.execute("update solicitante set bloqueo_manual = true, bloqueo_motivo = 'no devolvió una pinza' where id = %s", (juan,))
+    with rechazo("P0001", contiene="no puede llevarse más material. Tiene un bloqueo: no devolvió una pinza"):
         prestar(bd, d, [{"articulo_id": str(a), "cantidad": 1}], solicitante=juan)
 
 

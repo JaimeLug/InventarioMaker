@@ -17,4 +17,13 @@ abstract final class Configuracion {
 
   /// En web, la sesión se cierra tras este tiempo sin tocar la pantalla (P-5).
   static const inactividadWeb = Duration(minutes: 30);
+
+  /// Firebase, para avisos al celular (Android). Son datos públicos del proyecto de Firebase
+  /// (Configuración del proyecto → General → tu app Android). Proyecto: inventario-maker-77e2e.
+  static const firebaseApiKey = String.fromEnvironment('FIREBASE_API_KEY', defaultValue: 'AIzaSyCyCm3RI-zzmA5lpEd9cs5z07JSq6hdZL4');
+  static const firebaseAppId = String.fromEnvironment('FIREBASE_APP_ID', defaultValue: '1:850389332615:android:d205b92c09a9ccd6067e22');
+  static const firebaseSenderId = String.fromEnvironment('FIREBASE_SENDER_ID', defaultValue: '850389332615');
+  static const firebaseProjectId = String.fromEnvironment('FIREBASE_PROJECT_ID', defaultValue: 'inventario-maker-77e2e');
+
+  static bool get hayFirebase => firebaseAppId.isNotEmpty && firebaseApiKey.isNotEmpty;
 }

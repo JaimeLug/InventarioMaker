@@ -7,7 +7,7 @@ Control de inventario en tiempo real del Laboratorio Maker. Diseño aprobado en 
 | 1 | Modelo de datos, migraciones e importación desde Excel | Hecha |
 | 2 | Consulta abierta, acceso con PIN/contraseña, roles, artículos y fotos | Hecha |
 | 3 | Movimientos y bitácora | Hecha |
-| 3b | Solicitudes sin cuenta, código de entrega, adeudos | Pendiente |
+| 3b | Solicitudes sin cuenta, código de entrega, adeudos | **Lista para probar** |
 | 4 | Pendientes, contenedores, etiquetas QR y escaneo | Pendiente |
 | 5 | Reportes, Excel para Contraloría y acta PDF | Pendiente |
 | 6 | Trabajo sin conexión y ajustes de móvil | Pendiente |
@@ -140,6 +140,54 @@ La jornada dura 8 horas desde que se abrió la sesión (la base lo revisa en cad
 
 Configuración nueva (tabla `configuracion`): `hora_fin_jornada` (15:00), `dominio_correo_alumnos` (prepasoficiales.net), `prestamo_directo_max_dias` (30).
 
+## Fase 3b: solicitudes sin cuenta
+
+| Qué | Dónde en la app | Quién |
+|---|---|---|
+| Pedir material (carrito, datos, motivo, fecha) | Ficha → **Pedir prestado** | Alumnos, maestros y otros, sin cuenta |
+| Confirmar la solicitud ("Sí, yo lo pedí" / "No fui yo") | Enlace que llega al correo | El dueño del correo |
+| Ver el estado, cancelar, escribir el código de entrega | Enlace `/s/…` o **Mis solicitudes** (ícono de recibo en el Inicio) | Quien pidió |
+| Recuperar un enlace perdido | Mis solicitudes → **¿Perdiste el enlace?** | Quien pidió (llega a su correo) |
+| Bandeja: por revisar, por entregar, en préstamo, sin confirmar, cerradas | Inicio → ícono de bandeja, o menú de tu nombre → **Solicitudes** | Responsable, sub administración |
+| Aprobar (parcial, con nota), rechazar, cancelar, confirmar en persona | Solicitud → botones | Responsable, sub administración |
+| Entregar: código, identificación con foto, foto del material | Solicitud → **Entregar** | Responsable, sub administración |
+| Ver la identificación (queda en la bitácora) | Solicitud o expediente → **Ver identificación** | Responsable, sub administración |
+| Adeudos, expediente de la persona y del préstamo, bloquear y desbloquear | Menú → **Adeudos** | Responsable, sub administración |
+| Avisos (campana) y avisos al celular Android | Inicio → campana | Quien tiene cuenta |
+| Fin del ciclo escolar, plazos, hora de fin de jornada | Menú → **Ajustes** | Sub administración |
+
+**Tareas automáticas** (cada 5 minutos en Supabase, con pg_cron): códigos vencidos, solicitudes sin confirmar en 24 h, sin respuesta en 3 días hábiles, aprobadas sin recoger en 2 días hábiles, préstamos vencidos y bloqueos, recordatorios por correo (un día antes y el día del vencimiento).
+
+**Probar sin servicio de correo.** Envía la solicitud desde la app sin sesión; luego, con tu cuenta, en **Solicitudes → Sin confirmar** ábrela y toca **Confirmar en persona**. Para abrir enlaces directos (`/s/…`) en la versión web compilada:
+
+```bash
+.venv\Scripts\python scripts\servidor_web.py
+```
+
+**Correos.** Salen de una cola (tabla `envio`) que vacía la función `avisos`. Mientras no haya servicio de correo configurado, se quedan en la cola y se mandan en cuanto se configure. Para activarlos:
+
+1. Crea la cuenta en **Resend** (necesita un dominio propio verificado para escribirle a cualquiera) o en **Brevo** (basta verificar una dirección remitente).
+2. Pon en `.env` la llave (`RESEND_API_KEY` o `BREVO_API_KEY`) y `CORREO_REMITENTE`.
+3. Publícalas en las funciones (no se imprimen):
+
+```bash
+.venv\Scripts\python scripts\desplegar.py secretos
+```
+
+Por ahora el remitente es el Gmail del responsable; cuando haya correo institucional, se cambia `CORREO_REMITENTE` en `.env` (verificándolo antes en Brevo) y se vuelve a correr `desplegar.py secretos`. Los correos pueden caer en no deseado: la app se lo recuerda a quien pide.
+
+4. Cuando la app web tenga su dirección definitiva, cámbiala en **Ajustes → Dirección de la app web**: los enlaces de los correos apuntan ahí.
+
+**Avisos al celular (Android).**
+
+1. Crea un proyecto en Firebase y agrega una app Android con el identificador `mx.edu.prepa13.inventario_maker`.
+2. En Configuración del proyecto → Cuentas de servicio → **Generar nueva clave privada**, guarda el JSON en la carpeta del proyecto (git lo ignora) y pon su nombre en `FIREBASE_CUENTA_SERVICIO_ARCHIVO`. Luego corre `desplegar.py secretos`.
+3. Los datos públicos de la app Android (proyecto `inventario-maker-77e2e`) ya están en `app/lib/configuracion.dart`; basta `flutter build apk`. Para otro proyecto de Firebase se cambian ahí o con `--dart-define=FIREBASE_API_KEY=...` (y `FIREBASE_APP_ID`, `FIREBASE_SENDER_ID`, `FIREBASE_PROJECT_ID`).
+
+El secreto `FIREBASE_CUENTA_SERVICIO` se pone a mano en Supabase → Edge Functions → Secrets: su valor queda en `secretos/FIREBASE_CUENTA_SERVICIO.txt` (ignorado por git).
+
+Sin esos datos la app funciona igual y los avisos se ven en la campana.
+
 ## Estructura
 
 | Ruta | Qué es |
@@ -151,11 +199,11 @@ Configuración nueva (tabla `configuracion`): `hora_fin_jornada` (15:00), `domin
 | `scripts/import_excel.py` | Importación idempotente |
 | `scripts/consultar.py` | Consulta desde la terminal (mientras llega la app) |
 | `scripts/respaldo.py` | Respaldo y restauración, independientes de Supabase |
-| `tests/` | Pruebas de existencias, integridad, importación, acceso y movimientos |
+| `tests/` | Pruebas de existencias, integridad, importación, acceso, movimientos y solicitudes |
 | `app/` | App de Flutter (Android y web) |
-| `supabase/functions/` | Funciones del servidor: acceso con PIN y administración de cuentas |
+| `supabase/functions/` | Funciones del servidor: acceso con PIN, cuentas, solicitudes públicas y avisos (correo y celular) |
 | `scripts/cuentas.py` | Crear la primera cuenta desde la terminal |
-| `scripts/desplegar.py` | Publicar funciones y cerrar el registro público |
+| `scripts/desplegar.py` | Publicar funciones, pasarles los secretos de correo y Firebase, cerrar el registro público |
 
 ## Supabase
 

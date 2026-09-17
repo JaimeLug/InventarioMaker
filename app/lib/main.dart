@@ -9,7 +9,9 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'configuracion.dart';
+import 'datos/avisos_celular.dart';
 import 'datos/proveedores.dart';
+import 'datos/repositorio.dart';
 import 'ui/rutas.dart';
 import 'ui/tema.dart';
 
@@ -18,6 +20,7 @@ Future<void> main() async {
   usePathUrlStrategy();
   await initializeDateFormatting('es_MX');
   await Supabase.initialize(url: Configuracion.supabaseUrl, publishableKey: Configuracion.supabaseLlavePublica);
+  await AvisosCelular.iniciar();
   runApp(const ProviderScope(child: InventarioApp()));
 }
 
@@ -31,6 +34,8 @@ class InventarioApp extends ConsumerStatefulWidget {
 class _InventarioAppState extends ConsumerState<InventarioApp> {
   StreamSubscription<AuthState>? _cambiosDeSesion;
   Timer? _inactividad;
+  String? _registradoPara;
+  final _mensajes = GlobalKey<ScaffoldMessengerState>();
 
   @override
   void initState() {
@@ -39,7 +44,27 @@ class _InventarioAppState extends ConsumerState<InventarioApp> {
       if (cambio.event == AuthChangeEvent.signedIn || cambio.event == AuthChangeEvent.signedOut) {
         ref.invalidate(sesionProvider);
       }
+      // Al entrar con PIN la sesión llega como "tokenRefreshed", no como "signedIn": se registra con cualquier
+      // evento que traiga sesión, una sola vez por cuenta.
+      final usuario = cambio.session?.user.id;
+      if (usuario != null && usuario != _registradoPara) {
+        _registradoPara = usuario;
+        AvisosCelular.registrar(ref.read(repositorioProvider));
+      }
+      if (cambio.event == AuthChangeEvent.signedOut) _registradoPara = null;
     });
+    AvisosCelular.escuchar(
+      alTocar: (ruta) => ref.read(rutasProvider).push(ruta),
+      alLlegar: (titulo, ruta) {
+        _mensajes.currentState?.showSnackBar(SnackBar(
+          content: Text(titulo),
+          action: ruta == null ? null : SnackBarAction(label: 'Ver', onPressed: () => ref.read(rutasProvider).push(ruta)),
+        ));
+        ref.invalidate(avisosSinLeerProvider);
+        ref.invalidate(solicitudesContarProvider);
+        ref.invalidate(porRevisarProvider);
+      },
+    );
     _reiniciarInactividad();
   }
 
@@ -65,6 +90,7 @@ class _InventarioAppState extends ConsumerState<InventarioApp> {
     return Listener(
       onPointerDown: (_) => _reiniciarInactividad(),
       child: MaterialApp.router(
+        scaffoldMessengerKey: _mensajes,
         title: 'Inventario Maker',
         theme: temaClaro(),
         routerConfig: ref.watch(rutasProvider),

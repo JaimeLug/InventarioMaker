@@ -43,14 +43,19 @@ class BarraSesion extends ConsumerWidget {
                 PopupMenuItem(enabled: false, child: Text('${s.nombre}\n${s.rol.nombre}')),
                 const PopupMenuItem(value: 'mis-prestamos', child: ListTile(leading: Icon(Icons.outbox_outlined), title: Text('Mis préstamos'))),
                 const PopupMenuItem(value: 'mis-reportes', child: ListTile(leading: Icon(Icons.flag_outlined), title: Text('Mis reportes'))),
+                const PopupMenuItem(value: 'avisos', child: ListTile(leading: Icon(Icons.notifications_outlined), title: Text('Avisos'))),
                 if (s.administra) ...[
+                  const PopupMenuItem(value: 'solicitudes', child: ListTile(leading: Icon(Icons.inbox_outlined), title: Text('Solicitudes'))),
+                  const PopupMenuItem(value: 'adeudos', child: ListTile(leading: Icon(Icons.assignment_ind_outlined), title: Text('Adeudos'))),
                   const PopupMenuItem(value: 'por-revisar', child: ListTile(leading: Icon(Icons.fact_check_outlined), title: Text('Por revisar'))),
                   const PopupMenuItem(
                       value: 'prestamos-abiertos', child: ListTile(leading: Icon(Icons.schedule), title: Text('Préstamos abiertos'))),
                   const PopupMenuItem(value: 'cuentas', child: ListTile(leading: Icon(Icons.group_outlined), title: Text('Cuentas'))),
                 ],
-                if (s.rol == Rol.subadmin)
+                if (s.rol == Rol.subadmin) ...[
                   const PopupMenuItem(value: 'bitacora', child: ListTile(leading: Icon(Icons.history_edu), title: Text('Bitácora'))),
+                  const PopupMenuItem(value: 'ajustes', child: ListTile(leading: Icon(Icons.tune), title: Text('Ajustes'))),
+                ],
                 const PopupMenuItem(value: 'mi-cuenta', child: ListTile(leading: Icon(Icons.person_outline), title: Text('Mi cuenta'))),
                 const PopupMenuItem(value: 'salir', child: ListTile(leading: Icon(Icons.logout), title: Text('Cerrar sesión'))),
               ],

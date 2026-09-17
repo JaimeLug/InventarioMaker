@@ -69,7 +69,7 @@ class _PrestamoPantallaState extends ConsumerState<PrestamoPantalla> {
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
-      builder: (_) => _BuscarArticulo(opciones: todos.where((a) => a.prestable && a.disponible > 0 && !ya.contains(a.id)).toList()),
+      builder: (_) => BuscarArticulo(opciones: todos.where((a) => a.prestable && a.disponible > 0 && !ya.contains(a.id)).toList()),
     );
     if (elegido != null) setState(() => _lineas.add(_Linea(elegido)));
   }
@@ -239,16 +239,17 @@ class _PrestamoPantallaState extends ConsumerState<PrestamoPantalla> {
   }
 }
 
-class _BuscarArticulo extends StatefulWidget {
-  const _BuscarArticulo({required this.opciones});
+/// Buscador de artículos disponibles (préstamo directo y "Mi solicitud").
+class BuscarArticulo extends StatefulWidget {
+  const BuscarArticulo({super.key, required this.opciones});
 
   final List<Articulo> opciones;
 
   @override
-  State<_BuscarArticulo> createState() => _BuscarArticuloState();
+  State<BuscarArticulo> createState() => _BuscarArticuloState();
 }
 
-class _BuscarArticuloState extends State<_BuscarArticulo> {
+class _BuscarArticuloState extends State<BuscarArticulo> {
   String _texto = '';
 
   @override

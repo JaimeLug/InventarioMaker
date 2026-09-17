@@ -5,6 +5,7 @@ import 'package:inventario_maker/datos/errores.dart';
 import 'package:inventario_maker/modelos/articulo.dart';
 import 'package:inventario_maker/modelos/catalogos.dart';
 import 'package:inventario_maker/modelos/movimientos.dart';
+import 'package:inventario_maker/modelos/solicitudes.dart';
 import 'package:inventario_maker/util/texto.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -148,6 +149,57 @@ void main() {
     test('la extensión de préstamo tiene nombre en el historial', () {
       expect(nombresMovimiento['EXTENSION'], 'Extensión de préstamo');
       expect(motivosAjuste['NO_SE_ENCONTRO'], 'No se encontró');
+    });
+  });
+
+  group('Solicitudes (Fase 3b)', () {
+    Map<String, dynamic> publica([Map<String, dynamic> cambios = const {}]) => {
+          'folio': 'LM-0057', 'estado': 'ENTREGADO', 'confirmada': true, 'enlace_de_correo': false,
+          'creada_en': '2026-09-16T14:00:00+00:00', 'motivo': 'Proyecto de clase: robot', 'fecha_devolucion': '2026-09-23T21:00:00+00:00',
+          'codigo_aceptado': false, 'correo': 'j***@prepasoficiales.net', 'autorizo': 'Jaime Lugo',
+          'solicitante': {'nombre': 'Juan Pérez Chan', 'matricula': '23-0456', 'grupo': '5°B', 'tipo': 'ALUMNO'},
+          'lineas': [
+            {'articulo_id': 'a1', 'codigo': 'A-0101', 'nombre': 'Multímetro', 'unidad': 'pieza', 'cantidad': 3, 'aprobada': 2, 'pendiente': 1},
+            {'articulo_id': 'a2', 'codigo': 'A-0102', 'nombre': 'Cautín', 'unidad': 'pieza', 'cantidad': 1, 'aprobada': null, 'pendiente': 1},
+          ],
+          ...cambios,
+        };
+
+    test('el comprobante cuenta lo aprobado y lo que falta devolver', () {
+      final s = SolicitudPublica.desdeMapa(publica());
+      expect((s.estado, s.estado.conMaterial, s.estado.abierta), (EstadoSolicitud.entregado, true, false));
+      expect((s.piezasEntregadas, s.piezasPendientes), (3, 2));
+      expect(s.matricula, '23-0456');
+    });
+
+    test('antes de confirmar solo llegan las iniciales', () {
+      final s = SolicitudPublica.desdeMapa(publica({'estado': 'PENDIENTE', 'confirmada': false, 'solicitante': {'nombre': 'J. P. C.', 'tipo': 'ALUMNO'}}));
+      expect((s.nombre, s.matricula, s.estado.nombre), ('J. P. C.', null, 'En revisión'));
+    });
+
+    test('el código se muestra solo mientras está vigente', () {
+      final futuro = DateTime.now().add(const Duration(minutes: 30)).toUtc().toIso8601String();
+      final pasado = DateTime.now().subtract(const Duration(minutes: 1)).toUtc().toIso8601String();
+      expect(CodigoEntrega.desdeMapa({'estado': 'VIGENTE', 'expira_en': futuro, 'codigo': '123456'}).vigente, isTrue);
+      expect(CodigoEntrega.desdeMapa({'estado': 'VIGENTE', 'expira_en': pasado, 'codigo': '123456'}).vigente, isFalse);
+      final usado = CodigoEntrega.desdeMapa({'estado': 'USADO', 'expira_en': futuro, 'usado_en': pasado});
+      expect((usado.aceptado, usado.nombreEstado), (true, 'Usado'));
+      expect(CodigoEntrega.desdeMapa({'estado': 'USADO', 'expira_en': futuro, 'entrega_anulada_en': pasado}).aceptado, isFalse);
+    });
+
+    test('historial de la persona en una línea', () {
+      FichaSolicitante ficha(int n, int r) => FichaSolicitante.desdeMapa({
+            'id': 's', 'nombre': 'Juan', 'tipo': 'ALUMNO', 'matricula': '1', 'prestamos_anteriores': n, 'con_retraso': r,
+          });
+      expect(ficha(0, 0).historial, 'Primer préstamo');
+      expect(ficha(1, 0).historial, '1 préstamo anterior, todos a tiempo');
+      expect(ficha(4, 1).historial, '4 préstamos anteriores, 1 con retraso');
+    });
+
+    test('el carrito se guarda y se lee igual', () {
+      final l = LineaCarrito(articuloId: 'a1', codigo: 'A-0101', nombre: 'Multímetro', unidad: 'pieza', cantidad: 2);
+      final copia = LineaCarrito.desdeMapa(l.aMapa());
+      expect((copia.articuloId, copia.cantidad, copia.foto), ('a1', 2, null));
     });
   });
 }

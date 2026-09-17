@@ -4,7 +4,10 @@
     {
       "name": "app-web",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8123", "--directory", "app/build/web", "--bind", "127.0.0.1"],
+      "runtimeArgs": [
+        "scripts/servidor_web.py",
+        "8123"
+      ],
       "port": 8123
     }
   ]

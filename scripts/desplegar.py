@@ -2,6 +2,7 @@
 
 Uso:
   python scripts/desplegar.py funciones     Publica las funciones del servidor (supabase/functions)
+  python scripts/desplegar.py secretos      Pasa a las funciones la llave de correo y la de Firebase
   python scripts/desplegar.py auth          Cierra el registro público de cuentas
 
 Necesita SUPABASE_ACCESS_TOKEN en .env (supabase.com/dashboard/account/tokens).
@@ -10,10 +11,13 @@ Usa el CLI de Supabase por npx: no hay que instalarlo ni tener Docker.
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import os
 import subprocess
 import sys
+import tempfile
+from pathlib import Path
 import urllib.error
 import urllib.request
 
@@ -47,6 +51,45 @@ def funciones(_args) -> None:
             sys.exit(f"No se publicó {nombre}.")
     print(f"Listo: {', '.join(nombres)}")
 
+    # La base despierta a la función "avisos" cada vez que encola un correo: necesita saber dónde está.
+    url = f"https://{referencia}.supabase.co/functions/v1"
+    with db.conectar(nube=True) as conn:
+        conn.execute("update public.configuracion set valor = to_jsonb(%s::text) where clave = 'url_funciones'", (url,))
+    print(f"Dirección de las funciones guardada en la configuración: {url}")
+
+
+# Secretos que usan las funciones. Se leen de .env y nunca se imprimen.
+SECRETOS = ("RESEND_API_KEY", "BREVO_API_KEY", "CORREO_REMITENTE")
+
+
+def secretos(_args) -> None:
+    token, referencia = entorno()
+    env = db.leer_env()
+    valores = {k: env[k] for k in SECRETOS if env.get(k)}
+    archivo = env.get("FIREBASE_CUENTA_SERVICIO_ARCHIVO")
+    if archivo:
+        ruta = (db.RAIZ / archivo) if not os.path.isabs(archivo) else Path(archivo)
+        if not ruta.exists():
+            sys.exit(f"No encontré el archivo de la cuenta de servicio de Firebase: {ruta}")
+        # En base64: un JSON con comillas y saltos de línea no sobrevive a un archivo .env.
+        compacto = json.dumps(json.loads(ruta.read_text(encoding="utf-8")), separators=(",", ":"))
+        valores["FIREBASE_CUENTA_SERVICIO"] = base64.b64encode(compacto.encode()).decode()
+    if not valores:
+        sys.exit("No hay secretos en .env. Revisa .env.ejemplo (sección de correo y Firebase).")
+
+    npx = "npx.cmd" if os.name == "nt" else "npx"
+    with tempfile.TemporaryDirectory() as carpeta:
+        temporal = os.path.join(carpeta, "secretos.env")
+        with open(temporal, "w", encoding="utf-8") as f:
+            for k, v in valores.items():
+                f.write(f"{k}={v}\n")
+        r = subprocess.run([npx, "--yes", f"supabase@{VERSION_CLI}", "secrets", "set", "--env-file", temporal,
+                            "--project-ref", referencia],
+                           cwd=db.RAIZ, env={**os.environ, "SUPABASE_ACCESS_TOKEN": token}, capture_output=True, text=True)
+    if r.returncode != 0:
+        sys.exit("No se guardaron los secretos:\n" + (r.stderr or r.stdout)[-800:])
+    print("Secretos guardados en las funciones: " + ", ".join(sorted(valores)))
+
 
 def auth(_args) -> None:
     token, referencia = entorno()
@@ -72,8 +115,8 @@ def auth(_args) -> None:
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8")
     p = argparse.ArgumentParser(description="Publicar en Supabase")
-    p.add_argument("que", choices=["funciones", "auth"])
-    {"funciones": funciones, "auth": auth}[p.parse_args().que](None)
+    p.add_argument("que", choices=["funciones", "secretos", "auth"])
+    {"funciones": funciones, "secretos": secretos, "auth": auth}[p.parse_args().que](None)
 
 
 if __name__ == "__main__":

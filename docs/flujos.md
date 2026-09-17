@@ -501,8 +501,13 @@ flowchart TD
 |---|---|
 | **Inicia** | Alumno |
 | **Sesión** | No. Se identifica con sus datos y se le da un enlace secreto a su solicitud |
-| **Pantallas** | Ficha o listado → Carrito de solicitud → Mis datos → Revisar y enviar → Estado de mi solicitud → Captura de código y firma → Comprobante |
-| **Se guarda** | `solicitante` (nuevo o reutilizado), `solicitud` en PENDIENTE con folio, `solicitud_linea`; al entregarse: `codigo_entrega` usado, movimientos `PRESTAMO` con `autorizado_por` y `responsable_solicitante_id`, firma y fotos |
+| **Pantallas** | Ficha → Mi solicitud (carrito, datos, motivo, fecha, aviso de privacidad) → Enlace por correo → Estado de mi solicitud → Captura del código → Comprobante |
+| **Se guarda** | `solicitante` (nuevo o reutilizado), `solicitud` en PENDIENTE con folio, `solicitud_linea`, `solicitud_enlace`; al confirmar desde el correo: `confirmada_en`; al entregarse: `codigo_entrega` usado, movimientos `PRESTAMO` con `autorizado_por` y `responsable_solicitante_id`, foto de identificación y fotos del material |
+
+> **Actualización de la Fase 3b (aprobada el 2026-09-16).** La identidad se prueba con el **correo**, no con los últimos 4 dígitos del teléfono:
+> al enviar, llega un enlace al correo registrado de la ficha y la solicitud **no llega a la bandeja** hasta que se toca *"Sí, yo lo pedí"*.
+> Si la matrícula ya existe y ya se comprobó, el enlace va al correo registrado (no al que se escribió). Sin confirmar en 24 h, se cancela sola.
+> Si no hay correo o no llega, el responsable la confirma **en persona**. Freno: una solicitud en curso por persona, 5 por hora por dispositivo y 30 por hora por red.
 
 ```mermaid
 flowchart TD
@@ -515,7 +520,7 @@ flowchart TD
     E -->|"Sí"| A
     E -->|"No"| F["Mis datos: matrícula primero"]
     F --> G{"¿La matrícula ya existe?"}
-    G -->|"Sí"| H["Te reconocimos, J. L. M. Confirma los últimos 4 dígitos de tu teléfono"]
+    G -->|"Sí"| H["Te reconocimos, J. L. M. El enlace va al correo registrado j***@..."]
     G -->|"No"| I["Nombre completo, grupo, teléfono, correo"]
     H --> J{"¿Tiene adeudo vencido o está bloqueado?"}
     I --> K["Motivo y fecha de devolución"]
@@ -548,10 +553,11 @@ flowchart TD
 **Paso a paso**
 
 1. **Busca y elige.** El botón **Pedir prestado** está en cada ficha. El artículo pasa a un **carrito** ("Mi solicitud") con selector de cantidad que no deja pedir más de lo disponible. Puede juntar varios artículos en una sola solicitud.
-2. **Mis datos.** Primero se pide solo la **matrícula**:
-   - **Si ya existe:** se muestran solo las iniciales (*"¿Eres J. L. M.?"*) y se piden los **últimos 4 dígitos del teléfono registrado** para confirmar. Así nadie puede ver ni usar los datos de otro alumno solo con su matrícula.
-   - **Si no existe:** nombre completo, grupo, teléfono y correo. Tipo = Alumno.
-   - **Si dice "no soy yo" o no recuerda su teléfono:** se crea una ficha nueva marcada *"Posible duplicado — revisar"*, y el responsable decide si las une.
+2. **Mis datos.** Matrícula, nombre completo, grupo, correo institucional y teléfono (opcional):
+   - **Si la matrícula ya existe y ya se comprobó** (en persona o por correo): no se cambia nada desde aquí. Se muestran solo las iniciales y el correo enmascarado (*"Te reconocimos (J. L. M.). Te enviamos el enlace a j\*\*\*@prepasoficiales.net"*). Así nadie puede usar la ficha de otro alumno solo con su matrícula.
+   - **Si existe pero nadie la ha comprobado:** se toman los datos nuevos.
+   - **Si no existe:** se crea, *sin verificar*.
+   - **Si dice "ese no es mi correo":** se crea una ficha nueva marcada *"Posible duplicado"* y el responsable compara la identificación al entregar.
 3. **Revisión de adeudos** (en el servidor): si tiene un préstamo `VENCIDA`, o está bloqueado a mano, se detiene aquí. Se muestra **folio y fecha** de lo que debe, sin listar los artículos, y no puede continuar.
 4. **Motivo y fecha.** Motivo con opciones frecuentes (*Proyecto de clase, Concurso, Práctica, Otro*) más texto libre. Fecha de devolución: por defecto hoy + 7 días, máximo 14 (lo configura sub admin).
 5. **Revisar y enviar.** Resumen, casilla de aceptación del **aviso de privacidad** y del compromiso: *"Me hago responsable del material. Si se pierde o se daña, queda registrado a mi nombre."*
@@ -580,7 +586,7 @@ flowchart TD
 | **Se arrepiente mientras llena el formulario** | Sale sin enviar. El carrito queda en su dispositivo 24 h y **no se guarda nada en el servidor** |
 | **Se arrepiente con la solicitud `PENDIENTE` o `APROBADA`** | En *Estado de mi solicitud*, **Cancelar solicitud** → *"¿Seguro?"* → `CANCELADA` (motivo *"Cancelada por el solicitante"*); se libera lo apartado y se avisa al responsable |
 | **Se arrepiente ya con el material** | No se puede cancelar: el material ya está a su nombre. Se le indica que lo devuelva (F-08) |
-| **Pierde el enlace** | Entra con *folio + matrícula + últimos 4 dígitos del teléfono* |
+| **Pierde el enlace** | En *Mis solicitudes* → *Recuperar*: folio + matrícula. El enlace llega al correo registrado; la pantalla responde lo mismo aunque los datos no coincidan |
 | **Sin conexión** | Puede armar el carrito, pero **enviar requiere conexión** porque el folio lo da el servidor: *"Sin conexión. Tu solicitud se enviará cuando vuelva la señal."* El envío queda en cola en su dispositivo |
 
 ---
@@ -598,6 +604,7 @@ flowchart TD
 | 3 | **Datos de contacto bloqueados.** Si la matrícula ya existe, desde la solicitud pública no se cambia teléfono ni correo. Solo el responsable o sub administración, en persona | "Apropiarse" de la ficha de otro |
 | 4 | **Correo institucional con aviso.** El correo de la ficha debe ser del dominio de la escuela (ver P-15). En cada solicitud y cada entrega le llega al alumno: *"Se pidió material a tu nombre (folio LM-0057). Si no fuiste tú, toca aquí."* Ese botón cancela la solicitud (si no se ha entregado) y manda una alerta al responsable | Que el dueño real no se entere |
 | 5 | **Una solicitud pendiente a la vez** por solicitante | Saturar la ficha de otro con solicitudes |
+| 6 | **Confirmación desde el correo** (Fase 3b). La solicitud no llega a la bandeja hasta que el dueño del correo toca *"Sí, yo lo pedí"*. Los avisos al celular del responsable nunca llevan nombres de alumnos | Que alguien pida a nombre de otro con su matrícula |
 
 **Privacidad de las fotos de identificación** (son datos de menores de edad):
 
@@ -723,7 +730,7 @@ sequenceDiagram
    6. **Aunque el alumno tuviera el código antes de tiempo, no se lleva nada "en papel":** sin las fotos que toma el responsable no se crea ningún préstamo.
 7. **Entrega en el mismo dispositivo** (el alumno no trae celular): en la pantalla del código, **Capturar aquí**. La pantalla cambia a modo solicitante, que pide folio + matrícula + código. El código lo sigue tecleando el alumno, no el responsable.
 
-**Qué se aprobó y qué se entregó.** La aprobación **no** crea movimientos de préstamo: solo aparta. Canjear el código tampoco. Los movimientos `PRESTAMO` se crean **al cerrar la entrega**, es decir, cuando ya hay código válido, firma (o credencial) y se sube la foto del material. Hasta ese momento, las piezas siguen como *apartadas*, no como *prestadas*. Cada uno lleva:
+**Qué se aprobó y qué se entregó.** La aprobación **no** crea movimientos de préstamo: solo aparta. Canjear el código tampoco. Los movimientos `PRESTAMO` se crean **al cerrar la entrega**, es decir, cuando ya hay código válido, foto de la identificación y foto del material. Hasta ese momento, las piezas siguen como *apartadas*, no como *prestadas*. Cada uno lleva:
 - `autorizado_por` = quien aprobó.
 - `responsable_solicitante_id` = el solicitante.
 - `solicitud_id` = el folio.
@@ -1540,6 +1547,11 @@ Cada hoja lleva en el encabezado: *"Fecha de corte: 14/09/2026 13:05 · Generado
 | **P-8** | Tabla nueva de incidencias | Aprobada, con el nombre `incidencia`. Todas las incidencias salen en el Excel para Contraloría (F-19) |
 | **P-11** | Código de entrega | Se genera al aprobar. La vigencia la elige quien aprueba: 1 h 30 min (por defecto), fin de la jornada o hasta 24 h. Si vence, se genera otro con un toque. Nunca se le envía al solicitante |
 | **P-13** | Docentes y nombres | Un docente ve el nombre **solo del préstamo que está recibiendo** (F-08). No ve la lista de adeudos por persona (F-18) |
+| **P-6** | Foto del material al entregar | Obligatoria (Fase 3b) |
+| **P-10** | Vigencias | Sin recoger: 2 días hábiles. Sin respuesta: 3 días hábiles. Sin confirmar el correo: 24 h. Alumno: 7 días por defecto, máximo 14. Maestro: máximo 30. Los cambia sub administración en *Ajustes* |
+| **P-12** | Identificar a quien ya existe | **Enlace al correo registrado** en lugar de los últimos 4 dígitos del teléfono (2026-09-16) |
+| **P-14** | Fotos de identificación | Mientras deba algo y hasta el fin del ciclo escolar (fecha en *Ajustes*). Se borra el archivo; el registro y el borrado quedan en la bitácora |
+| **P-15** | Dominio del correo de alumnos | `@prepasoficiales.net` obligatorio |
 
 ### Pendientes
 
@@ -1549,12 +1561,7 @@ Cada hoja lleva en el encabezado: *"Fecha de corte: 14/09/2026 13:05 · Generado
 | **P-2** | Artículos importados sin número (`varias`, `varios`, `1 contenedor lleno`) | No se prestan hasta contarlos | Permitir préstamo con advertencia |
 | **P-4** | ¿Los docentes pueden ayudar a contar en un inventario periódico? | No, solo R y S | Sí, pero sus conteos quedan como "propuestos" hasta que R o S los validen |
 | **P-5** | Sesión abierta en un celular que otro toma | En Android dura la jornada y siempre muestra *"Firmando como…"*; en web vence a los 30 min de inactividad | Pedir PIN en **cada** acción (más seguro, más lento) |
-| **P-6** | Foto del material al entregar una solicitud | **Obligatoria** para cerrar la entrega | Opcional |
 | **P-9** | Baja de equipo con número de resguardo | Pide número de oficio o acta; si no hay, queda *"Baja en trámite"* | Permitir baja sin oficio |
-| **P-10** | Otras vigencias | Solicitud aprobada sin recoger: 2 días hábiles. Solicitud sin respuesta: 3 días hábiles. Plazo máximo: alumno 14 días, maestro 30 | Los valores que prefieras |
-| **P-14** | **Cuánto tiempo se guardan las fotos de identificación** | Mientras el alumno tenga algo prestado y hasta el fin del ciclo escolar en que devolvió; después se eliminan. Sería la única excepción a "nada se borra", y la eliminación queda en la bitácora | Guardarlas siempre |
-| **P-15** | **Dominio del correo institucional** de los alumnos (ej. `@prepa13.edu.mx`) | Exigirlo en la ficha del solicitante | Aceptar cualquier correo |
-| **P-12** | Identificar a un solicitante que ya existe sin exponer sus datos | Matrícula + últimos 4 dígitos del teléfono | Solo matrícula (más fácil, pero cualquiera puede pedir a nombre de otro) |
 
 ---
 

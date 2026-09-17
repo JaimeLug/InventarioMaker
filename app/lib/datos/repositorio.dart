@@ -10,6 +10,7 @@ import '../modelos/articulo.dart';
 import '../modelos/catalogos.dart';
 import '../modelos/movimientos.dart';
 import '../modelos/otros.dart';
+import '../modelos/solicitudes.dart';
 import 'errores.dart';
 
 final repositorioProvider = Provider<Repositorio>((ref) => Repositorio(Supabase.instance.client));
@@ -256,21 +257,17 @@ class Repositorio {
         'p_telefono': telefono,
       }) as String;
 
-  /// Fotos de daños y pérdidas: almacén privado, en la carpeta incidencias/ID del reporte.
-  Future<List<Map<String, String>>> subirFotosPrivadas(String incidenciaId, List<FotoNueva> fotos) async {
-    final rutas = <Map<String, String>>[];
-    for (final f in fotos) {
-      if (f.rutaSubida == null) {
-        final ruta = 'incidencias/$incidenciaId/${DateTime.now().toUtc().millisecondsSinceEpoch}_${_uuid.v4().substring(0, 8)}.jpg';
-        await _c.storage
-            .from('privado')
-            .uploadBinary(ruta, f.bytes, fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: false));
-        f.rutaSubida = ruta;
-      }
-      rutas.add({'ruta': f.rutaSubida!});
-    }
-    return rutas;
+  /// Foto al almacén privado, en carpeta/ID (incidencias, entregas o identificaciones).
+  Future<String> subirPrivada(String carpeta, String id, FotoNueva f) async {
+    if (f.rutaSubida != null) return f.rutaSubida!;
+    final ruta = '$carpeta/$id/${DateTime.now().toUtc().millisecondsSinceEpoch}_${_uuid.v4().substring(0, 8)}.jpg';
+    await _c.storage.from('privado').uploadBinary(ruta, f.bytes, fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: false));
+    return f.rutaSubida = ruta;
   }
+
+  /// Fotos de daños y pérdidas: almacén privado, en la carpeta incidencias/ID del reporte.
+  Future<List<Map<String, String>>> subirFotosPrivadas(String incidenciaId, List<FotoNueva> fotos) async =>
+      [for (final f in fotos) {'ruta': await subirPrivada('incidencias', incidenciaId, f)}];
 
   /// Enlace temporal (5 minutos) a una foto privada. Solo funciona para quien tiene permiso.
   Future<String> urlPrivada(String ruta) => _c.storage.from('privado').createSignedUrl(ruta, 300);
@@ -389,4 +386,140 @@ class Repositorio {
 
   Future<List<EventoBitacora>> bitacora({int? antes}) async =>
       _filas(await _c.rpc('bitacora_listar', params: {'p_antes': antes, 'p_limite': 100})).map(EventoBitacora.desdeMapa).toList();
+
+  // --- Solicitudes sin cuenta (Fase 3b) ---------------------------------------------------
+  Map<String, dynamic> _mapa(Object? r) => Map<String, dynamic>.from(r as Map);
+
+  /// Por la función del servidor "solicitud-publica" (agrega la red para el freno contra abusos).
+  Future<SolicitudEnviada> enviarSolicitud(Map<String, dynamic> datos, String dispositivo) async {
+    final r = await _c.functions.invoke('solicitud-publica', body: {'accion': 'enviar', 'datos': datos, 'dispositivo': dispositivo});
+    final m = _mapa(r.data);
+    if (m['ok'] != true) throw ErrorApp(m['mensaje'] as String? ?? 'No se pudo enviar la solicitud.');
+    return SolicitudEnviada.desdeMapa(m);
+  }
+
+  Future<String> recuperarEnlace(String folio, String matricula, String dispositivo) async {
+    final r = await _c.functions
+        .invoke('solicitud-publica', body: {'accion': 'recuperar', 'folio': folio, 'matricula': matricula, 'dispositivo': dispositivo});
+    final m = _mapa(r.data);
+    if (m['ok'] != true) throw ErrorApp(m['mensaje'] as String? ?? 'No se pudo completar.');
+    return m['mensaje'] as String;
+  }
+
+  Future<SolicitudPublica?> solicitudPublica(String token) async {
+    final r = await _c.rpc('solicitud_publica_estado', params: {'p_token': token});
+    return r == null ? null : SolicitudPublica.desdeMapa(_mapa(r));
+  }
+
+  Future<SolicitudPublica> confirmarSolicitud(String token) async =>
+      SolicitudPublica.desdeMapa(_mapa(await _c.rpc('solicitud_publica_confirmar', params: {'p_token': token})));
+
+  Future<SolicitudPublica> cancelarSolicitudPublica(String token) async =>
+      SolicitudPublica.desdeMapa(_mapa(await _c.rpc('solicitud_publica_cancelar', params: {'p_token': token})));
+
+  Future<SolicitudPublica> noFuiYo(String token) async =>
+      SolicitudPublica.desdeMapa(_mapa(await _c.rpc('solicitud_publica_no_fui_yo', params: {'p_token': token})));
+
+  /// Devuelve null si se aceptó, o el mensaje de por qué no.
+  Future<String?> canjearCodigo(String token, String codigo) async {
+    final m = _mapa(await _c.rpc('solicitud_publica_canjear', params: {'p_token': token, 'p_codigo': codigo}));
+    return m['ok'] == true ? null : m['mensaje'] as String;
+  }
+
+  // --- Bandeja y entrega (responsable y sub administración) ------------------------------
+  Future<({int porRevisar, int porEntregar, int sinConfirmar})> solicitudesContar() async {
+    final m = _mapa(await _c.rpc('solicitudes_contar'));
+    return (porRevisar: m['por_revisar'] as int, porEntregar: m['por_entregar'] as int, sinConfirmar: m['sin_confirmar'] as int);
+  }
+
+  Future<List<SolicitudResumen>> solicitudes(String grupo) async =>
+      _filas(await _c.rpc('solicitudes_listar', params: {'p_grupo': grupo})).map(SolicitudResumen.desdeMapa).toList();
+
+  Future<SolicitudDetalle> solicitudDetalle(String id) async =>
+      SolicitudDetalle.desdeMapa(_mapa(await _c.rpc('solicitud_detalle', params: {'p_id': id})));
+
+  Future<void> aprobarSolicitud(String id,
+          {required Map<String, int> cantidades, DateTime? fecha, String? nota, required String vigencia}) =>
+      _c.rpc('solicitud_aprobar', params: {
+        'p_id': id,
+        'p_lineas': [for (final e in cantidades.entries) {'articulo_id': e.key, 'cantidad': e.value}],
+        'p_fecha': fecha?.toUtc().toIso8601String(),
+        'p_nota': nota,
+        'p_vigencia': vigencia,
+      });
+
+  Future<void> rechazarSolicitud(String id, String motivo, String? detalle) =>
+      _c.rpc('solicitud_rechazar', params: {'p_id': id, 'p_motivo': motivo, 'p_detalle': detalle});
+
+  Future<void> cancelarSolicitud(String id, String motivo) => _c.rpc('solicitud_cancelar', params: {'p_id': id, 'p_motivo': motivo});
+
+  Future<void> confirmarEnPersona(String id) => _c.rpc('solicitud_confirmar_en_persona', params: {'p_id': id});
+
+  Future<void> codigoNuevo(String id, String vigencia) => _c.rpc('solicitud_codigo_nuevo', params: {'p_id': id, 'p_vigencia': vigencia});
+
+  /// Devuelve null si se aceptó, o el mensaje de por qué no.
+  Future<String?> canjearEnLaboratorio(String id, String matricula, String codigo) async {
+    final m = _mapa(await _c.rpc('solicitud_canjear_en_laboratorio', params: {'p_id': id, 'p_matricula': matricula, 'p_codigo': codigo}));
+    return m['ok'] == true ? null : m['mensaje'] as String;
+  }
+
+  Future<void> entregarSolicitud(String id,
+      {required String tipoIdentificacion,
+      required FotoNueva identificacion,
+      required List<FotoNueva> material,
+      DateTime? fechaDevolucion}) async {
+    final ident = await subirPrivada('identificaciones', id, identificacion);
+    final fotos = [for (final f in material) {'ruta': await subirPrivada('entregas', id, f)}];
+    await _c.rpc('solicitud_entregar', params: {
+      'p_id': id,
+      'p_tipo_identificacion': tipoIdentificacion,
+      'p_foto_identificacion': ident,
+      'p_fotos_material': fotos,
+      'p_fecha_devolucion': fechaDevolucion?.toUtc().toIso8601String(),
+    });
+  }
+
+  Future<void> anularEntrega(String id, String motivo) => _c.rpc('solicitud_entrega_anular', params: {'p_id': id, 'p_motivo': motivo});
+
+  /// Deja el registro en la bitácora y devuelve enlaces temporales (5 minutos) a la identificación.
+  Future<List<String>> verIdentificacion(String solicitudId) async {
+    final rutas = [for (final r in (await _c.rpc('identificacion_ver', params: {'p_solicitud': solicitudId}) as List)) r as String];
+    return [for (final r in rutas) await urlPrivada(r)];
+  }
+
+  Future<List<Adeudo>> adeudos() async => _filas(await _c.rpc('adeudos_listar')).map(Adeudo.desdeMapa).toList();
+
+  Future<Map<String, dynamic>> personaExpediente(String tipo, String id) async =>
+      _mapa(await _c.rpc('persona_expediente', params: {'p_tipo': tipo, 'p_id': id}));
+
+  Future<Map<String, dynamic>> expedientePrestamo(String prestamoId) async =>
+      _mapa(await _c.rpc('expediente_prestamo', params: {'p_prestamo': prestamoId}));
+
+  Future<void> bloquearSolicitante(String id, String motivo) => _c.rpc('solicitante_bloquear', params: {'p_id': id, 'p_motivo': motivo});
+
+  Future<void> desbloquearSolicitante(String id, String motivo) =>
+      _c.rpc('solicitante_desbloquear', params: {'p_id': id, 'p_motivo': motivo});
+
+  Future<void> editarSolicitante(String id, {required String nombre, String? grupo, String? correo, String? telefono}) => _c.rpc(
+      'solicitante_editar',
+      params: {'p_id': id, 'p_nombre': nombre, 'p_grupo': grupo, 'p_correo': correo, 'p_telefono': telefono});
+
+  // --- Avisos ---------------------------------------------------------------------------------
+  Future<List<Aviso>> avisos() async => _filas(await _c.rpc('avisos_listar')).map(Aviso.desdeMapa).toList();
+
+  Future<int> avisosSinLeer() async => await _c.rpc('avisos_sin_leer') as int;
+
+  Future<void> marcarAvisosLeidos() => _c.rpc('avisos_marcar_leidos');
+
+  Future<void> registrarDispositivo(String token) =>
+      _c.rpc('dispositivo_registrar', params: {'p_token': token, 'p_plataforma': 'android'});
+
+  // --- Configuración -----------------------------------------------------------------------------
+  Future<Map<String, dynamic>> configuracion() async {
+    final filas = await _c.from('configuracion').select('clave, valor');
+    return {for (final f in filas) f['clave'] as String: f['valor']};
+  }
+
+  Future<void> cambiarConfiguracion(String clave, Object valor) =>
+      _c.rpc('configuracion_cambiar', params: {'p_clave': clave, 'p_valor': valor});
 }

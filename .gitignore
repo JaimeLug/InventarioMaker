@@ -9,3 +9,9 @@ salidas/
 .env
 respaldos/
 supabase/.temp/
+# Cuenta de servicio de Firebase (llave privada)
+*firebase-adminsdk*.json
+firebase-cuenta-servicio.json
+# Valores secretos preparados para copiar al panel de Supabase
+secretos/
+google-services.json

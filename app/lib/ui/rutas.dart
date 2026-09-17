@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'pantallas/adeudos_pantallas.dart';
 import 'pantallas/articulo_form_pantalla.dart';
+import 'pantallas/avisos_ajustes_pantallas.dart';
 import 'pantallas/bitacora_pantalla.dart';
 import 'pantallas/codigo_pantalla.dart';
 import 'pantallas/cuentas_pantalla.dart';
@@ -14,6 +16,8 @@ import 'pantallas/prestamo_pantalla.dart';
 import 'pantallas/prestamos_pantallas.dart';
 import 'pantallas/reporte_pantalla.dart';
 import 'pantallas/revision_pantallas.dart';
+import 'pantallas/solicitud_publica_pantallas.dart';
+import 'pantallas/solicitudes_pantallas.dart';
 
 final rutasProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -30,6 +34,19 @@ final rutasProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/por-revisar', builder: (_, _) => const PorRevisarPantalla()),
       GoRoute(path: '/prestamos-abiertos', builder: (_, _) => const PrestamosAbiertosPantalla()),
       GoRoute(path: '/bitacora', builder: (_, _) => const BitacoraPantalla()),
+      // Sin cuenta (Fase 3b). /s/<enlace> es la dirección que llega por correo.
+      GoRoute(path: '/solicitud', builder: (_, _) => const SolicitudPantalla()),
+      GoRoute(path: '/s/:token', builder: (_, e) => EstadoSolicitudPantalla(token: e.pathParameters['token']!)),
+      GoRoute(path: '/mis-solicitudes', builder: (_, _) => const MisSolicitudesPantalla()),
+      // Responsable y sub administración
+      GoRoute(path: '/solicitudes', builder: (_, _) => const BandejaPantalla()),
+      GoRoute(path: '/solicitudes/:id', builder: (_, e) => SolicitudDetallePantalla(id: e.pathParameters['id']!)),
+      GoRoute(path: '/solicitudes/:id/entrega', builder: (_, e) => EntregaPantalla(id: e.pathParameters['id']!)),
+      GoRoute(path: '/adeudos', builder: (_, _) => const AdeudosPantalla()),
+      GoRoute(path: '/persona/:tipo/:id', builder: (_, e) => PersonaPantalla(tipo: e.pathParameters['tipo']!, id: e.pathParameters['id']!)),
+      GoRoute(path: '/expediente/:id', builder: (_, e) => ExpedientePantalla(prestamoId: e.pathParameters['id']!)),
+      GoRoute(path: '/avisos', builder: (_, _) => const AvisosPantalla()),
+      GoRoute(path: '/ajustes', builder: (_, _) => const AjustesPantalla()),
       // Los QR de las etiquetas llevan esta dirección (Fase 4): /q/A-0101 o /q/C-0012
       GoRoute(path: '/q/:codigo', builder: (_, e) => CodigoPantalla(codigo: e.pathParameters['codigo']!)),
       GoRoute(path: '/cuentas', builder: (_, _) => const CuentasPantalla()),

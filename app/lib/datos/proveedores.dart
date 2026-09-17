@@ -39,6 +39,24 @@ final porRevisarProvider = FutureProvider<int>((ref) async {
   return ref.watch(repositorioProvider).porRevisarContar();
 });
 
+/// Solicitudes por revisar y por entregar (responsable y sub administración).
+final solicitudesContarProvider = FutureProvider<int>((ref) async {
+  final sesion = await ref.watch(sesionProvider.future);
+  if (sesion == null || !sesion.administra) return 0;
+  final c = await ref.watch(repositorioProvider).solicitudesContar();
+  return c.porRevisar + c.porEntregar;
+});
+
+/// Avisos sin leer de la cuenta con sesión (la campana).
+final avisosSinLeerProvider = FutureProvider<int>((ref) async {
+  final sesion = await ref.watch(sesionProvider.future);
+  if (sesion == null) return 0;
+  return ref.watch(repositorioProvider).avisosSinLeer();
+});
+
+/// Configuración pública (plazos, hora de fin de jornada, dominio de correo).
+final configuracionProvider = FutureProvider<Map<String, dynamic>>((ref) => ref.watch(repositorioProvider).configuracion());
+
 /// Después de cambiar algo de un artículo, se vuelve a leer todo lo que lo muestra.
 void refrescarArticulo(WidgetRef ref, String id) => refrescarArticuloEn(ref.container, id);
 
@@ -50,4 +68,6 @@ void refrescarArticuloEn(ProviderContainer c, String id) {
   c.invalidate(pendientesProvider(id));
   c.invalidate(vencidosProvider);
   c.invalidate(porRevisarProvider);
+  c.invalidate(solicitudesContarProvider);
+  c.invalidate(avisosSinLeerProvider);
 }

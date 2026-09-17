@@ -40,11 +40,12 @@ class SelectorCantidad extends StatelessWidget {
 
 /// Fotos elegidas para un reporte (se suben al guardar).
 class SelectorFotos extends StatelessWidget {
-  const SelectorFotos({super.key, required this.fotos, required this.alCambiar, this.texto = 'Agregar foto'});
+  const SelectorFotos({super.key, required this.fotos, required this.alCambiar, this.texto = 'Agregar foto', this.maximo = 10});
 
   final List<FotoNueva> fotos;
   final VoidCallback alCambiar;
   final String texto;
+  final int maximo;
 
   @override
   Widget build(BuildContext context) {
@@ -65,6 +66,7 @@ class SelectorFotos extends StatelessWidget {
             ),
           ),
         ]),
+      if (fotos.length < maximo)
       SizedBox(
         width: 96,
         height: 96,

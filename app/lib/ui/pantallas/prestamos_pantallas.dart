@@ -105,6 +105,8 @@ class _ListaPrestamos extends ConsumerWidget {
               Wrap(spacing: 8, children: [
                 TextButton(onPressed: () => context.push('/articulo/${p.articuloId}/devolver'), child: const Text('Recibir devolución')),
                 TextButton(onPressed: () => _extender(context, ref, p), child: const Text('Extender')),
+                if (p.autorizo != null)
+                  TextButton(onPressed: () => context.push('/expediente/${p.id}'), child: const Text('Expediente')),
               ]),
             ]),
           ),

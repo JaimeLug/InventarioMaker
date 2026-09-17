@@ -14,6 +14,8 @@ import '../../util/texto.dart';
 import '../tema.dart';
 import '../widgets/comunes.dart';
 import '../widgets/fotos.dart';
+import '../../acceso/hoja_acceso.dart';
+import '../../datos/local.dart';
 import 'acciones_articulo.dart' as acciones;
 
 /// Ficha del artículo (F-01): fotos, cifras, datos, pendientes e historial.
@@ -392,6 +394,32 @@ class _Acciones extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final a = articulo;
+    final sesion = ref.watch(sesionProvider);
+    // Sin cuenta: alumnos y maestros piden (F-04). Quien tiene cuenta presta directo (F-07).
+    if (!sesion.isLoading && sesion.value == null) {
+      final enCarrito = ref.watch(carritoProvider).any((l) => l.articuloId == a.id);
+      final sePide = a.prestable && a.disponible > 0 && !a.esConsumible;
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
+          FilledButton.icon(
+            onPressed: !sePide
+                ? null
+                : () {
+                    ref.read(carritoProvider.notifier).agregar(a);
+                    context.push('/solicitud');
+                  },
+            icon: Icon(enCarrito ? Icons.shopping_basket : Icons.shopping_basket_outlined),
+            label: Text(enCarrito ? 'Ya está en tu solicitud' : 'Pedir prestado'),
+          ),
+          if (a.esConsumible) const Text('Los consumibles se piden en persona en el laboratorio.'),
+          TextButton(
+            onPressed: () => pedirAcceso(context, descripcion: 'prestar o recibir material'),
+            child: const Text('Soy docente'),
+          ),
+        ]),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Wrap(spacing: 8, runSpacing: 8, children: [
