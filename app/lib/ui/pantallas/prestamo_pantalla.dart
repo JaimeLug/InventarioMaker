@@ -20,9 +20,12 @@ enum _ParaQuien { yo, persona }
 
 /// Préstamo directo (F-07). Ruta corta: para mí, hoy al final de la jornada → Prestar.
 class PrestamoPantalla extends ConsumerStatefulWidget {
-  const PrestamoPantalla({super.key, required this.articuloId});
+  const PrestamoPantalla({super.key, this.articuloId, this.lineas = const {}});
 
-  final String articuloId;
+  final String? articuloId;
+
+  /// Varios artículos con su cantidad (al prestar desde un contenedor).
+  final Map<String, int> lineas;
 
   @override
   ConsumerState<PrestamoPantalla> createState() => _PrestamoPantallaState();
@@ -49,8 +52,13 @@ class _PrestamoPantallaState extends ConsumerState<PrestamoPantalla> {
   void initState() {
     super.initState();
     ref.read(articulosProvider.future).then((todos) {
-      final a = todos.where((x) => x.id == widget.articuloId).firstOrNull;
-      if (a != null && mounted) setState(() => _lineas.add(_Linea(a)));
+      if (!mounted) return;
+      final pedidos = {if (widget.articuloId != null) widget.articuloId!: 1, ...widget.lineas};
+      setState(() {
+        for (final a in todos.where((x) => pedidos.containsKey(x.id) && x.prestable && x.disponible > 0)) {
+          _lineas.add(_Linea(a)..cantidad = pedidos[a.id]!.clamp(1, a.disponible));
+        }
+      });
     });
   }
 

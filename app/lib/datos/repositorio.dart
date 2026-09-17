@@ -8,6 +8,7 @@ import '../acceso/sesion.dart';
 import '../configuracion.dart';
 import '../modelos/articulo.dart';
 import '../modelos/catalogos.dart';
+import '../modelos/contenedores.dart';
 import '../modelos/movimientos.dart';
 import '../modelos/otros.dart';
 import '../modelos/solicitudes.dart';
@@ -522,4 +523,78 @@ class Repositorio {
 
   Future<void> cambiarConfiguracion(String clave, Object valor) =>
       _c.rpc('configuracion_cambiar', params: {'p_clave': clave, 'p_valor': valor});
+
+  // --- Contenedores y acomodo (Fase 4a) -----------------------------------------------------
+  Future<List<Contenedor>> contenedores() async {
+    final filas = await _c.from('v_contenedores').select().order('nombre', ascending: true);
+    return filas.map(Contenedor.desdeMapa).toList();
+  }
+
+  Future<String> crearContenedor({
+    required String id,
+    required String nombre,
+    required String tipo,
+    String? padreId,
+    Categoria? categoria,
+    FotoNueva? foto,
+    String? nota,
+  }) async {
+    final ruta = foto == null ? null : await subirFotoContenedor(id, foto);
+    final r = await _c.rpc('contenedor_crear', params: {
+      'p_id': id,
+      'p_nombre': nombre,
+      'p_tipo': tipo,
+      'p_padre': padreId,
+      'p_categoria': categoria?.codigo,
+      'p_foto': ruta,
+      'p_nota': nota,
+    });
+    return (r as Map)['codigo'] as String;
+  }
+
+  Future<void> editarContenedor(Contenedor actual,
+      {required String nombre, required String tipo, String? padreId, Categoria? categoria, FotoNueva? foto, String? nota}) async {
+    final ruta = foto == null ? actual.foto : await subirFotoContenedor(actual.id, foto);
+    await _c.rpc('contenedor_editar', params: {
+      'p_id': actual.id,
+      'p_nombre': nombre,
+      'p_tipo': tipo,
+      'p_padre': padreId,
+      'p_categoria': categoria?.codigo,
+      'p_foto': ruta,
+      'p_nota': nota,
+    });
+  }
+
+  Future<String> subirFotoContenedor(String id, FotoNueva foto) async {
+    if (foto.rutaSubida != null) return foto.rutaSubida!;
+    final ruta = 'contenedores/$id/${DateTime.now().toUtc().millisecondsSinceEpoch}_${_uuid.v4().substring(0, 8)}.jpg';
+    await _c.storage.from(Configuracion.almacenFotos).uploadBinary(ruta, foto.bytes,
+        fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: false));
+    return foto.rutaSubida = ruta;
+  }
+
+  Future<void> activarContenedor(String id, bool activo) => _c.rpc('contenedor_activar', params: {'p_id': id, 'p_activo': activo});
+
+  /// [contenedorId] null = quitar la ubicación. Devuelve cuántos cambiaron de lugar.
+  Future<int> acomodar(List<String> articulos, String? contenedorId) async =>
+      await _c.rpc('articulos_acomodar', params: {'p_articulos': articulos, 'p_contenedor': contenedorId}) as int;
+
+  Future<void> proponerUbicacion(String articuloId, String contenedorId, String? nota) =>
+      _c.rpc('ubicacion_proponer', params: {'p_articulo': articuloId, 'p_contenedor': contenedorId, 'p_nota': nota});
+
+  Future<List<PropuestaUbicacion>> propuestasUbicacion() async =>
+      _filas(await _c.rpc('ubicacion_propuestas')).map(PropuestaUbicacion.desdeMapa).toList();
+
+  Future<void> resolverPropuesta(String id, {required bool aceptar, String? motivo}) =>
+      _c.rpc('ubicacion_resolver', params: {'p_id': id, 'p_aceptar': aceptar, 'p_motivo': motivo});
+
+  Future<List<PrestamoListado>> prestamosDeContenedor(String contenedorId) async =>
+      _filas(await _c.rpc('prestamos_de_contenedor', params: {'p_contenedor': contenedorId})).map(PrestamoListado.desdeMapa).toList();
+
+  /// Varias devoluciones "en buen estado" de una vez (los daños se registran en la devolución de cada artículo).
+  Future<void> devolverVarios(Map<String, int> regresanPorPrestamo, String comando) => _c.rpc('devolucion_registrar', params: {
+        'p_lineas': [for (final e in regresanPorPrestamo.entries) {'prestamo_id': e.key, 'regresan': e.value}],
+        'p_comando': comando,
+      });
 }

@@ -50,7 +50,7 @@ def test_funciones_internas_con_search_path_fijo(bd):
 
 def test_vistas_internas_fuera_de_la_api(bd):
     publicas = {r["viewname"] for r in bd.execute("select viewname from pg_views where schemaname = 'public'").fetchall()}
-    assert publicas == {"v_inventario", "v_existencias", "v_historial_publico", "v_resumen_categoria"}
+    assert publicas == {"v_inventario", "v_existencias", "v_historial_publico", "v_resumen_categoria", "v_contenedores"}
 
 
 def test_hoy_es_la_fecha_de_merida(bd):

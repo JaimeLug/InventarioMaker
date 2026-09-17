@@ -25,6 +25,7 @@ class _InicioPantallaState extends ConsumerState<InicioPantalla> {
   bool _disponibles = false;
   bool _sinFoto = false;
   bool _porContar = false;
+  bool _sinUbicacion = false;
 
   @override
   void dispose() {
@@ -39,6 +40,7 @@ class _InicioPantallaState extends ConsumerState<InicioPantalla> {
       if (_conPendientes && a.pendientesAbiertos == 0) return false;
       if (_disponibles && (!a.prestable || a.disponible <= 0)) return false;
       if (_sinFoto && a.fotoPrincipal != null) return false;
+      if (_sinUbicacion && a.contenedorId != null) return false;
       if (_porContar && !(a.cantidadEstimada || a.conteoDesconocido)) return false;
       return palabras.every(a.textoBusqueda.contains);
     }).toList();
@@ -47,7 +49,7 @@ class _InicioPantallaState extends ConsumerState<InicioPantalla> {
   void _limpiar() => setState(() {
         _busqueda.clear();
         _categoria = null;
-        _conPendientes = _disponibles = _sinFoto = _porContar = false;
+        _conPendientes = _disponibles = _sinFoto = _porContar = _sinUbicacion = false;
       });
 
   @override
@@ -57,7 +59,14 @@ class _InicioPantallaState extends ConsumerState<InicioPantalla> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Inventario Maker'),
-        actions: const [_BotonesPublicos(), _BotonSolicitudes(), _BotonAvisos(), _BotonPorRevisar(), BarraSesion()],
+        actions: [
+          IconButton(icon: const Icon(Icons.qr_code_scanner), tooltip: 'Escanear etiqueta', onPressed: () => context.push('/escanear')),
+          const _BotonesPublicos(),
+          const _BotonSolicitudes(),
+          const _BotonAvisos(),
+          const _BotonPorRevisar(),
+          const BarraSesion(),
+        ],
       ),
       // Dar de alta es de administración; sin sesión, el botón no confunde a los alumnos.
       floatingActionButton: (ref.watch(sesionProvider).value?.administra ?? false)
@@ -123,6 +132,8 @@ class _InicioPantallaState extends ConsumerState<InicioPantalla> {
                     FilterChip(label: const Text('Con pendientes'), selected: _conPendientes, onSelected: (v) => setState(() => _conPendientes = v)),
                     const SizedBox(width: 8),
                     FilterChip(label: const Text('Por contar'), selected: _porContar, onSelected: (v) => setState(() => _porContar = v)),
+                    const SizedBox(width: 8),
+                    FilterChip(label: const Text('Sin ubicación'), selected: _sinUbicacion, onSelected: (v) => setState(() => _sinUbicacion = v)),
                     const SizedBox(width: 8),
                     FilterChip(label: const Text('Sin foto'), selected: _sinFoto, onSelected: (v) => setState(() => _sinFoto = v)),
                   ]),

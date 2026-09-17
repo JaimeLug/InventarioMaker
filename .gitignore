@@ -15,3 +15,5 @@ firebase-cuenta-servicio.json
 # Valores secretos preparados para copiar al panel de Supabase
 secretos/
 google-services.json
+# Caché de wrangler (Cloudflare)
+.wrangler/

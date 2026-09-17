@@ -4,8 +4,10 @@ import 'package:inventario_maker/acceso/sesion.dart';
 import 'package:inventario_maker/datos/errores.dart';
 import 'package:inventario_maker/modelos/articulo.dart';
 import 'package:inventario_maker/modelos/catalogos.dart';
+import 'package:inventario_maker/modelos/contenedores.dart';
 import 'package:inventario_maker/modelos/movimientos.dart';
 import 'package:inventario_maker/modelos/solicitudes.dart';
+import 'package:inventario_maker/util/etiquetas_pdf.dart';
 import 'package:inventario_maker/util/texto.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -200,6 +202,45 @@ void main() {
       final l = LineaCarrito(articuloId: 'a1', codigo: 'A-0101', nombre: 'Multímetro', unidad: 'pieza', cantidad: 2);
       final copia = LineaCarrito.desdeMapa(l.aMapa());
       expect((copia.articuloId, copia.cantidad, copia.foto), ('a1', 2, null));
+    });
+  });
+
+  group('Contenedores y etiquetas (Fase 4a)', () {
+    Contenedor c(String id, String nombre, {String? padre, String? categoria}) => Contenedor.desdeMapa({
+          'id': id, 'codigo': 'C-$id', 'nombre': nombre, 'tipo': 'CAJON', 'padre_id': padre, 'categoria_exclusiva': categoria,
+          'activo': true, 'ruta': nombre, 'articulos': 0, 'subcontenedores': 0,
+        });
+
+    test('el QR se entiende como dirección, código suelto o escrito a mano', () {
+      expect(codigoDeEscaneo('https://inventario-maker.pages.dev/q/C-0012'), 'C-0012');
+      expect(codigoDeEscaneo('http://localhost:8123/q/a-0101'), 'A-0101');
+      expect(codigoDeEscaneo(' c-12 '), 'C-0012');
+      expect(codigoDeEscaneo('A101'), 'A-0101');
+      expect(codigoDeEscaneo('https://www.google.com'), isNull);
+      expect(codigoDeEscaneo('LM-0057'), isNull);
+    });
+
+    test('el árbol pone a cada hijo después de su padre', () {
+      final arbol = comoArbol([c('3', 'Bolsa', padre: '2'), c('2', 'Cajón B', padre: '1'), c('1', 'Gabinete'), c('4', 'Anaquel')]);
+      expect([for (final (x, nivel) in arbol) '${x.nombre}:$nivel'], ['Anaquel:0', 'Gabinete:0', 'Cajón B:1', 'Bolsa:2']);
+    });
+
+    test('VEX y FTC solo en su contenedor exclusivo; mixto para lo demás', () {
+      final mixto = c('1', 'Cajón general');
+      final vex = c('2', 'Caja VEX', categoria: 'VEX');
+      expect((mixto.acepta(Categoria.herramientas), mixto.acepta(Categoria.vex)), (true, false));
+      expect((vex.acepta(Categoria.vex), vex.acepta(Categoria.ftc), vex.acepta(Categoria.comun)), (true, false, false));
+      expect(vex.nombreCategoria, 'Solo VEX');
+    });
+
+    test('la hoja de etiquetas lleva la dirección y reparte en hojas', () async {
+      expect(direccionDeCodigo('https://inventario-maker.pages.dev/', 'C-0012'), 'https://inventario-maker.pages.dev/q/C-0012');
+      final etiquetas = [for (var i = 1; i <= 31; i++) EtiquetaDatos(codigo: 'C-${i.toString().padLeft(4, '0')}', titulo: 'Cajón › $i', detalle: 'Gabinete 2 › Cajón')];
+      final pdf = await generarEtiquetas(etiquetas, FormatoEtiqueta.chica, 'https://x.pages.dev');
+      final texto = String.fromCharCodes(pdf);
+      expect(RegExp(r'/Type\s*/Page[^s]').allMatches(texto).length, 2);   // 30 por hoja: 31 ocupan 2
+      final empezada = await generarEtiquetas(etiquetas.take(2).toList(), FormatoEtiqueta.chica, 'https://x.pages.dev', empezarEn: 30);
+      expect(RegExp(r'/Type\s*/Page[^s]').allMatches(String.fromCharCodes(empezada)).length, 2);
     });
   });
 }

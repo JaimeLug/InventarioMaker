@@ -6,6 +6,7 @@ import '../../acceso/gate.dart';
 import '../../acceso/sesion.dart';
 import '../../datos/proveedores.dart';
 import '../../datos/repositorio.dart';
+import '../../modelos/contenedores.dart';
 import '../../modelos/movimientos.dart';
 import '../../util/texto.dart';
 import '../tema.dart';
@@ -20,11 +21,11 @@ class PorRevisarPantalla extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Por revisar')),
       body: Centrado(
-        child: CargaConAcceso<List<Incidencia>>(
+        child: CargaConAcceso<(List<Incidencia>, List<PropuestaUbicacion>)>(
           descripcion: 'revisar reportes',
           requisito: Requisito.administracion,
-          cargar: (repo) => repo.porRevisar(),
-          construir: (context, lista, recargar) => _Revision(lista: lista, recargar: recargar),
+          cargar: (repo) async => (await repo.porRevisar(), await repo.propuestasUbicacion()),
+          construir: (context, datos, recargar) => _Revision(lista: datos.$1, propuestas: datos.$2, recargar: recargar),
         ),
       ),
     );
@@ -32,9 +33,10 @@ class PorRevisarPantalla extends ConsumerWidget {
 }
 
 class _Revision extends ConsumerStatefulWidget {
-  const _Revision({required this.lista, required this.recargar});
+  const _Revision({required this.lista, required this.propuestas, required this.recargar});
 
   final List<Incidencia> lista;
+  final List<PropuestaUbicacion> propuestas;
   final Future<void> Function() recargar;
 
   @override
@@ -75,6 +77,26 @@ class _RevisionState extends ConsumerState<_Revision> {
     }
   }
 
+  Future<void> _propuesta(PropuestaUbicacion p, {required bool aceptar}) async {
+    String? motivo;
+    if (!aceptar) {
+      motivo = await pedirTexto(context, titulo: 'Rechazar', etiqueta: 'Por qué *', ayuda: 'Ej. Ya se regresó a su lugar', boton: 'Rechazar');
+      if (motivo == null || !mounted) return;
+    }
+    try {
+      final hecho = await conAcceso<bool>(context, ref, descripcion: aceptar ? 'mover "${p.articulo}"' : 'rechazar la propuesta',
+          requisito: Requisito.administracion, accion: () async {
+        await ref.read(repositorioProvider).resolverPropuesta(p.id, aceptar: aceptar, motivo: motivo);
+        return true;
+      });
+      if (hecho != true || !mounted) return;
+      refrescarArticulo(ref, p.articuloId);
+      await widget.recargar();
+    } on Object catch (e) {
+      if (mounted) avisarError(context, e);
+    }
+  }
+
   Future<void> _preguntar(Incidencia i) async {
     final texto = await pedirTexto(context, titulo: 'Pedir más información', etiqueta: 'Pregunta para ${i.reportadaPor}', boton: 'Enviar');
     if (texto == null || !mounted) return;
@@ -96,11 +118,33 @@ class _RevisionState extends ConsumerState<_Revision> {
       _inicializado = true;
     }
     final tema = Theme.of(context);
-    if (widget.lista.isEmpty) {
+    if (widget.lista.isEmpty && widget.propuestas.isEmpty) {
       return ListView(children: const [Padding(padding: EdgeInsets.all(32), child: Center(child: Text('No hay nada por revisar.')))]);
     }
     final elegidos = _consumos.where((c) => _consumosElegidos.contains(c.id)).toList();
     return ListView(padding: const EdgeInsets.all(12), children: [
+      if (widget.propuestas.isNotEmpty) ...[
+        Text('Artículos encontrados en otro lugar', style: tema.textTheme.titleMedium),
+        for (final p in widget.propuestas)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('${p.articuloCodigo} · ${p.articulo}', style: tema.textTheme.titleSmall),
+                Text('Registrado en: ${p.actual ?? 'sin ubicación'}'),
+                Text('${p.propuestaPor} lo encontró en: ${p.propuesta}'),
+                if (p.nota != null) Text(p.nota!, style: tema.textTheme.bodySmall),
+                Text(fechaHora(p.propuestaEn), style: tema.textTheme.bodySmall),
+                Wrap(spacing: 8, children: [
+                  FilledButton(onPressed: () => _propuesta(p, aceptar: true), child: const Text('Moverlo ahí')),
+                  OutlinedButton(onPressed: () => _propuesta(p, aceptar: false), child: const Text('Rechazar')),
+                  TextButton(onPressed: () => context.push('/articulo/${p.articuloId}'), child: const Text('Ver artículo')),
+                ]),
+              ]),
+            ),
+          ),
+        const SizedBox(height: 16),
+      ],
       if (_reportes.isNotEmpty) Text('Reportes de pérdida y daño', style: tema.textTheme.titleMedium),
       for (final i in _reportes)
         Card(

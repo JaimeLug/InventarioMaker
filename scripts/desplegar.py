@@ -4,6 +4,7 @@ Uso:
   python scripts/desplegar.py funciones     Publica las funciones del servidor (supabase/functions)
   python scripts/desplegar.py secretos      Pasa a las funciones la llave de correo y la de Firebase
   python scripts/desplegar.py auth          Cierra el registro público de cuentas
+  python scripts/desplegar.py web           Compila la app web y la publica en Cloudflare Pages
 
 Necesita SUPABASE_ACCESS_TOKEN en .env (supabase.com/dashboard/account/tokens).
 Usa el CLI de Supabase por npx: no hay que instalarlo ni tener Docker.
@@ -112,11 +113,58 @@ def auth(_args) -> None:
     print(f"Registro público de cuentas ahora: {'cerrado' if despues.get('disable_signup') else 'ABIERTO'}")
 
 
+PROYECTO_PAGES = "inventario-maker"
+
+
+def web(_args) -> None:
+    """Compila y publica la app web. La dirección queda en la configuración: la usan los QR y los correos."""
+    env = db.leer_env()
+    token, cuenta = env.get("CLOUDFLARE_API_TOKEN"), env.get("CLOUDFLARE_ACCOUNT_ID")
+    if not token or not cuenta:
+        sys.exit("Faltan CLOUDFLARE_API_TOKEN y CLOUDFLARE_ACCOUNT_ID en .env (ver README, sección Cloudflare).")
+    flutter = "flutter.bat" if os.name == "nt" else "flutter"
+    print("Compilando la app web…")
+    if subprocess.run([flutter, "build", "web", "--release"], cwd=db.RAIZ / "app").returncode != 0:
+        sys.exit("No compiló la app web.")
+
+    entorno_cf = {**os.environ, "CLOUDFLARE_API_TOKEN": token, "CLOUDFLARE_ACCOUNT_ID": cuenta}
+    api = f"https://api.cloudflare.com/client/v4/accounts/{cuenta}/pages/projects"
+
+    def llamar(metodo: str, url: str, cuerpo: dict | None = None) -> dict:
+        solicitud = urllib.request.Request(url, method=metodo, data=json.dumps(cuerpo).encode() if cuerpo else None,
+                                           headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(solicitud, timeout=30) as r:
+                return json.loads(r.read())
+        except urllib.error.HTTPError as e:
+            return json.loads(e.read() or b"{}") | {"_estado": e.code}
+
+    proyecto = llamar("GET", f"{api}/{PROYECTO_PAGES}")
+    if not proyecto.get("success"):
+        creado = llamar("POST", api, {"name": PROYECTO_PAGES, "production_branch": "main"})
+        if not creado.get("success"):
+            sys.exit(f"Cloudflare no creó el proyecto: {creado.get('errors')}")
+        proyecto = creado
+    subdominio = proyecto["result"]["subdomain"]
+
+    npx = "npx.cmd" if os.name == "nt" else "npx"
+    r = subprocess.run([npx, "--yes", "wrangler@4", "pages", "deploy", str(db.RAIZ / "app" / "build" / "web"),
+                        "--project-name", PROYECTO_PAGES, "--branch", "main", "--commit-dirty=true"],
+                       cwd=db.RAIZ, env=entorno_cf)
+    if r.returncode != 0:
+        sys.exit("No se publicó la app web.")
+
+    url = f"https://{subdominio}"
+    with db.conectar(nube=True) as conn:
+        conn.execute("update public.configuracion set valor = to_jsonb(%s::text) where clave = 'url_app'", (url,))
+    print(f"App web publicada en {url} (guardada como dirección de la app para QR y correos)")
+
+
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8")
     p = argparse.ArgumentParser(description="Publicar en Supabase")
-    p.add_argument("que", choices=["funciones", "secretos", "auth"])
-    {"funciones": funciones, "secretos": secretos, "auth": auth}[p.parse_args().que](None)
+    p.add_argument("que", choices=["funciones", "secretos", "auth", "web"])
+    {"funciones": funciones, "secretos": secretos, "auth": auth, "web": web}[p.parse_args().que](None)
 
 
 if __name__ == "__main__":

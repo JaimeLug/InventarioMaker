@@ -30,6 +30,8 @@ class Articulo {
     this.estadoFisico,
     this.estadoFisicoTexto,
     this.ubicacionRuta,
+    this.contenedorId,
+    this.contenedorCodigo,
     this.ubicacionTexto,
     this.numResguardo,
     this.numSerie,
@@ -57,6 +59,8 @@ class Articulo {
   final String? estadoFisicoTexto;
   final Etiquetado etiquetado;
   final String? ubicacionRuta;
+  final String? contenedorId;
+  final String? contenedorCodigo;
   final String? ubicacionTexto;
   final String? numResguardo;
   final String? numSerie;
@@ -99,6 +103,8 @@ class Articulo {
         estadoFisicoTexto: m['estado_fisico_texto'] as String?,
         etiquetado: Etiquetado.desde(m['etiquetado'] as String),
         ubicacionRuta: m['ubicacion_ruta'] as String?,
+        contenedorId: m['contenedor_id'] as String?,
+        contenedorCodigo: m['contenedor_codigo'] as String?,
         ubicacionTexto: m['ubicacion_texto'] as String?,
         numResguardo: m['num_resguardo'] as String?,
         numSerie: m['num_serie'] as String?,

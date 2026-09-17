@@ -8,7 +8,8 @@ Control de inventario en tiempo real del Laboratorio Maker. Diseño aprobado en 
 | 2 | Consulta abierta, acceso con PIN/contraseña, roles, artículos y fotos | Hecha |
 | 3 | Movimientos y bitácora | Hecha |
 | 3b | Solicitudes sin cuenta, código de entrega, adeudos | **Lista para probar** |
-| 4 | Pendientes, contenedores, etiquetas QR y escaneo | Pendiente |
+| 4a | Contenedores, etiquetas QR, escaneo y acomodo | **Lista para probar** |
+| 4b | Pendientes del levantamiento, desglose de kits, inventario periódico | Pendiente |
 | 5 | Reportes, Excel para Contraloría y acta PDF | Pendiente |
 | 6 | Trabajo sin conexión y ajustes de móvil | Pendiente |
 
@@ -187,6 +188,31 @@ Por ahora el remitente es el Gmail del responsable; cuando haya correo instituci
 El secreto `FIREBASE_CUENTA_SERVICIO` se pone a mano en Supabase → Edge Functions → Secrets: su valor queda en `secretos/FIREBASE_CUENTA_SERVICIO.txt` (ignorado por git).
 
 Sin esos datos la app funciona igual y los avisos se ven en la campana.
+
+## Fase 4a: contenedores, etiquetas y escaneo
+
+| Qué | Dónde en la app | Quién |
+|---|---|---|
+| Ver el árbol de contenedores y lo que hay en cada uno | Menú → **Contenedores**, o escaneando su QR | Cualquiera |
+| Alta y edición de contenedores (tipo, dentro de cuál, Solo VEX / Solo FTC / mixto, foto) | Contenedores → **Nuevo contenedor**; en un contenedor, menú ⋮ | Responsable, sub administración |
+| Acomodar artículos en un contenedor | Contenedor → **Agregar artículos**; en la ficha, Ubicación → **Cambiar** | Responsable, sub administración |
+| Proponer otra ubicación ("lo encontré en otro lugar") | Ficha → Ubicación → **Está en otro lugar** | Docentes; se aceptan en **Por revisar** |
+| Prestar varios y devolver varios desde un contenedor | Contenedor → **Prestar varios** / **Devolver varios** | Cualquier cuenta |
+| Escanear una etiqueta (o escribir su código) | Inicio → ícono de escáner | Cualquiera |
+| Imprimir etiquetas QR (carta 3 × 10 o 2 × 5) | Menú → **Imprimir etiquetas** | Responsable, sub administración |
+| Desactivar un contenedor (solo vacío) | Contenedor → menú ⋮ | Responsable, sub administración |
+
+Los QR llevan la dirección de la app web (`…/q/C-0012`): al escanearlos con la cámara normal del celular abren el contenedor o la ficha. **Publica la web antes de imprimir**; la pantalla de etiquetas no deja imprimir mientras la dirección sea `localhost`.
+
+**Publicar la app web (Cloudflare Pages).** En `.env`, `CLOUDFLARE_API_TOKEN` (token con permiso *Account · Cloudflare Pages · Edit*) y `CLOUDFLARE_ACCOUNT_ID`. Luego:
+
+```bash
+.venv\Scripts\python scripts\desplegar.py web
+```
+
+Compila, publica y guarda la dirección en la configuración (la usan los QR y los enlaces de los correos). Para actualizar la web después de un cambio, se vuelve a correr.
+
+**Hojas de etiquetas:** carta de 30 etiquetas de 2⅝ × 1 pulgadas (Avery 5160 o genérica compatible) o de 10 de 4 × 2 pulgadas (Avery 5163), para gabinetes. Imprime al 100 % ("tamaño real", sin ajustar a la página). Con **Empezar en la etiqueta número** se aprovecha una hoja ya usada.
 
 ## Estructura
 

@@ -17,6 +17,7 @@ import '../widgets/fotos.dart';
 import '../../acceso/hoja_acceso.dart';
 import '../../datos/local.dart';
 import 'acciones_articulo.dart' as acciones;
+import 'contenedores_pantallas.dart' show elegirContenedor;
 
 /// Ficha del artículo (F-01): fotos, cifras, datos, pendientes e historial.
 class FichaPantalla extends ConsumerWidget {
@@ -91,7 +92,7 @@ class _Contenido extends ConsumerWidget {
         _Dato('Categoría', [a.categoria.nombre, a.subcategoria].whereType<String>().join(' · ')),
         _Dato('Estado', a.estadoInventario.nombre),
         _Dato('Estado físico', a.estadoFisicoTexto ?? a.estadoFisico?.nombre),
-        _Dato('Ubicación', a.ubicacion ?? 'Sin asignar'),
+        _Ubicacion(articulo: a),
         _Dato('Número de resguardo', a.numResguardo),
         _Dato('Número de serie', a.numSerie),
         _Dato('Etiquetado', '${a.etiquetado.nombre}: ${a.etiquetado.explicacion}'),
@@ -335,6 +336,63 @@ class _Dato extends StatelessWidget {
   Widget build(BuildContext context) {
     if (valor == null || valor!.isEmpty) return const SizedBox.shrink();
     return ListTile(dense: true, title: Text(etiqueta), subtitle: SelectableText(valor!, style: Theme.of(context).textTheme.bodyLarge));
+  }
+}
+
+/// Dónde vive el artículo. Administración lo cambia; un docente propone si lo encontró en otro lugar.
+class _Ubicacion extends ConsumerWidget {
+  const _Ubicacion({required this.articulo});
+
+  final Articulo articulo;
+
+  Future<void> _cambiar(BuildContext context, WidgetRef ref, bool administra) async {
+    final a = articulo;
+    final destino = await elegirContenedor(context, ref,
+        para: a.categoria,
+        excluir: a.contenedorId,
+        titulo: administra ? 'Mover "${a.nombre}" a…' : '¿Dónde lo encontraste?',
+        permitirNinguno: administra);
+    if (destino == null || !context.mounted) return;
+    try {
+      if (administra) {
+        await conAcceso<int>(context, ref,
+            descripcion: 'cambiar la ubicación de "${a.nombre}"',
+            requisito: Requisito.administracion,
+            accion: () => ref.read(repositorioProvider).acomodar([a.id], destino.id.isEmpty ? null : destino.id));
+      } else {
+        final hecho = await conAcceso<bool>(context, ref, descripcion: 'proponer otra ubicación', requisito: Requisito.docente, accion: () async {
+          await ref.read(repositorioProvider).proponerUbicacion(a.id, destino.id, null);
+          return true;
+        });
+        if (hecho == true && context.mounted) avisar(context, 'Propuesta enviada al responsable del laboratorio.');
+      }
+      refrescarArticulo(ref, a.id);
+    } on Object catch (e) {
+      if (context.mounted) avisarError(context, e);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final a = articulo;
+    final sesion = ref.watch(sesionProvider).value;
+    final administra = sesion?.administra ?? false;
+    return ListTile(
+      dense: true,
+      title: const Text('Ubicación'),
+      subtitle: Text(a.ubicacion ?? 'Sin asignar', style: Theme.of(context).textTheme.bodyLarge),
+      onTap: a.contenedorCodigo == null ? null : () => context.push('/contenedor/${a.contenedorCodigo}'),
+      trailing: !a.activo || sesion == null
+          ? (a.contenedorCodigo == null ? null : const Icon(Icons.chevron_right))
+          : Row(mainAxisSize: MainAxisSize.min, children: [
+              if (administra && a.etiquetado == Etiquetado.individual)
+                IconButton(icon: const Icon(Icons.qr_code_2), tooltip: 'Imprimir su etiqueta', onPressed: () => context.push('/etiquetas?codigos=${a.codigo}')),
+              TextButton(
+                onPressed: () => _cambiar(context, ref, administra),
+                child: Text(administra ? 'Cambiar' : 'Está en otro lugar'),
+              ),
+            ]),
+    );
   }
 }
 

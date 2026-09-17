@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../datos/errores.dart';
 import '../../datos/repositorio.dart';
 
-/// Destino de los QR: /q/A-0101 abre la ficha. Los contenedores (C-xxxx) llegan en la Fase 4.
+/// Destino de los QR: /q/A-0101 abre la ficha del artículo y /q/C-0012 el contenido del contenedor.
 class CodigoPantalla extends ConsumerStatefulWidget {
   const CodigoPantalla({super.key, required this.codigo});
 
@@ -21,13 +21,13 @@ class _CodigoPantallaState extends ConsumerState<CodigoPantalla> {
   @override
   void initState() {
     super.initState();
-    _resolver();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _resolver());
   }
 
   Future<void> _resolver() async {
     final codigo = widget.codigo.toUpperCase();
     if (codigo.startsWith('C-')) {
-      setState(() => _mensaje = 'Los contenedores se habilitan en la Fase 4.');
+      context.go('/contenedor/$codigo');
       return;
     }
     try {

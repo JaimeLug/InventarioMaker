@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../acceso/sesion.dart';
 import '../modelos/articulo.dart';
+import '../modelos/contenedores.dart';
 import '../modelos/otros.dart';
 import 'repositorio.dart';
 
@@ -39,6 +40,9 @@ final porRevisarProvider = FutureProvider<int>((ref) async {
   return ref.watch(repositorioProvider).porRevisarContar();
 });
 
+/// Todos los contenedores (activos y desactivados); se filtran en el dispositivo.
+final contenedoresProvider = FutureProvider<List<Contenedor>>((ref) => ref.watch(repositorioProvider).contenedores());
+
 /// Solicitudes por revisar y por entregar (responsable y sub administración).
 final solicitudesContarProvider = FutureProvider<int>((ref) async {
   final sesion = await ref.watch(sesionProvider.future);
@@ -63,6 +67,7 @@ void refrescarArticulo(WidgetRef ref, String id) => refrescarArticuloEn(ref.cont
 void refrescarArticuloEn(ProviderContainer c, String id) {
   c.invalidate(articulosProvider);
   c.invalidate(articuloProvider(id));
+  c.invalidate(contenedoresProvider);
   c.invalidate(fotosProvider(id));
   c.invalidate(historialProvider(id));
   c.invalidate(pendientesProvider(id));

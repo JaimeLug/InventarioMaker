@@ -7,6 +7,9 @@ import 'pantallas/articulo_form_pantalla.dart';
 import 'pantallas/avisos_ajustes_pantallas.dart';
 import 'pantallas/bitacora_pantalla.dart';
 import 'pantallas/codigo_pantalla.dart';
+import 'pantallas/contenedores_pantallas.dart';
+import 'pantallas/escanear_pantalla.dart';
+import 'pantallas/etiquetas_pantalla.dart';
 import 'pantallas/cuentas_pantalla.dart';
 import 'pantallas/devolucion_pantalla.dart';
 import 'pantallas/ficha_pantalla.dart';
@@ -29,6 +32,24 @@ final rutasProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/articulo/:id/prestar', builder: (_, e) => PrestamoPantalla(articuloId: e.pathParameters['id']!)),
       GoRoute(path: '/articulo/:id/devolver', builder: (_, e) => DevolucionPantalla(articuloId: e.pathParameters['id']!)),
       GoRoute(path: '/articulo/:id/reportar', builder: (_, e) => ReportePantalla(articuloId: e.pathParameters['id']!)),
+      GoRoute(
+        path: '/prestar',
+        builder: (_, e) => PrestamoPantalla(lineas: {
+          for (final par in (e.uri.queryParameters['lineas'] ?? '').split(',').where((x) => x.contains(':')))
+            par.split(':').first: int.tryParse(par.split(':').last) ?? 1,
+        }),
+      ),
+      // Fase 4a: contenedores, escaneo y etiquetas
+      GoRoute(path: '/contenedores', builder: (_, _) => const ContenedoresPantalla()),
+      GoRoute(path: '/contenedores/nuevo', builder: (_, e) => ContenedorFormPantalla(padreId: e.uri.queryParameters['padre'])),
+      GoRoute(path: '/contenedor/:codigo', builder: (_, e) => ContenedorPantalla(codigo: e.pathParameters['codigo']!.toUpperCase())),
+      GoRoute(path: '/contenedor/:codigo/editar', builder: (_, e) => ContenedorFormPantalla(codigo: e.pathParameters['codigo']!.toUpperCase())),
+      GoRoute(path: '/contenedor/:codigo/devolver', builder: (_, e) => DevolverVariosPantalla(codigo: e.pathParameters['codigo']!.toUpperCase())),
+      GoRoute(path: '/escanear', builder: (_, _) => const EscanearPantalla()),
+      GoRoute(
+        path: '/etiquetas',
+        builder: (_, e) => EtiquetasPantalla(codigos: (e.uri.queryParameters['codigos'] ?? '').split(',').where((c) => c.isNotEmpty).toList()),
+      ),
       GoRoute(path: '/mis-prestamos', builder: (_, _) => const MisPrestamosPantalla()),
       GoRoute(path: '/mis-reportes', builder: (_, _) => const MisReportesPantalla()),
       GoRoute(path: '/por-revisar', builder: (_, _) => const PorRevisarPantalla()),
@@ -47,7 +68,7 @@ final rutasProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/expediente/:id', builder: (_, e) => ExpedientePantalla(prestamoId: e.pathParameters['id']!)),
       GoRoute(path: '/avisos', builder: (_, _) => const AvisosPantalla()),
       GoRoute(path: '/ajustes', builder: (_, _) => const AjustesPantalla()),
-      // Los QR de las etiquetas llevan esta dirección (Fase 4): /q/A-0101 o /q/C-0012
+      // Los QR de las etiquetas llevan esta dirección: /q/A-0101 o /q/C-0012
       GoRoute(path: '/q/:codigo', builder: (_, e) => CodigoPantalla(codigo: e.pathParameters['codigo']!)),
       GoRoute(path: '/cuentas', builder: (_, _) => const CuentasPantalla()),
       GoRoute(path: '/mi-cuenta', builder: (_, _) => const MiCuentaPantalla()),

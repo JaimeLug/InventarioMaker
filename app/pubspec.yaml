@@ -47,6 +47,9 @@ dependencies:
     sdk: flutter
   firebase_core: ^4.15.0
   firebase_messaging: ^16.7.0
+  mobile_scanner: '>=7.1.4 <7.2.0' # 7.2 o más nuevo pide compilar con Android 16 (API 36)
+  pdf: ^3.11.3
+  printing: ^5.14.3
 
 dev_dependencies:
   flutter_test:
