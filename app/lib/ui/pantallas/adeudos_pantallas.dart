@@ -1,3 +1,4 @@
+import '../armazon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -22,9 +23,10 @@ class AdeudosPantalla extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Adeudos'), actions: const [BarraSesion()]),
-      body: Centrado(
+    return TmArmazon(
+      ruta: '/adeudos',
+      titulo: 'Adeudos',
+      child: Centrado(
         child: CargaConAcceso<List<Adeudo>>(
           descripcion: 'ver los adeudos',
           requisito: Requisito.administracion,
@@ -73,9 +75,12 @@ class PersonaPantalla extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Expediente de la persona'), actions: const [BarraSesion()]),
-      body: Centrado(
+    return TmArmazon(
+      ruta: '/adeudos',
+      titulo: 'Expediente de la persona',
+      migas: const [('Adeudos', '/adeudos')],
+      conRegresar: true,
+      child: Centrado(
         child: CargaConAcceso<Map<String, dynamic>>(
           descripcion: 'ver el expediente',
           requisito: Requisito.administracion,

@@ -1,3 +1,4 @@
+import '../armazon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -19,9 +20,11 @@ class AvisosPantalla extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Avisos')),
-      body: Centrado(
+    return TmArmazon(
+      ruta: '/avisos',
+      titulo: 'Avisos',
+      conRegresar: true,
+      child: Centrado(
         child: CargaConAcceso<List<Aviso>>(
           descripcion: 'ver tus avisos',
           requisito: Requisito.docente,
@@ -120,9 +123,10 @@ class AjustesPantalla extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final config = ref.watch(configuracionProvider);
-    return Scaffold(
-      appBar: AppBar(title: const Text('Ajustes')),
-      body: Centrado(
+    return TmArmazon(
+      ruta: '/ajustes',
+      titulo: 'Ajustes',
+      child: Centrado(
         child: config.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(child: Text('$e')),

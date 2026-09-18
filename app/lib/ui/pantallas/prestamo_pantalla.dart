@@ -1,3 +1,6 @@
+import '../armazon.dart';
+import '../componentes/componentes.dart';
+import '../diseno/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -154,21 +157,25 @@ class _PrestamoPantallaState extends ConsumerState<PrestamoPantalla> {
   @override
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(title: const Text('Prestar'), actions: const [BarraSesion()]),
-      bottomNavigationBar: SafeArea(
+    return TmArmazon(
+      ruta: '/prestar',
+      titulo: 'Prestar',
+      conRegresar: true,
+      barraInferior: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: FilledButton.icon(
-            onPressed: _guardando || _lineas.isEmpty ? null : _prestar,
-            icon: _guardando
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.outbox),
-            label: const Text('Prestar'),
+          padding: const EdgeInsets.all(Espacio.x3),
+          child: TmBoton(
+            _lineas.isEmpty ? 'Elige qué se lleva' : 'Prestar ${_lineas.fold<int>(0, (s, l) => s + l.cantidad)} pieza${_lineas.fold<int>(0, (s, l) => s + l.cantidad) == 1 ? '' : 's'}',
+            tipo: TipoBoton.primario,
+            icono: Ico.prestar,
+            tamano: TamanoBoton.grande,
+            expandido: true,
+            cargando: _guardando,
+            onTap: _lineas.isEmpty ? null : _prestar,
           ),
         ),
       ),
-      body: Centrado(
+      child: Centrado(
         child: ListView(padding: const EdgeInsets.all(16), children: [
           Text('Qué se lleva', style: tema.textTheme.titleMedium),
           if (_lineas.isEmpty) const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator())),

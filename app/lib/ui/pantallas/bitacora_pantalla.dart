@@ -1,3 +1,4 @@
+import '../armazon.dart';
 import 'package:flutter/material.dart';
 
 import '../../acceso/sesion.dart';
@@ -29,9 +30,10 @@ class BitacoraPantalla extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Bitácora')),
-      body: Centrado(
+    return TmArmazon(
+      ruta: '/bitacora',
+      titulo: 'Bitácora',
+      child: Centrado(
         child: CargaConAcceso<List<EventoBitacora>>(
           descripcion: 'ver la bitácora',
           requisito: Requisito.subadministracion,

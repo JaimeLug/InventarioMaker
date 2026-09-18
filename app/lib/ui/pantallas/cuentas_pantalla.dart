@@ -1,3 +1,5 @@
+import '../armazon.dart';
+import '../diseno/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -98,12 +100,13 @@ class _CuentasPantallaState extends ConsumerState<CuentasPantalla> {
   @override
   Widget build(BuildContext context) {
     final yo = ref.watch(sesionProvider).value;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Cuentas')),
-      floatingActionButton: yo != null && yo.administra && _cuentas != null
-          ? FloatingActionButton.extended(onPressed: () => _nueva(yo), icon: const Icon(Icons.person_add), label: const Text('Nueva cuenta'))
+    return TmArmazon(
+      ruta: '/cuentas',
+      titulo: 'Cuentas',
+      fab: yo != null && yo.administra && _cuentas != null
+          ? FloatingActionButton.extended(onPressed: () => _nueva(yo), icon: const Icon(Ico.cuentas), label: const Text('Nueva cuenta'))
           : null,
-      body: Centrado(
+      child: Centrado(
         child: _cuentas == null
             ? Center(
                 child: _error == null

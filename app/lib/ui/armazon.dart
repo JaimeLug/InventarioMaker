@@ -29,6 +29,8 @@ class TmArmazon extends ConsumerWidget {
     this.migas = const [],
     this.conRegresar = false,
     this.anchoContenido = 1560.0,
+    this.bajoTitulo,
+    this.barraInferior,
   });
 
   /// La ruta de esta pantalla, para marcar dónde estás.
@@ -43,6 +45,12 @@ class TmArmazon extends ConsumerWidget {
   final List<(String, String)> migas;
   final bool conRegresar;
   final double anchoContenido;
+
+  /// Pestañas o barra de progreso debajo del título.
+  final PreferredSizeWidget? bajoTitulo;
+
+  /// Barra fija abajo del contenido (por ejemplo, el botón de "Prestar").
+  final Widget? barraInferior;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -142,6 +150,7 @@ class TmArmazon extends ConsumerWidget {
           const BarraSesion(),
           const SizedBox(width: Espacio.x2),
         ],
+        bottom: bajoTitulo,
       ),
       child: Column(children: [
         const _FranjaSinConexion(),
@@ -151,6 +160,15 @@ class TmArmazon extends ConsumerWidget {
             child: ConstrainedBox(constraints: BoxConstraints(maxWidth: anchoContenido), child: child),
           ),
         ),
+        if (barraInferior != null)
+          Material(
+            color: context.tm.superficie,
+            elevation: 0,
+            child: DecoratedBox(
+              decoration: BoxDecoration(border: Border(top: BorderSide(color: context.tm.borde))),
+              child: barraInferior,
+            ),
+          ),
       ]),
     );
   }

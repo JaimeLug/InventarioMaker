@@ -1,3 +1,5 @@
+import '../armazon.dart';
+import '../componentes/componentes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -184,14 +186,22 @@ class _ArticuloFormPantallaState extends ConsumerState<ArticuloFormPantalla> {
   @override
   Widget build(BuildContext context) {
     if (!_esAlta && _original == null) {
-      return Scaffold(appBar: AppBar(title: const Text('Editar artículo')), body: const Center(child: CircularProgressIndicator()));
+      return const TmArmazon(
+        ruta: '/inventario',
+        titulo: 'Editar artículo',
+        conRegresar: true,
+        child: Padding(padding: EdgeInsets.all(Espacio.x4), child: TmCargandoLista(renglones: 4)),
+      );
     }
     final tema = Theme.of(context);
 
     return PopScope(
       canPop: !_guardando,
       child: Scaffold(
-        appBar: AppBar(title: Text(_esAlta ? 'Nuevo artículo' : 'Editar ${_original!.codigo}'), actions: const [BarraSesion()]),
+        appBar: AppBar(
+          title: Text(_esAlta ? 'Nuevo artículo' : 'Editar ${_original!.codigo}'),
+          actions: const [BarraSesion(), SizedBox(width: Espacio.x2)],
+        ),
         bottomNavigationBar: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(12),

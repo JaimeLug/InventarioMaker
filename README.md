@@ -14,7 +14,8 @@ Control de inventario en tiempo real del Laboratorio Maker. Diseño aprobado en 
 | 6 | Trabajo sin conexión (celular) | Hecha |
 | 7a | Rediseño: sistema de diseño, tema claro/oscuro y componentes | Hecha |
 | 7b | Rediseño: navegación, tablero, inventario y ficha | Hecha |
-| 7c | Rediseño: herramientas, contenedores, pendientes, conteos, inventarios y kits | **Lista para probar** |
+| 7c | Rediseño: herramientas, contenedores, pendientes, conteos, inventarios y kits | Hecha |
+| 7d | Rediseño: préstamo, devolución, solicitudes, adeudos, reportes y administración | **Lista para probar** |
 
 ## Fase 1: cómo probarla
 
@@ -269,6 +270,19 @@ La app guarda en el celular el catálogo, contenedores, pendientes, préstamos a
 - Todo entra al servidor por `comando_sin_conexion`: se aplica una sola vez aunque llegue repetido. Si el material ya se movió en físico (dos préstamos de la última pieza) se acepta **con conflicto**, se crea el pendiente "Contar físicamente" y se avisa. Si es imposible (devolver dos veces) va a *Por resolver*.
 - Se envía a nombre de quien lo capturó: si la sesión venció, la app pide que entre esa misma persona.
 - Menú → **Conflictos sin conexión** (responsable y sub administración). Lo recibido más de 72 h después queda marcado "Registrado tarde".
+
+## Fase 7d: flujos y administración
+
+Con esta etapa termina el rediseño: **todas** las pantallas usan el armazón (barra lateral en computadora, barra inferior en el celular) y los componentes del sistema.
+
+| Pantalla | Qué cambió |
+|---|---|
+| **Prestar** | Botón fijo abajo que dice cuántas piezas se llevan ("Prestar 3 piezas") y se deshabilita hasta que elijas algo |
+| **Recibir devolución** | Armazón con regreso y migas; si el artículo no tiene nada prestado, lo explica en vez de dejar la pantalla vacía |
+| **Mis préstamos y Préstamos abiertos** | Tarjetas con avatar de la persona, insignia de vencido o fecha de vencimiento y acciones (recibir, extender, expediente) |
+| **Solicitudes, Adeudos y expedientes** | Armazón con pestañas y migas para regresar |
+| **Reportes, Cuentas, Bitácora, Avisos, Ajustes, Mi cuenta, Sin conexión** | Armazón nuevo; en la computadora se navega sin perder la barra lateral |
+| **Formulario de artículo** | Conserva sus secciones y validaciones, con el tema y los estados de carga del sistema |
 
 ## Fase 7c: taller y control
 

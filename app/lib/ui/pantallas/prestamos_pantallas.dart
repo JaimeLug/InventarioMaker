@@ -1,3 +1,6 @@
+import '../componentes/componentes.dart';
+import '../diseno/iconos.dart';
+import '../armazon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,9 +20,10 @@ class MisPrestamosPantalla extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Mis préstamos')),
-      body: Centrado(
+    return TmArmazon(
+      ruta: '/mis-prestamos',
+      titulo: 'Mis préstamos',
+      child: Centrado(
         child: CargaConAcceso<List<PrestamoListado>>(
           descripcion: 'ver tus préstamos',
           requisito: Requisito.docente,
@@ -37,9 +41,10 @@ class PrestamosAbiertosPantalla extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Préstamos abiertos')),
-      body: Centrado(
+    return TmArmazon(
+      ruta: '/prestamos-abiertos',
+      titulo: 'Préstamos abiertos',
+      child: Centrado(
         child: CargaConAcceso<List<PrestamoListado>>(
           descripcion: 'ver los préstamos abiertos',
           requisito: Requisito.administracion,
@@ -82,31 +87,60 @@ class _ListaPrestamos extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tema = Theme.of(context);
-    if (lista.isEmpty) return ListView(children: [Padding(padding: const EdgeInsets.all(32), child: Center(child: Text(vacio)))]);
+    if (lista.isEmpty) {
+      return ListView(children: [
+        TmVacio(
+          icono: Ico.prestamos,
+          titulo: vacio,
+          texto: 'Cuando salga material del taller, aparece aquí con su fecha de regreso.',
+          acciones: [TmBoton('Ir al inventario', icono: Ico.inventario, onTap: () => context.push('/inventario'))],
+        ),
+      ]);
+    }
     final vencidos = lista.where((p) => p.vencido).length;
-    return ListView(padding: const EdgeInsets.all(12), children: [
+    return ListView(padding: const EdgeInsets.all(Espacio.x3), children: [
       if (vencidos > 0)
-        Card(
-          color: tema.colorScheme.errorContainer,
-          child: ListTile(leading: const Icon(Icons.warning_amber), title: Text('$vencidos vencido${vencidos == 1 ? '' : 's'}')),
+        Padding(
+          padding: const EdgeInsets.only(bottom: Espacio.x3),
+          child: TmAlerta(
+            titulo: '$vencidos préstamo${vencidos == 1 ? '' : 's'} vencido${vencidos == 1 ? '' : 's'}',
+            texto: 'Material que ya debió regresar al taller.',
+            tono: Tono.error,
+            icono: Ico.reloj,
+          ),
         ),
       for (final p in lista)
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(12),
+        Padding(
+          padding: const EdgeInsets.only(bottom: Espacio.x3),
+          child: TmTarjeta(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('${conUnidad(p.pendiente, p.unidad)} · ${p.nombre}', style: tema.textTheme.titleSmall),
-              Text('${p.codigo} · a cargo de ${p.aMiNombre ? 'ti' : p.aCargo}${p.autorizo == null ? '' : ' · prestó ${p.autorizo}'}',
-                  style: tema.textTheme.bodySmall),
+              Row(children: [
+                TmAvatar(p.aMiNombre ? 'Tú' : p.aCargo),
+                const SizedBox(width: Espacio.x3),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                    Text('${conUnidad(p.pendiente, p.unidad)} · ${p.nombre}', style: tema.textTheme.titleMedium),
+                    Text('${p.codigo} · a cargo de ${p.aMiNombre ? 'ti' : p.aCargo}${p.autorizo == null ? '' : ' · prestó ${p.autorizo}'}',
+                        style: tema.textTheme.bodySmall),
+                  ]),
+                ),
+                TmInsignia(
+                  p.vencido ? 'Vencido' : 'Vence ${fecha(p.venceEn)}',
+                  tono: p.vencido ? Tono.error : Tono.neutro,
+                  icono: p.vencido ? Ico.alerta : Ico.reloj,
+                ),
+              ]),
+              const SizedBox(height: Espacio.x2),
               Text(
-                '${p.vencido ? 'VENCIDO desde' : 'Vence'} ${fechaHora(p.venceEn)}${p.extensiones > 0 ? ' (extendido ${p.extensiones} vez)' : ''}',
-                style: tema.textTheme.bodyMedium?.copyWith(color: p.vencido ? tema.colorScheme.error : null),
+                '${p.vencido ? 'Vencido desde' : 'Vence'} ${fechaHora(p.venceEn)}${p.extensiones > 0 ? ' · extendido ${p.extensiones} vez' : ''}',
+                style: tema.textTheme.bodySmall,
               ),
-              Wrap(spacing: 8, children: [
-                TextButton(onPressed: () => context.push('/articulo/${p.articuloId}/devolver'), child: const Text('Recibir devolución')),
-                TextButton(onPressed: () => _extender(context, ref, p), child: const Text('Extender')),
+              const SizedBox(height: Espacio.x2),
+              Wrap(spacing: Espacio.x2, runSpacing: Espacio.x2, children: [
+                TmBoton('Recibir devolución', tamano: TamanoBoton.chico, icono: Ico.devolver, onTap: () => context.push('/articulo/${p.articuloId}/devolver')),
+                TmBoton('Extender', tipo: TipoBoton.fantasma, tamano: TamanoBoton.chico, icono: Ico.reloj, onTap: () => _extender(context, ref, p)),
                 if (p.autorizo != null)
-                  TextButton(onPressed: () => context.push('/expediente/${p.id}'), child: const Text('Expediente')),
+                  TmBoton('Expediente', tipo: TipoBoton.fantasma, tamano: TamanoBoton.chico, onTap: () => context.push('/expediente/${p.id}')),
               ]),
             ]),
           ),

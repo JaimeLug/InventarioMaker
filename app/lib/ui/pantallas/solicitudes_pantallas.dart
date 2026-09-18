@@ -1,3 +1,4 @@
+import '../armazon.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -33,13 +34,11 @@ class BandejaPantalla extends StatelessWidget {
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: _grupos.length,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Solicitudes'),
-          actions: const [BarraSesion()],
-          bottom: TabBar(isScrollable: true, tabs: [for (final g in _grupos) Tab(text: g.$2)]),
-        ),
-        body: TabBarView(children: [
+      child: TmArmazon(
+        ruta: '/solicitudes',
+        titulo: 'Solicitudes',
+        bajoTitulo: TabBar(isScrollable: true, tabs: [for (final g in _grupos) Tab(text: g.$2)]),
+        child: TabBarView(children: [
           for (final g in _grupos)
             Centrado(
               child: CargaConAcceso<List<SolicitudResumen>>(
@@ -122,9 +121,12 @@ class SolicitudDetallePantalla extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Solicitud'), actions: const [BarraSesion()]),
-      body: Centrado(
+    return TmArmazon(
+      ruta: '/solicitudes',
+      titulo: 'Solicitud',
+      migas: const [('Solicitudes', '/solicitudes')],
+      conRegresar: true,
+      child: Centrado(
         child: CargaConAcceso<SolicitudDetalle>(
           descripcion: 'ver la solicitud',
           requisito: Requisito.administracion,

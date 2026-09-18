@@ -1,3 +1,5 @@
+import '../armazon.dart';
+import '../componentes/componentes.dart';
 import '../componentes/campo.dart';
 import '../diseno/modo_tema.dart';
 import 'package:flutter/material.dart';
@@ -19,9 +21,11 @@ class MiCuentaPantalla extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sesion = ref.watch(sesionProvider);
-    return Scaffold(
-      appBar: AppBar(title: const Text('Mi cuenta')),
-      body: Centrado(
+    return TmArmazon(
+      ruta: '/mi-cuenta',
+      titulo: 'Mi cuenta',
+      conRegresar: true,
+      child: Centrado(
         child: sesion.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, _) => const Center(child: Text('No se pudo leer la sesión.')),

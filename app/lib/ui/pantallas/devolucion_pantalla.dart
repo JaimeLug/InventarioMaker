@@ -1,3 +1,6 @@
+import '../armazon.dart';
+import '../componentes/componentes.dart';
+import '../diseno/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,7 +13,6 @@ import '../../datos/repositorio.dart';
 import '../../modelos/movimientos.dart';
 import '../../util/texto.dart';
 import '../tema.dart';
-import '../widgets/comunes.dart';
 import '../widgets/formularios.dart';
 
 /// Recibir una devolución (F-08): total, parcial, con daño o con faltantes perdidos.
@@ -22,15 +24,23 @@ class DevolucionPantalla extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final articulo = ref.watch(articuloProvider(articuloId)).value;
-    return Scaffold(
-      appBar: AppBar(title: Text(articulo == null ? 'Recibir devolución' : 'Devolución: ${articulo.codigo}'), actions: const [BarraSesion()]),
-      body: Centrado(
+    return TmArmazon(
+      ruta: '/devolver',
+      titulo: articulo == null ? 'Recibir devolución' : 'Devolución · ${articulo.codigo}',
+      conRegresar: true,
+      child: Centrado(
         child: CargaConAcceso<List<PrestamoAbierto>>(
           descripcion: 'recibir una devolución',
           requisito: Requisito.docente,
           cargar: (repo) => repo.prestamosDeArticulo(articuloId),
           construir: (context, prestamos, _) => prestamos.isEmpty
-              ? ListView(children: const [Padding(padding: EdgeInsets.all(32), child: Center(child: Text('No hay préstamos abiertos de este artículo.')))])
+              ? ListView(children: const [
+                  TmVacio(
+                    icono: Ico.devolver,
+                    titulo: 'No hay nada prestado de este artículo',
+                    texto: 'Cuando alguien se lo lleve, aquí podrás recibirlo de regreso.',
+                  ),
+                ])
               : _Devolucion(articuloId: articuloId, nombre: articulo?.nombre ?? '', unidad: articulo?.unidad ?? 'pieza', prestamos: prestamos),
         ),
       ),

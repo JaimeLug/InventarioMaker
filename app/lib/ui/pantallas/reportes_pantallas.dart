@@ -135,13 +135,11 @@ class _ReportesPantallaState extends ConsumerState<ReportesPantalla> {
     final ciclo = cicloEscolar(DateTime.now());
     final esCiclo = _periodo.desde == ciclo.desde && _periodo.hasta == ciclo.hasta;
     final ocupado = _estado != null;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Reportes'),
-        actions: const [BarraSesion()],
-        bottom: ocupado ? const PreferredSize(preferredSize: Size.fromHeight(4), child: LinearProgressIndicator()) : null,
-      ),
-      body: Centrado(
+    return TmArmazon(
+      ruta: '/reportes',
+      titulo: 'Reportes',
+      bajoTitulo: ocupado ? const PreferredSize(preferredSize: Size.fromHeight(4), child: LinearProgressIndicator()) : null,
+      child: Centrado(
         child: ListView(padding: const EdgeInsets.all(12), children: [
           if (ocupado) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(_estado!, style: Theme.of(context).textTheme.bodyLarge)),
           Card(
