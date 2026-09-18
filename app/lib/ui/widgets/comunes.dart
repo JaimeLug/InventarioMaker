@@ -70,6 +70,7 @@ class BarraSesion extends ConsumerWidget {
                   const PopupMenuItem(value: 'ajustes', child: ListTile(leading: Icon(Icons.tune), title: Text('Ajustes'))),
                 ],
                 const PopupMenuItem(value: 'mi-cuenta', child: ListTile(leading: Icon(Icons.person_outline), title: Text('Mi cuenta'))),
+                const PopupMenuItem(value: 'diseno', child: ListTile(leading: Icon(Icons.palette_outlined), title: Text('Sistema de diseño'))),
                 const PopupMenuItem(value: 'salir', child: ListTile(leading: Icon(Icons.logout), title: Text('Cerrar sesión'))),
               ],
               child: Padding(

@@ -14,6 +14,7 @@ import 'pantallas/pendientes_pantallas.dart';
 import 'pantallas/escanear_pantalla.dart';
 import 'pantallas/etiquetas_pantalla.dart';
 import 'pantallas/cuentas_pantalla.dart';
+import 'pantallas/diseno_pantalla.dart';
 import 'pantallas/devolucion_pantalla.dart';
 import 'pantallas/ficha_pantalla.dart';
 import 'pantallas/inicio_pantalla.dart';
@@ -92,6 +93,7 @@ final rutasProvider = Provider<GoRouter>((ref) {
       // Los QR de las etiquetas llevan esta dirección: /q/A-0101 o /q/C-0012
       GoRoute(path: '/q/:codigo', builder: (_, e) => CodigoPantalla(codigo: e.pathParameters['codigo']!)),
       GoRoute(path: '/cuentas', builder: (_, _) => const CuentasPantalla()),
+      GoRoute(path: '/diseno', builder: (_, _) => const DisenoPantalla()),
       GoRoute(path: '/mi-cuenta', builder: (_, _) => const MiCuentaPantalla()),
     ],
     errorBuilder: (context, _) => Scaffold(

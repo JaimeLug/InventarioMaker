@@ -13,6 +13,7 @@ import 'datos/avisos_celular.dart';
 import 'datos/proveedores.dart';
 import 'datos/repositorio.dart';
 import 'sin_conexion/cola.dart';
+import 'ui/diseno/modo_tema.dart';
 import 'ui/rutas.dart';
 import 'ui/tema.dart';
 
@@ -141,6 +142,8 @@ class _InventarioAppState extends ConsumerState<InventarioApp> with WidgetsBindi
         scaffoldMessengerKey: _mensajes,
         title: 'Inventario Maker',
         theme: temaClaro(),
+        darkTheme: temaOscuro(),
+        themeMode: ref.watch(modoTemaProvider),
         routerConfig: ref.watch(rutasProvider),
         locale: const Locale('es', 'MX'),
         supportedLocales: const [Locale('es', 'MX')],

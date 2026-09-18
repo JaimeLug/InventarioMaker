@@ -56,6 +56,7 @@ dependencies:
   path_provider: ^2.1.5
   connectivity_plus: '>=6.1.0 <6.2.0' # 7.x pide compilar con Android 16 (API 36)
   image: ^4.3.0
+  lucide_icons_flutter: ^3.1.20
 
 dev_dependencies:
   flutter_test:
@@ -78,6 +79,32 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Fuentes del sistema de diseño (Fase 7). Van empacadas para que se vean igual sin conexión.
+  # Barlow e IBM Plex Mono: licencia SIL Open Font License (ver assets/fuentes/OFL-*.txt).
+  fonts:
+    - family: Barlow
+      fonts:
+        - asset: assets/fuentes/Barlow-Regular.ttf
+        - asset: assets/fuentes/Barlow-Medium.ttf
+          weight: 500
+        - asset: assets/fuentes/Barlow-SemiBold.ttf
+          weight: 600
+        - asset: assets/fuentes/Barlow-Bold.ttf
+          weight: 700
+    - family: BarlowCondensed
+      fonts:
+        - asset: assets/fuentes/BarlowCondensed-SemiBold.ttf
+          weight: 600
+        - asset: assets/fuentes/BarlowCondensed-Bold.ttf
+          weight: 700
+    - family: IBMPlexMono
+      fonts:
+        - asset: assets/fuentes/IBMPlexMono-Regular.ttf
+        - asset: assets/fuentes/IBMPlexMono-Medium.ttf
+          weight: 500
+        - asset: assets/fuentes/IBMPlexMono-SemiBold.ttf
+          weight: 600
 
   # To add assets to your application, add an assets section, like this:
   # assets:

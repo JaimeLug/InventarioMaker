@@ -11,7 +11,8 @@ Control de inventario en tiempo real del Laboratorio Maker. Diseño aprobado en 
 | 4a | Contenedores, etiquetas QR, escaneo y acomodo | Hecha |
 | 4b | Pendientes del levantamiento, desglose de kits, inventario periódico | Hecha |
 | 5 | Reportes, Excel para Contraloría y acta PDF | Hecha |
-| 6 | Trabajo sin conexión (celular) | **Lista para probar** |
+| 6 | Trabajo sin conexión (celular) | Hecha |
+| 7a | Rediseño: sistema de diseño, tema claro/oscuro y componentes | **Lista para probar** |
 
 ## Fase 1: cómo probarla
 
@@ -266,6 +267,22 @@ La app guarda en el celular el catálogo, contenedores, pendientes, préstamos a
 - Todo entra al servidor por `comando_sin_conexion`: se aplica una sola vez aunque llegue repetido. Si el material ya se movió en físico (dos préstamos de la última pieza) se acepta **con conflicto**, se crea el pendiente "Contar físicamente" y se avisa. Si es imposible (devolver dos veces) va a *Por resolver*.
 - Se envía a nombre de quien lo capturó: si la sesión venció, la app pide que entre esa misma persona.
 - Menú → **Conflictos sin conexión** (responsable y sub administración). Lo recibido más de 72 h después queda marcado "Registrado tarde".
+
+## Fase 7a: sistema de diseño "Taller Maker"
+
+Rediseño (propuesta y prototipo: artifact "Taller Maker · Rediseño"). La etapa 7a es la base; las pantallas se rearman en 7b, 7c y 7d.
+
+| Qué | Dónde |
+|---|---|
+| Colores, espacios, radios, sombras y puntos de quiebre | `app/lib/ui/diseno/tokens.dart` (`context.tm.primario`, `Espacio.x4`, `Redondeo.rLg`…) |
+| Tipografías empacadas: Barlow, Barlow Condensed e IBM Plex Mono | `app/lib/ui/diseno/tipografia.dart` y `app/assets/fuentes/` (licencia OFL) |
+| Iconos Lucide, con el icono de cada categoría, subcategoría y movimiento | `app/lib/ui/diseno/iconos.dart` (`Ico.prestar`, `Ico.deCategoria(...)`) |
+| Tema claro y oscuro de Material armado con los tokens | `app/lib/ui/diseno/tema.dart` |
+| Componentes: botones, campos, insignias, existencias, tarjetas, alertas, estados y navegación | `app/lib/ui/componentes/` |
+| Catálogo para revisarlos en claro y oscuro | Menú → **Sistema de diseño** (`/diseno`) |
+| Elegir claro, oscuro o "como el celular" | **Mi cuenta** → Apariencia |
+
+Reglas al programar: ninguna pantalla escribe colores, tamaños ni radios a mano (todo sale de los tokens) y ninguna arma su propio botón, insignia o tarjeta (usa los componentes). Las pruebas de `app/test/diseno_test.dart` revisan el contraste de los dos temas y que los estados no dependan solo del color.
 
 ## Estructura
 

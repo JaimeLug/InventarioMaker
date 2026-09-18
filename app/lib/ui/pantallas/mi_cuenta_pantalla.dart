@@ -1,3 +1,5 @@
+import '../componentes/campo.dart';
+import '../diseno/modo_tema.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,6 +36,20 @@ class MiCuentaPantalla extends ConsumerWidget {
                 )
               : ListView(padding: const EdgeInsets.all(16), children: [
                   ListTile(leading: const Icon(Icons.person), title: Text(s.nombre), subtitle: Text(s.rol.nombre)),
+                  ListTile(
+                    leading: const Icon(Icons.palette_outlined),
+                    title: const Text('Apariencia'),
+                    subtitle: Text('Tema: ${ModoTema.nombre(ref.watch(modoTemaProvider))}'),
+                    trailing: TmSegmento<ThemeMode>(
+                      valor: ref.watch(modoTemaProvider),
+                      opciones: const [
+                        (ThemeMode.light, 'Claro', null),
+                        (ThemeMode.dark, 'Oscuro', null),
+                        (ThemeMode.system, 'Auto', null),
+                      ],
+                      onCambio: (m) => ref.read(modoTemaProvider.notifier).cambiar(m),
+                    ),
+                  ),
                   ListTile(
                     leading: Icon(s.nivel == NivelSesion.pin ? Icons.dialpad : Icons.verified_user_outlined),
                     title: Text(s.nivel == NivelSesion.pin ? 'Entraste con PIN' : 'Entraste con contraseña'),

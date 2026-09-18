@@ -1,37 +1,31 @@
 import 'package:flutter/material.dart';
 
-ThemeData temaClaro() {
-  final colores = ColorScheme.fromSeed(seedColor: const Color(0xFF00695C), surface: const Color(0xFFF6F7F6));
-  return ThemeData(
-    colorScheme: colores,
-    useMaterial3: true,
-    visualDensity: VisualDensity.standard,
-    inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder(), filled: false),
-    // Botones y renglones grandes: se usa en el taller, con el celular en una mano.
-    filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(minimumSize: const Size(64, 48))),
-    outlinedButtonTheme: OutlinedButtonThemeData(style: OutlinedButton.styleFrom(minimumSize: const Size(64, 48))),
-    listTileTheme: const ListTileThemeData(minVerticalPadding: 10),
-    chipTheme: const ChipThemeData(padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2)),
-    snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating),
-  );
-}
+import 'diseno/tema.dart';
 
-/// Colores de avisos que deben distinguirse de un vistazo.
+export 'diseno/tokens.dart' show TmColores, TmContexto, Espacio, Redondeo, Sombra, Duracion, Quiebre;
+
+/// Tema claro y oscuro del sistema "Taller Maker" (Fase 7).
+ThemeData temaClaro() => temaTallerMaker(Brightness.light);
+ThemeData temaOscuro() => temaTallerMaker(Brightness.dark);
+
+/// Colores de avisos que deben distinguirse de un vistazo (se conservan de fases
+/// anteriores y ahora salen de los tokens).
 abstract final class Avisos {
-  static const sinClasificar = Color(0xFFB3261E);
-  static const pendiente = Color(0xFF8A5A00);
-  static const estimado = Color(0xFF5B5F97);
+  static const sinClasificar = Color(0xFFB91C1C);
+  static const pendiente = Color(0xFF9A5B00);
+  static const estimado = Color(0xFF0B63D6);
 }
 
-/// Ancho máximo del contenido en pantallas grandes (sub administración usa computadora).
-const anchoContenido = 900.0;
+/// Ancho máximo del contenido en pantallas grandes.
+const anchoContenido = 1100.0;
 
 class Centrado extends StatelessWidget {
-  const Centrado({super.key, required this.child});
+  const Centrado({super.key, required this.child, this.ancho = anchoContenido});
 
   final Widget child;
+  final double ancho;
 
   @override
   Widget build(BuildContext context) =>
-      Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: anchoContenido), child: child));
+      Center(child: ConstrainedBox(constraints: BoxConstraints(maxWidth: ancho), child: child));
 }
