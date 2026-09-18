@@ -1,3 +1,6 @@
+import '../diseno/iconos.dart';
+import '../componentes/componentes.dart';
+import '../armazon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -31,8 +34,15 @@ class ContenedoresPantalla extends ConsumerStatefulWidget {
 }
 
 class _ContenedoresPantallaState extends ConsumerState<ContenedoresPantalla> {
+  final _buscador = TextEditingController();
   String _texto = '';
   bool _desactivados = false;
+
+  @override
+  void dispose() {
+    _buscador.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,16 +50,17 @@ class _ContenedoresPantallaState extends ConsumerState<ContenedoresPantalla> {
     final administra = ref.watch(sesionProvider).value?.administra ?? false;
     final articulos = ref.watch(articulosProvider).value ?? const <Articulo>[];
     final sinUbicar = articulos.where((a) => a.contenedorId == null).length;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Contenedores'), actions: const [BarraSesion()]),
-      floatingActionButton: administra
+    return TmArmazon(
+      ruta: '/contenedores',
+      titulo: 'Contenedores',
+      fab: administra
           ? FloatingActionButton.extended(
               onPressed: () => context.push('/contenedores/nuevo'),
-              icon: const Icon(Icons.add),
+              icon: const Icon(Ico.nuevo),
               label: const Text('Nuevo contenedor'),
             )
           : null,
-      body: Centrado(
+      child: Centrado(
         child: Cargando<List<Contenedor>>(
           valor: contenedores,
           alReintentar: () => ref.invalidate(contenedoresProvider),
@@ -65,16 +76,21 @@ class _ContenedoresPantallaState extends ConsumerState<ContenedoresPantalla> {
               child: ListView(padding: const EdgeInsets.only(bottom: 96), children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: TextField(
-                    decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Buscar por nombre o código'),
-                    onChanged: (t) => setState(() => _texto = t),
+                  child: TmBuscador(
+                    controlador: _buscador,
+                    pista: 'Buscar por nombre o código',
+                    onCambio: (t) => setState(() => _texto = t),
                   ),
                 ),
                 if (sinUbicar > 0)
-                  ListTile(
-                    leading: const Icon(Icons.location_off_outlined, color: Avisos.pendiente),
-                    title: Text('$sinUbicar artículo${sinUbicar == 1 ? '' : 's'} sin ubicación'),
-                    subtitle: Text(administra ? 'Abre un contenedor y toca "Agregar artículos".' : 'Todavía no se acomodan en un contenedor.'),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: TmAlerta(
+                      titulo: '$sinUbicar artículo${sinUbicar == 1 ? '' : 's'} sin ubicación',
+                      texto: administra ? 'Abre un contenedor y toca "Agregar artículos".' : 'Todavía no se acomodan en un contenedor.',
+                      tono: Tono.aviso,
+                      icono: Ico.ubicacion,
+                    ),
                   ),
                 SwitchListTile(
                   value: _desactivados,
@@ -83,11 +99,15 @@ class _ContenedoresPantallaState extends ConsumerState<ContenedoresPantalla> {
                   dense: true,
                 ),
                 if (todos.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Text(administra
-                        ? 'Todavía no hay contenedores. Empieza por los gabinetes y después sus cajones.'
-                        : 'Todavía no hay contenedores registrados.'),
+                  TmVacio(
+                    icono: Ico.contenedores,
+                    titulo: 'Todavía no hay contenedores',
+                    texto: administra
+                        ? 'Empieza por los gabinetes y después sus cajones: así cada artículo tiene dónde vivir.'
+                        : 'Cuando el responsable los registre, aparecen aquí.',
+                    acciones: [
+                      if (administra) TmBoton('Nuevo contenedor', tipo: TipoBoton.secundario, icono: Ico.nuevo, onTap: () => context.push('/contenedores/nuevo')),
+                    ],
                   ),
                 for (final (c, nivel) in arbol)
                   ListTile(

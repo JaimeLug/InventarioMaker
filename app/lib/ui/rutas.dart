@@ -17,6 +17,7 @@ import 'pantallas/cuentas_pantalla.dart';
 import 'pantallas/diseno_pantalla.dart';
 import 'pantallas/devolucion_pantalla.dart';
 import 'pantallas/ficha_pantalla.dart';
+import 'pantallas/herramientas_pantalla.dart';
 import 'pantallas/inventario_pantalla.dart';
 import 'pantallas/tablero_pantalla.dart';
 import 'pantallas/mi_cuenta_pantalla.dart';
@@ -34,6 +35,7 @@ final rutasProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/', builder: (_, _) => const TableroPantalla()),
       GoRoute(path: '/inventario', builder: (_, _) => const InventarioPantalla()),
+      GoRoute(path: '/herramientas', builder: (_, _) => const HerramientasPantalla()),
       GoRoute(path: '/articulo/nuevo', builder: (_, _) => const ArticuloFormPantalla()),
       GoRoute(path: '/articulo/:id', builder: (_, e) => FichaPantalla(id: e.pathParameters['id']!)),
       GoRoute(path: '/articulo/:id/editar', builder: (_, e) => ArticuloFormPantalla(id: e.pathParameters['id'])),

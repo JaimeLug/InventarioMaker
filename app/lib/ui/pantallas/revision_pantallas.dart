@@ -1,3 +1,4 @@
+import '../armazon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,9 +19,10 @@ class PorRevisarPantalla extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Por revisar')),
-      body: Centrado(
+    return TmArmazon(
+      ruta: '/por-revisar',
+      titulo: 'Por revisar',
+      child: Centrado(
         child: CargaConAcceso<(List<Incidencia>, List<PropuestaUbicacion>)>(
           descripcion: 'revisar reportes',
           requisito: Requisito.administracion,

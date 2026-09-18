@@ -1,3 +1,6 @@
+import '../armazon.dart';
+import '../componentes/componentes.dart';
+import '../diseno/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,22 +45,25 @@ class InventariosPantalla extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final administra = ref.watch(sesionProvider).value?.administra ?? false;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Inventarios'), actions: const [BarraSesion()]),
-      body: Centrado(
+    return TmArmazon(
+      ruta: '/inventarios',
+      titulo: 'Inventarios periódicos',
+      child: Centrado(
         child: CargaConAcceso<List<InventarioResumen>>(
           descripcion: 'ver los inventarios',
           requisito: Requisito.docente,
           cargar: (repo) => repo.inventarios(),
           construir: (context, lista, recargar) => ListView(padding: const EdgeInsets.all(12), children: [
             if (administra && !lista.any((i) => i.abierto))
-              FilledButton.icon(
-                onPressed: () => _abrir(context, ref, recargar),
-                icon: const Icon(Icons.playlist_add_check),
-                label: const Text('Abrir un inventario'),
-              ),
+              TmBoton('Abrir un inventario', tipo: TipoBoton.primario, icono: Ico.contar, expandido: true, onTap: () => _abrir(context, ref, recargar)),
             if (lista.isEmpty)
-              const Padding(padding: EdgeInsets.all(24), child: Text('Todavía no se ha hecho ningún inventario periódico.')),
+              TmVacio(
+                icono: Ico.contar,
+                titulo: 'Todavía no se ha hecho ningún inventario',
+                texto: administra
+                    ? 'Un inventario periódico sirve para contar todo (o una parte) y dejar acta de lo que salió.'
+                    : 'Cuando el responsable abra uno, aquí podrás contar lo que te toque.',
+              ),
             for (final i in lista)
               Card(
                 child: ListTile(

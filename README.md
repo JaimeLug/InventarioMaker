@@ -13,7 +13,8 @@ Control de inventario en tiempo real del Laboratorio Maker. Diseño aprobado en 
 | 5 | Reportes, Excel para Contraloría y acta PDF | Hecha |
 | 6 | Trabajo sin conexión (celular) | Hecha |
 | 7a | Rediseño: sistema de diseño, tema claro/oscuro y componentes | Hecha |
-| 7b | Rediseño: navegación, tablero, inventario y ficha | **Lista para probar** |
+| 7b | Rediseño: navegación, tablero, inventario y ficha | Hecha |
+| 7c | Rediseño: herramientas, contenedores, pendientes, conteos, inventarios y kits | **Lista para probar** |
 
 ## Fase 1: cómo probarla
 
@@ -268,6 +269,18 @@ La app guarda en el celular el catálogo, contenedores, pendientes, préstamos a
 - Todo entra al servidor por `comando_sin_conexion`: se aplica una sola vez aunque llegue repetido. Si el material ya se movió en físico (dos préstamos de la última pieza) se acepta **con conflicto**, se crea el pendiente "Contar físicamente" y se avisa. Si es imposible (devolver dos veces) va a *Por resolver*.
 - Se envía a nombre de quien lo capturó: si la sesión venció, la app pide que entre esa misma persona.
 - Menú → **Conflictos sin conexión** (responsable y sub administración). Lo recibido más de 72 h después queda marcado "Registrado tarde".
+
+## Fase 7c: taller y control
+
+| Pantalla | Qué cambió |
+|---|---|
+| **Herramientas** (`/herramientas`, nueva) | Tablero de taller: cada herramienta en su hueco, agrupadas por tipo (mano, medición, soldadura, fabricación, corte, seguridad). Contorno punteado = prestada; gris = fuera de servicio; borde continuo = en su lugar. Arriba, cuántas están en su lugar, prestadas, fuera de servicio y fijas |
+| **Contenedores** | Armazón nuevo, buscador del sistema, aviso de "artículos sin ubicación" y estado vacío que explica por dónde empezar |
+| **Pendientes y Conteos** | Armazón nuevo con acceso directo entre ellos |
+| **Inventarios periódicos** | Armazón nuevo y estado vacío que explica para qué sirve |
+| **Kits y revisiones** | Pasa al grupo "Control" del menú, con estado vacío que explica qué es una revisión |
+
+Las herramientas no son una categoría nueva: es la misma información del inventario (categorías Herramientas y Herramientas eléctricas) vista como tablero.
 
 ## Fase 7b: navegación, tablero, inventario y ficha
 

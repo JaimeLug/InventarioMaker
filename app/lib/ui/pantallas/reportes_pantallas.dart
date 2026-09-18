@@ -1,3 +1,6 @@
+import '../armazon.dart';
+import '../componentes/componentes.dart';
+import '../diseno/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -448,10 +451,11 @@ class _RevisionesKitPantallaState extends ConsumerState<RevisionesKitPantalla> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Revisiones de kits'), actions: const [BarraSesion()]),
-        floatingActionButton: FloatingActionButton.extended(onPressed: _nueva, icon: const Icon(Icons.add), label: const Text('Nueva revisión')),
-        body: Centrado(
+  Widget build(BuildContext context) => TmArmazon(
+        ruta: '/revisiones-kit',
+        titulo: 'Kits y revisiones',
+        fab: FloatingActionButton.extended(onPressed: _nueva, icon: const Icon(Ico.nuevo), label: const Text('Nueva revisión')),
+        child: Centrado(
           child: CargaConAcceso<List<Map<String, dynamic>>>(
             key: _llave,
             descripcion: 'ver las revisiones de kits',
@@ -461,7 +465,13 @@ class _RevisionesKitPantallaState extends ConsumerState<RevisionesKitPantalla> {
               const ListTile(
                 title: Text('Se anota lo que se encontró de cada kit contra su lista de fábrica. No cambia las existencias: sirve para el reporte de faltantes.'),
               ),
-              if (lista.isEmpty) const ListTile(title: Text('Todavía no hay revisiones.')),
+              if (lista.isEmpty)
+                TmVacio(
+                  icono: Ico.kits,
+                  titulo: 'Todavía no hay revisiones',
+                  texto: 'Una revisión anota, renglón por renglón, qué traía el kit y qué encontraste. Alimenta el reporte de faltantes.',
+                  acciones: [TmBoton('Nueva revisión', tipo: TipoBoton.secundario, icono: Ico.nuevo, onTap: _nueva)],
+                ),
               for (final r in lista)
                 ListTile(
                   title: Text('${r['nombre']}'),

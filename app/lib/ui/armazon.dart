@@ -59,6 +59,7 @@ class TmArmazon extends ConsumerWidget {
       TmGrupoNav('Operación', [
         TmDestino('/', sesion == null ? 'Catálogo' : 'Tablero', Ico.tablero),
         if (sesion != null) TmDestino('/inventario', 'Inventario', Ico.inventario),
+        if (sesion != null) TmDestino('/herramientas', 'Herramientas', Ico.herramientas),
         TmDestino('/escanear', 'Escanear', Ico.escanear),
         if (sesion == null) TmDestino('/solicitud', 'Mi solicitud', Ico.solicitudes, conteo: ref.watch(carritoProvider).length),
         if (sesion != null && !administra) TmDestino('/mis-prestamos', 'Mis préstamos', Ico.prestamos),
@@ -70,7 +71,8 @@ class TmArmazon extends ConsumerWidget {
         TmGrupoNav('Control', [
           TmDestino('/pendientes', 'Pendientes', Ico.pendientes, conteo: pendientes),
           TmDestino('/conteos', 'Conteos', Ico.contar),
-          TmDestino('/inventarios', 'Inventarios', Ico.kits),
+          TmDestino('/inventarios', 'Inventarios', Ico.contar),
+          if (administra) TmDestino('/revisiones-kit', 'Kits y revisiones', Ico.kits),
           TmDestino('/contenedores', 'Contenedores', Ico.contenedores),
           if (administra) TmDestino('/por-revisar', 'Por revisar', Ico.aviso, conteo: porRevisar, urgente: porRevisar > 0),
           if (administra) TmDestino('/conflictos', 'Conflictos', Ico.sinConexion),
@@ -78,7 +80,6 @@ class TmArmazon extends ConsumerWidget {
       if (administra)
         TmGrupoNav('Administración', [
           TmDestino('/reportes', 'Reportes', Ico.reportes),
-          TmDestino('/revisiones-kit', 'Revisiones de kits', Ico.kits),
           TmDestino('/adeudos', 'Adeudos', Ico.adeudos),
           TmDestino('/etiquetas', 'Etiquetas', Ico.qr),
           TmDestino('/cuentas', 'Cuentas', Ico.cuentas),

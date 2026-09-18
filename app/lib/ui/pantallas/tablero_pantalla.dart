@@ -97,7 +97,7 @@ class _Tablero extends ConsumerWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 mainAxisSpacing: Espacio.x3,
                 crossAxisSpacing: Espacio.x3,
-                childAspectRatio: compacto ? 1.5 : 1.9,
+                childAspectRatio: compacto ? 1.9 : 2.2,
                 children: [
                   TmKpi(etiqueta: 'Artículos', valor: '${todos.length}', pie: 'renglones en 7 categorías', icono: Ico.inventario, onTap: () => context.push('/inventario')),
                   TmKpi(etiqueta: 'Disponibles', valor: '$disponibles', pie: 'listos para prestar', iconoPie: Ico.ok, onTap: () => context.push('/inventario')),

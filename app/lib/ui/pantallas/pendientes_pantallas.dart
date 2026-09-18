@@ -1,3 +1,6 @@
+import '../diseno/iconos.dart';
+import '../componentes/componentes.dart';
+import '../armazon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,15 +39,16 @@ class _PendientesPantallaState extends ConsumerState<PendientesPantalla> {
     final pendientes = ref.watch(pendientesAbiertosProvider);
     final articulos = {for (final a in ref.watch(articulosProvider).value ?? const <Articulo>[]) a.id: a};
     final tema = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pendientes'),
-        actions: [
-          IconButton(icon: const Icon(Icons.pin_outlined), tooltip: 'Conteos', onPressed: () => context.push('/conteos')),
-          const BarraSesion(),
-        ],
-      ),
-      body: Centrado(
+    return TmArmazon(
+      ruta: '/pendientes',
+      titulo: 'Pendientes',
+      acciones: [
+        Padding(
+          padding: const EdgeInsets.only(right: Espacio.x2),
+          child: TmBoton('Conteos', icono: Ico.contar, tamano: TamanoBoton.chico, onTap: () => context.push('/conteos')),
+        ),
+      ],
+      child: Centrado(
         child: Cargando<List<PendienteAbierto>>(
           valor: pendientes,
           alReintentar: () => ref.invalidate(pendientesAbiertosProvider),
@@ -435,9 +439,10 @@ class ConteosPantalla extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Conteos'), actions: const [BarraSesion()]),
-      body: Centrado(
+    return TmArmazon(
+      ruta: '/conteos',
+      titulo: 'Conteos por aplicar',
+      child: Centrado(
         child: CargaConAcceso<List<ConteoPorAplicar>>(
           descripcion: 'ver los conteos',
           requisito: Requisito.docente,
