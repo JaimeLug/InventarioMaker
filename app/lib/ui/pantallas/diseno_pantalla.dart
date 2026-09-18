@@ -7,7 +7,6 @@ import '../componentes/componentes.dart';
 import '../diseno/iconos.dart';
 import '../diseno/modo_tema.dart';
 import '../diseno/tipografia.dart';
-import '../diseno/tokens.dart';
 import '../tema.dart';
 
 /// Catálogo del sistema de diseño: aquí se revisa cada componente en claro y en oscuro

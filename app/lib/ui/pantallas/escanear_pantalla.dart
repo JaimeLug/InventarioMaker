@@ -3,6 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../modelos/contenedores.dart';
+import '../componentes/componentes.dart';
+import '../diseno/iconos.dart';
+import '../diseno/tipografia.dart';
 import '../tema.dart';
 
 /// Escáner (F-03): lee el QR de un artículo o contenedor. Si la cámara no está disponible o la etiqueta
@@ -50,9 +53,10 @@ class _EscanearPantallaState extends State<EscanearPantalla> {
     final tema = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Escanear etiqueta'),
+        title: Text(widget.devolver ? 'Escanear lo que regresa' : 'Escanear etiqueta'),
         actions: [
-          IconButton(icon: const Icon(Icons.flashlight_on_outlined), tooltip: 'Linterna', onPressed: () => _camara.toggleTorch()),
+          TmBotonIcono(Icons.flashlight_on_outlined, etiqueta: 'Linterna', onTap: () => _camara.toggleTorch()),
+          const SizedBox(width: Espacio.x2),
         ],
       ),
       body: Centrado(
@@ -91,26 +95,39 @@ class _EscanearPantallaState extends State<EscanearPantalla> {
             ),
           ),
           if (_aviso != null)
-            Container(
-              width: double.infinity,
-              color: tema.colorScheme.errorContainer,
-              padding: const EdgeInsets.all(12),
-              child: Text(_aviso!, textAlign: TextAlign.center),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(Espacio.x3, Espacio.x3, Espacio.x3, 0),
+              child: TmAlerta(
+                titulo: _aviso!,
+                texto: 'Los códigos del taller empiezan con A- (artículos) o C- (contenedores).',
+                tono: Tono.error,
+                accion: TmBoton('Entendido', tamano: TamanoBoton.chico, onTap: () => setState(() => _aviso = null)),
+              ),
             ),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(12),
-              child: Row(children: [
-                Expanded(
-                  child: TextField(
-                    controller: _manual,
-                    textCapitalization: TextCapitalization.characters,
-                    decoration: const InputDecoration(labelText: 'O escribe el código', hintText: 'A-0101 o C-0012'),
-                    onSubmitted: _abrir,
-                  ),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(
+                  widget.devolver
+                      ? 'Apunta al QR de cada artículo que regresa.'
+                      : 'Apunta al QR del artículo o del cajón. Si la etiqueta no lee, escribe el código impreso debajo.',
+                  style: Tipografia.chico.copyWith(color: tema.colorScheme.onSurfaceVariant),
                 ),
-                const SizedBox(width: 8),
-                FilledButton(onPressed: () => _abrir(_manual.text), child: const Text('Abrir')),
+                const SizedBox(height: Espacio.x2),
+                Row(children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _manual,
+                      textCapitalization: TextCapitalization.characters,
+                      style: Tipografia.codigoFuerte.copyWith(fontSize: 16),
+                      decoration: const InputDecoration(labelText: 'O escribe el código', hintText: 'A-0101 o C-0012'),
+                      onSubmitted: _abrir,
+                    ),
+                  ),
+                  const SizedBox(width: Espacio.x2),
+                  TmBoton('Abrir', tipo: TipoBoton.primario, icono: Ico.avanzar, onTap: () => _abrir(_manual.text)),
+                ]),
               ]),
             ),
           ),

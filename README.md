@@ -12,7 +12,8 @@ Control de inventario en tiempo real del Laboratorio Maker. Diseño aprobado en 
 | 4b | Pendientes del levantamiento, desglose de kits, inventario periódico | Hecha |
 | 5 | Reportes, Excel para Contraloría y acta PDF | Hecha |
 | 6 | Trabajo sin conexión (celular) | Hecha |
-| 7a | Rediseño: sistema de diseño, tema claro/oscuro y componentes | **Lista para probar** |
+| 7a | Rediseño: sistema de diseño, tema claro/oscuro y componentes | Hecha |
+| 7b | Rediseño: navegación, tablero, inventario y ficha | **Lista para probar** |
 
 ## Fase 1: cómo probarla
 
@@ -267,6 +268,18 @@ La app guarda en el celular el catálogo, contenedores, pendientes, préstamos a
 - Todo entra al servidor por `comando_sin_conexion`: se aplica una sola vez aunque llegue repetido. Si el material ya se movió en físico (dos préstamos de la última pieza) se acepta **con conflicto**, se crea el pendiente "Contar físicamente" y se avisa. Si es imposible (devolver dos veces) va a *Por resolver*.
 - Se envía a nombre de quien lo capturó: si la sesión venció, la app pide que entre esa misma persona.
 - Menú → **Conflictos sin conexión** (responsable y sub administración). Lo recibido más de 72 h después queda marcado "Registrado tarde".
+
+## Fase 7b: navegación, tablero, inventario y ficha
+
+| Pantalla | Qué cambió |
+|---|---|
+| **Navegación** (`app/lib/ui/armazon.dart`) | Barra lateral por grupos (Operación · Control · Administración) en computadora, rieles de iconos en tablet y barra inferior con **Escanear** al centro en el celular. Los destinos dependen del rol; "Más" abre el resto. El estado de conexión vive en la barra lateral |
+| **Tablero** (`/`, con sesión) | Cifras que llevan a su lista, "Atender hoy" ordenado por gravedad, artículos por categoría con lo verificado, accesos rápidos y próximos a vencer. Sin sesión, `/` sigue siendo el catálogo público |
+| **Inventario** (`/inventario`) | Búsqueda, categorías con conteo, riel de filtros en pantallas anchas (situación y revisión), tabla en computadora y tarjetas en celular, y el indicador de existencias en cada renglón |
+| **Ficha** (`/articulo/:id`) | Dos columnas en computadora: foto y etiqueta a la izquierda; insignias, cifras, barra de existencias, acciones, datos, pendientes e historial a la derecha. Avisos según la situación (agotado, en su mínimo, sin contar, no se presta) |
+| **Escanear** | Instrucciones claras y el código a mano con tipografía monoespaciada |
+
+Préstamo, devolución, solicitudes y los formularios conservan su acomodo y solo toman el tema nuevo; se rearman en 7c y 7d.
 
 ## Fase 7a: sistema de diseño "Taller Maker"
 

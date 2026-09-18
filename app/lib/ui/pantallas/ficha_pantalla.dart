@@ -11,6 +11,10 @@ import '../../modelos/catalogos.dart';
 import '../../modelos/movimientos.dart';
 import '../../modelos/otros.dart';
 import '../../util/texto.dart';
+import '../armazon.dart';
+import '../componentes/componentes.dart';
+import '../diseno/iconos.dart';
+import '../diseno/tipografia.dart';
 import '../tema.dart';
 import '../widgets/comunes.dart';
 import '../widgets/formularios.dart';
@@ -31,28 +35,29 @@ class FichaPantalla extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final articulo = ref.watch(articuloProvider(id));
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(articulo.value?.codigo ?? 'Artículo'),
-        actions: [
-          if (articulo.value?.activo ?? false)
-            IconButton(
-              icon: const Icon(Icons.edit_outlined),
-              tooltip: 'Editar datos',
-              onPressed: () => context.push('/articulo/$id/editar'),
-            ),
-          if (articulo.value != null) _MenuAdministracion(articulo: articulo.value!),
-          const BarraSesion(),
-        ],
-      ),
-      body: Cargando<Articulo?>(
+    final actual = articulo.value;
+    return TmArmazon(
+      ruta: '/inventario',
+      titulo: actual?.codigo ?? 'Artículo',
+      migas: const [('Inventario', '/inventario')],
+      conRegresar: true,
+      acciones: [
+        if (actual?.activo ?? false)
+          TmBotonIcono(Ico.editar, etiqueta: 'Editar datos', onTap: () => context.push('/articulo/$id/editar')),
+        if (actual != null) _MenuAdministracion(articulo: actual),
+      ],
+      child: Cargando<Articulo?>(
         valor: articulo,
         alReintentar: () => refrescarArticulo(ref, id),
         datos: (a) => a == null
-            ? const Center(child: Text('Este artículo no existe.'))
+            ? const TmVacio(
+                titulo: 'Este artículo no existe',
+                texto: 'Puede que lo hayan dado de baja o que el código esté mal escrito.',
+                icono: Ico.vacio,
+              )
             : RefreshIndicator(
                 onRefresh: () async => refrescarArticulo(ref, id),
-                child: Centrado(child: _Contenido(articulo: a)),
+                child: _Contenido(articulo: a),
               ),
       ),
     );
@@ -67,47 +72,164 @@ class _Contenido extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final a = articulo;
-    final tema = Theme.of(context);
-    return ListView(
-      padding: const EdgeInsets.only(bottom: 32),
-      children: [
-        if (!a.activo)
-          MaterialBanner(
-            content: Text(a.bajaEnTramite
-                ? 'Dado de baja. En trámite: falta registrar el número de oficio.'
-                : 'Dado de baja${a.bajaOficio == null ? '' : ' (oficio ${a.bajaOficio})'}.'),
-            leading: const Icon(Icons.block),
-            actions: const [SizedBox.shrink()],
+    final c = context.tm;
+    final dosColumnas = MediaQuery.sizeOf(context).width >= Quiebre.rieles;
+
+    final visual = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _Galeria(articulo: a),
+      const SizedBox(height: Espacio.x3),
+      TmTarjeta(
+        padding: const EdgeInsets.all(Espacio.x3),
+        child: Row(children: [
+          Icon(Ico.qr, size: 40, color: c.texto),
+          const SizedBox(width: Espacio.x3),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+              Text('ETIQUETA', style: Tipografia.etiqueta.copyWith(color: c.textoTenue)),
+              SelectableText(a.codigo, style: Tipografia.codigoFuerte.copyWith(fontSize: 20, color: c.texto)),
+              Text(a.etiquetado.nombre, style: Tipografia.chico.copyWith(color: c.textoTenue)),
+            ]),
           ),
-        _Galeria(articulo: a),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(a.nombre, style: tema.textTheme.headlineSmall),
-            if (a.marcaModelo != null) Text(a.marcaModelo!, style: tema.textTheme.bodyLarge),
-            const SizedBox(height: 8),
-            Wrap(spacing: 6, runSpacing: 6, children: insigniasDe(a)),
-          ]),
-        ),
-        _Cifras(articulo: a),
-        if (a.activo) _Acciones(articulo: a),
-        const _Titulo('Datos'),
+          if (a.etiquetado == Etiquetado.individual)
+            TmBotonIcono(Ico.imprimir, etiqueta: 'Imprimir su etiqueta', onTap: () => context.push('/etiquetas?codigos=${a.codigo}')),
+        ]),
+      ),
+    ]);
+
+    final encabezado = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Wrap(spacing: Espacio.x2, runSpacing: Espacio.x2, crossAxisAlignment: WrapCrossAlignment.center, children: [
+        TmCategoria(a.categoria),
+        if (a.subcategoria != null) TmInsignia(a.subcategoria!, icono: Ico.deSubcategoria(a.subcategoria)),
+        ...insigniasTm(a),
+      ]),
+      const SizedBox(height: Espacio.x2),
+      SelectableText(a.nombre, style: Tipografia.h1.copyWith(color: c.texto)),
+      if (a.marcaModelo != null) Text(a.marcaModelo!, style: Tipografia.cuerpo.copyWith(color: c.textoSecundario)),
+    ]);
+
+    final aviso = _avisoSituacion(a);
+
+    final datos = TmTarjeta(
+      titulo: 'Datos',
+      icono: Ico.inventario,
+      sinPadding: true,
+      child: Column(children: [
         _Dato('Categoría', [a.categoria.nombre, a.subcategoria].whereType<String>().join(' · ')),
         _Dato('Estado', a.estadoInventario.nombre),
         _Dato('Estado físico', a.estadoFisicoTexto ?? a.estadoFisico?.nombre),
         _Ubicacion(articulo: a),
         _Dato('Número de resguardo', a.numResguardo),
         _Dato('Número de serie', a.numSerie),
+        _Dato('Unidad', a.unidad),
+        _Dato(
+          'Mínimo para reponer',
+          a.minimoReposicion == null ? (a.esConsumible ? 'Sin mínimo definido' : 'No aplica (no es consumible)') : '${a.minimoReposicion}',
+        ),
         _Dato('Etiquetado', '${a.etiquetado.nombre}: ${a.etiquetado.explicacion}'),
         if (a.refFoto != null) _Dato('Ref. de la foto del levantamiento', '${a.refFoto}'),
         if (a.cantidadTexto != null) _Dato('Cantidad en el Excel original', '"${a.cantidadTexto}"'),
         _Dato('Observaciones', a.observaciones),
-        _Pendientes(articuloId: a.id),
-        _Historial(articuloId: a.id),
+        if (a.noSePresta) _Dato('No se presta', a.noSePrestaMotivo),
+      ]),
+    );
+
+    final detalle = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      encabezado,
+      const SizedBox(height: Espacio.x4),
+      if (!a.activo) ...[
+        TmAlerta(
+          titulo: a.bajaEnTramite ? 'Dado de baja · en trámite' : 'Dado de baja',
+          texto: a.bajaEnTramite
+              ? 'Falta registrar el número de oficio para cerrar el trámite.'
+              : a.bajaOficio == null
+                  ? 'Ya no cuenta en el inventario.'
+                  : 'Oficio ${a.bajaOficio}. Ya no cuenta en el inventario.',
+          tono: Tono.error,
+          icono: Ico.baja,
+        ),
+        const SizedBox(height: Espacio.x4),
+      ],
+      _Cifras(articulo: a),
+      if (aviso != null) ...[const SizedBox(height: Espacio.x3), aviso],
+      if (a.activo) ...[const SizedBox(height: Espacio.x4), _Acciones(articulo: a)],
+      const SizedBox(height: Espacio.x4),
+      datos,
+      const SizedBox(height: Espacio.x4),
+      _Pendientes(articuloId: a.id),
+      _Historial(articuloId: a.id),
+    ]);
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(Espacio.x4, Espacio.x4, Espacio.x4, Espacio.x10),
+      children: [
+        if (dosColumnas)
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            SizedBox(width: 360, child: visual),
+            const SizedBox(width: Espacio.x6),
+            Expanded(child: detalle),
+          ])
+        else ...[
+          visual,
+          const SizedBox(height: Espacio.x4),
+          detalle,
+        ],
       ],
     );
   }
+
+  Widget? _avisoSituacion(Articulo a) => switch (SituacionStock.de(a)) {
+        SituacionStock.sinContar => const TmAlerta(
+            titulo: 'Nunca se ha contado',
+            texto: 'No se puede prestar hasta que alguien lo cuente.',
+            tono: Tono.info,
+            icono: Ico.contar,
+          ),
+        SituacionStock.noSePresta => TmAlerta(
+            titulo: 'No sale del taller',
+            texto: a.noSePrestaMotivo,
+            tono: Tono.info,
+            icono: Ico.noSePresta,
+          ),
+        SituacionStock.agotado => const TmAlerta(titulo: 'Agotado', texto: 'No queda ninguno. Conviene reponerlo.', tono: Tono.error),
+        SituacionStock.ningunoDisponible => TmAlerta(
+            titulo: 'Ninguno disponible',
+            texto: a.prestadoHasta == null
+                ? 'Todo lo que hay está prestado, apartado o fuera de servicio.'
+                : 'Todo está prestado; el más próximo regresa el ${fecha(a.prestadoHasta!)}.',
+            tono: Tono.aviso,
+            icono: Ico.reloj,
+          ),
+        SituacionStock.enMinimo => TmAlerta(
+            titulo: 'Llegó a su mínimo',
+            texto: 'Quedan ${conUnidad(a.disponible, a.unidad)} y el mínimo es ${a.minimoReposicion}.',
+            tono: Tono.aviso,
+          ),
+        SituacionStock.disponible => a.cantidadEstimada
+            ? const TmAlerta(
+                titulo: 'La cantidad es estimada',
+                texto: 'El ~ se quita cuando alguien haga un conteo físico.',
+                tono: Tono.info,
+                icono: Ico.contar,
+              )
+            : null,
+      };
 }
+
+/// Las insignias que van junto al nombre, con el estilo del sistema de diseño.
+List<Widget> insigniasTm(Articulo a) => [
+      if (a.estadoInventario == EstadoInventario.sinClasificar)
+        const TmInsignia('Sin clasificar: no usar', tono: Tono.error, icono: Ico.alerta),
+      if (a.estadoInventario == EstadoInventario.verificado) const TmInsignia('Verificado', tono: Tono.ok, icono: Ico.verificado),
+      if (a.estadoInventario == EstadoInventario.porVerificar) const TmInsignia('Por verificar', tono: Tono.info, icono: Ico.porVerificar),
+      if (a.conteoDesconocido)
+        const TmInsignia('Sin contar', tono: Tono.aviso, icono: Ico.contar)
+      else if (a.cantidadEstimada)
+        const TmInsignia('Cantidad estimada', tono: Tono.info, icono: Ico.contar),
+      if (a.pendientesAbiertos > 0)
+        TmInsignia('${a.pendientesAbiertos} pendiente${a.pendientesAbiertos == 1 ? '' : 's'}', tono: Tono.aviso, icono: Ico.pendientes),
+      if (a.fueraServicio > 0) TmInsignia('${a.fueraServicio} fuera de servicio', tono: Tono.error, icono: Ico.aviso),
+      if (a.noSePresta) const TmInsignia('No se presta', tono: Tono.contorno, icono: Ico.noSePresta),
+    ];
 
 class _Galeria extends ConsumerStatefulWidget {
   const _Galeria({required this.articulo});
@@ -278,41 +400,61 @@ class _Cifras extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final a = articulo;
-    final tema = Theme.of(context);
-    Widget cifra(String etiqueta, String valor) => Column(children: [
-          Text(valor, style: tema.textTheme.titleLarge),
-          Text(etiqueta, style: tema.textTheme.labelSmall),
-        ]);
-
-    return Card(
-      margin: const EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(children: [
-          Text(a.disponibilidad,
-              style: tema.textTheme.headlineMedium?.copyWith(
-                color: a.prestable && a.disponible > 0 ? tema.colorScheme.primary : tema.colorScheme.error,
-              )),
-          if (a.prestadoHasta != null) Text('Prestado hasta el ${fecha(a.prestadoHasta!)}', style: tema.textTheme.bodyMedium),
-          const Divider(height: 24),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-            cifra('Existencia', a.cantidadMostrada),
-            cifra('Prestado', '${a.prestado}'),
-            cifra('Fuera de servicio', '${a.fueraServicio}'),
-            if (a.apartado > 0) cifra('Apartado', '${a.apartado}'),
+    final c = context.tm;
+    final estrecho = MediaQuery.sizeOf(context).width < 480;
+    Widget cifra(String etiqueta, String valor, {bool destacada = false}) => Container(
+          padding: const EdgeInsets.all(Espacio.x3),
+          decoration: BoxDecoration(
+            color: destacada ? c.exitoSuave : c.superficie,
+            border: Border(right: BorderSide(color: c.borde), bottom: BorderSide(color: c.borde)),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            Text(etiqueta.toUpperCase(), style: Tipografia.etiqueta.copyWith(color: c.textoTenue, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
+            const SizedBox(height: 2),
+            Text(valor, style: Tipografia.cifraChica.copyWith(fontSize: 24, color: destacada ? c.exito : c.texto), maxLines: 1),
           ]),
-          if (a.cantidadEstimada || a.conteoDesconocido) ...[
-            const SizedBox(height: 12),
-            Text(
-              a.conteoDesconocido
-                  ? 'Nunca se ha contado: no se presta hasta que alguien lo cuente.'
-                  : 'La cantidad es estimada (~) hasta que se haga un conteo físico.',
-              style: tema.textTheme.bodySmall?.copyWith(color: Avisos.estimado),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ]),
-      ),
+        );
+
+    final cifras = [
+      cifra('Disponibles', a.conteoDesconocido ? '?' : '${a.cantidadEstimada ? '~' : ''}${a.disponible < 0 ? 0 : a.disponible}', destacada: true),
+      cifra('Prestados', '${a.prestado}'),
+      cifra('Fuera de serv.', '${a.fueraServicio}'),
+      cifra('Existencia', a.conteoDesconocido ? '?' : '${a.cantidadEstimada ? '~' : ''}${a.existencia}'),
+    ];
+
+    return TmTarjeta(
+      sinPadding: true,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(Redondeo.lg)),
+          child: GridView.count(
+            crossAxisCount: estrecho ? 2 : 4,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            childAspectRatio: estrecho ? 2.6 : 1.9,
+            children: cifras,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(Espacio.x4),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            TmExistencias(a, conLeyenda: true),
+            if (a.prestadoHasta != null) ...[
+              const SizedBox(height: Espacio.x2),
+              Row(children: [
+                Icon(Ico.reloj, size: 15, color: c.textoTenue),
+                const SizedBox(width: 5),
+                Text('El próximo regresa el ${fecha(a.prestadoHasta!)}', style: Tipografia.chico.copyWith(color: c.textoSecundario)),
+              ]),
+            ],
+            if (a.apartado > 0) ...[
+              const SizedBox(height: Espacio.x1),
+              Text('${a.apartado} apartado${a.apartado == 1 ? '' : 's'} por solicitudes aprobadas',
+                  style: Tipografia.chico.copyWith(color: c.textoSecundario)),
+            ],
+          ]),
+        ),
+      ]),
     );
   }
 }

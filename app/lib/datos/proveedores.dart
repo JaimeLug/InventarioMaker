@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../acceso/sesion.dart';
 import '../modelos/articulo.dart';
 import '../modelos/contenedores.dart';
+import '../modelos/movimientos.dart';
 import '../modelos/otros.dart';
 import '../modelos/pendientes.dart';
 import 'repositorio.dart';
@@ -60,6 +61,29 @@ final avisosSinLeerProvider = FutureProvider<int>((ref) async {
   final sesion = await ref.watch(sesionProvider.future);
   if (sesion == null) return 0;
   return ref.watch(repositorioProvider).avisosSinLeer();
+});
+
+/// Préstamos abiertos con nombres (tablero de responsable y sub administración).
+/// Si la sesión no alcanza el nivel, regresa vacío: el tablero simplemente no muestra la lista.
+final prestamosAbiertosProvider = FutureProvider<List<PrestamoListado>>((ref) async {
+  final sesion = await ref.watch(sesionProvider.future);
+  if (sesion == null || !sesion.administra || sesion.nivel != NivelSesion.contrasena) return const [];
+  try {
+    return await ref.watch(repositorioProvider).prestamosAbiertos();
+  } on Object {
+    return const [];
+  }
+});
+
+/// Lo que está a nombre de quien entró (para su tablero).
+final misPrestamosProvider = FutureProvider<List<PrestamoListado>>((ref) async {
+  final sesion = await ref.watch(sesionProvider.future);
+  if (sesion == null) return const [];
+  try {
+    return await ref.watch(repositorioProvider).misPrestamos();
+  } on Object {
+    return const [];
+  }
 });
 
 /// Configuración pública (plazos, hora de fin de jornada, dominio de correo).

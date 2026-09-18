@@ -17,7 +17,8 @@ import 'pantallas/cuentas_pantalla.dart';
 import 'pantallas/diseno_pantalla.dart';
 import 'pantallas/devolucion_pantalla.dart';
 import 'pantallas/ficha_pantalla.dart';
-import 'pantallas/inicio_pantalla.dart';
+import 'pantallas/inventario_pantalla.dart';
+import 'pantallas/tablero_pantalla.dart';
 import 'pantallas/mi_cuenta_pantalla.dart';
 import 'pantallas/prestamo_pantalla.dart';
 import 'pantallas/prestamos_pantallas.dart';
@@ -31,7 +32,8 @@ import 'pantallas/solicitudes_pantallas.dart';
 final rutasProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     routes: [
-      GoRoute(path: '/', builder: (_, _) => const InicioPantalla()),
+      GoRoute(path: '/', builder: (_, _) => const TableroPantalla()),
+      GoRoute(path: '/inventario', builder: (_, _) => const InventarioPantalla()),
       GoRoute(path: '/articulo/nuevo', builder: (_, _) => const ArticuloFormPantalla()),
       GoRoute(path: '/articulo/:id', builder: (_, e) => FichaPantalla(id: e.pathParameters['id']!)),
       GoRoute(path: '/articulo/:id/editar', builder: (_, e) => ArticuloFormPantalla(id: e.pathParameters['id'])),
@@ -57,7 +59,7 @@ final rutasProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/conteos', builder: (_, _) => const ConteosPantalla()),
       GoRoute(path: '/desglose/:id', builder: (_, e) => DesglosePantalla(articuloId: e.pathParameters['id']!)),
       GoRoute(path: '/inventarios', builder: (_, _) => const InventariosPantalla()),
-      GoRoute(path: '/inventario/:id', builder: (_, e) => InventarioPantalla(id: e.pathParameters['id']!)),
+      GoRoute(path: '/inventario/:id', builder: (_, e) => InventarioPeriodicoPantalla(id: e.pathParameters['id']!)),
       GoRoute(
         path: '/etiquetas',
         builder: (_, e) => EtiquetasPantalla(codigos: (e.uri.queryParameters['codigos'] ?? '').split(',').where((c) => c.isNotEmpty).toList()),

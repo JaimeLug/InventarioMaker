@@ -163,8 +163,8 @@ class _HojaAbrirState extends ConsumerState<_HojaAbrir> {
 }
 
 /// Un inventario: contar (por contenedor o por lista), hallazgos y, para administración, diferencias y cierre.
-class InventarioPantalla extends ConsumerWidget {
-  const InventarioPantalla({super.key, required this.id});
+class InventarioPeriodicoPantalla extends ConsumerWidget {
+  const InventarioPeriodicoPantalla({super.key, required this.id});
 
   final String id;
 
