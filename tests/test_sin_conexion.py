@@ -138,3 +138,28 @@ def test_datos_para_el_celular_sin_contacto(lab):
     with rechazo("PT403", "ROL"):
         with como(bd, d, nivel="PIN"):
             bd.execute("select * from public.conflictos_sin_conexion()")
+
+
+# --- Fase 10: devolver sin señal lo que también se prestó sin señal ---------------------------
+
+
+def test_devolver_sin_conexion_un_prestamo_que_tambien_venia_de_la_cola(lab):
+    """El celular no conoce el id del préstamo: manda el del comando (como lo guarda movimiento.comando_id)."""
+    bd, d, juan = lab["bd"], lab["d"], lab["juan"]
+    comando = uuid.uuid4()
+    enviar(bd, d, "PRESTAMO", prestamo(lab, juan), id=comando)
+    assert existencias(bd, lab["multimetro"])["prestado"] == 1
+
+    # md5(comando || articulo) es lo que el servidor dejó en comando_id
+    with como(bd, d, nivel="PIN"):
+        id_local = bd.execute("select md5(%s::text || %s::text)::uuid as id", (comando, lab["multimetro"])).fetchone()["id"]
+    r = enviar(bd, d, "DEVOLUCION", {"lineas": [{"prestamo_id": str(id_local), "regresan": 1}]})
+
+    assert (r.get("resultado") or r).get("devueltas") == 1, r
+    assert existencias(bd, lab["multimetro"])["prestado"] == 0
+
+
+def test_devolver_con_un_prestamo_que_no_existe_sigue_fallando(lab):
+    bd, d = lab["bd"], lab["d"]
+    with pytest.raises(psycopg.errors.RaiseException, match="ya estaba cerrado"):
+        enviar(bd, d, "DEVOLUCION", {"lineas": [{"prestamo_id": str(uuid.uuid4()), "regresan": 1}]})

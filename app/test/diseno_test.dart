@@ -6,7 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:inventario_maker/modelos/articulo.dart';
 import 'package:inventario_maker/modelos/catalogos.dart';
 import 'package:inventario_maker/ui/componentes/componentes.dart';
-import 'package:inventario_maker/ui/diseno/tokens.dart';
 import 'package:inventario_maker/ui/tema.dart';
 
 import 'logica_test.dart' show renglon;

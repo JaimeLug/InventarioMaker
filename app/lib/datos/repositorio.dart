@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -289,6 +291,15 @@ class Repositorio {
   Future<void> extenderPrestamo(String prestamoId, DateTime fecha, String motivo) => _c.rpc('prestamo_extender',
       params: {'p_prestamo': prestamoId, 'p_fecha': fecha.toUtc().toIso8601String(), 'p_motivo': motivo});
 
+
+  /// Identificador de un préstamo que todavía está en la cola: el mismo que el servidor
+  /// le pone al aplicarlo (movimiento.comando_id = md5 del comando + el artículo), para
+  /// poder devolverlo aunque no haya señal.
+  static String idDePrestamoEnCola(String comando, String articuloId) {
+    final h = md5.convert(utf8.encode('$comando$articuloId')).toString();
+    return '${h.substring(0, 8)}-${h.substring(8, 12)}-${h.substring(12, 16)}-${h.substring(16, 20)}-${h.substring(20)}';
+  }
+
   Future<List<PrestamoAbierto>> prestamosDeArticulo(String articuloId) async {
     try {
       return _filas(await _c.rpc('prestamos_de_articulo', params: {'p_articulo': articuloId})).map(PrestamoAbierto.desdeMapa).toList();
@@ -304,11 +315,33 @@ class Repositorio {
           recibido[m['prestamo_id'] as String] = (recibido[m['prestamo_id']] ?? 0) + cierra;
         }
       }
-      return [
+      final lista = [
         for (final m in copia.where((m) => m['articulo_id'] == articuloId))
           if ((m['pendiente'] as int) - (recibido[m['prestamo_id']] ?? 0) > 0)
             PrestamoAbierto.desdeMapa({...m, 'pendiente': (m['pendiente'] as int) - (recibido[m['prestamo_id']] ?? 0)}),
       ];
+      // Lo que se prestó sin señal y sigue en la cola también se puede devolver.
+      for (final c in _cola!.comandos.where((c) => c.tipo == 'PRESTAMO' && !c.porResolver)) {
+        for (final l in (c.datos['lineas'] as List)) {
+          final m = l as Map;
+          if (m['articulo_id'] != articuloId) continue;
+          final id = idDePrestamoEnCola(c.id, articuloId);
+          final pendiente = (m['cantidad'] as int) - (recibido[id] ?? 0);
+          if (pendiente <= 0) continue;
+          final solicitante = c.datos['responsable_solicitante'] as String?;
+          lista.add(PrestamoAbierto.desdeMapa({
+            'prestamo_id': id,
+            'cantidad': m['cantidad'],
+            'pendiente': pendiente,
+            'fecha': c.capturado.toUtc().toIso8601String(),
+            'vence_en': c.datos['fecha_compromiso'],
+            'vencido': false,
+            'a_cargo': solicitante == null ? c.usuarioNombre : _nombreSolicitante(solicitante),
+            'autorizo': c.usuarioNombre,
+          }));
+        }
+      }
+      return lista;
     }
   }
 
@@ -316,6 +349,13 @@ class Repositorio {
 
   Future<List<PrestamoListado>> prestamosAbiertos() async =>
       _filas(await _c.rpc('prestamos_abiertos_listar')).map(PrestamoListado.desdeMapa).toList();
+
+  /// Por nombre, solo entre quienes ya pidieron o ya recibieron material (Fase 10).
+  /// A alguien nuevo se le sigue buscando por matrícula exacta. Necesita señal.
+  Future<List<SolicitanteEncontrado>> buscarSolicitantePorNombre(String texto) async =>
+      _filas(await _c.rpc('solicitante_buscar_conocido', params: {'p_texto': texto}))
+          .map(SolicitanteEncontrado.desdeMapa)
+          .toList();
 
   Future<List<SolicitanteEncontrado>> buscarSolicitante(String matricula) async {
     try {

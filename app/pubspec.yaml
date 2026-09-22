@@ -56,7 +56,7 @@ dependencies:
   path_provider: ^2.1.5
   connectivity_plus: '>=6.1.0 <6.2.0' # 7.x pide compilar con Android 16 (API 36)
   image: ^4.3.0
-  lucide_icons_flutter: ^3.1.20
+  crypto: ^3.0.7
 
 dev_dependencies:
   flutter_test:
@@ -99,6 +99,11 @@ flutter:
           weight: 600
         - asset: assets/fuentes/BarlowCondensed-Bold.ttf
           weight: 700
+    # Iconos Lucide (licencia ISC, ver assets/fuentes/LICENSE-lucide.txt). Solo esta fuente:
+    # el paquete traía además seis por grosor que no usamos.
+    - family: Lucide
+      fonts:
+        - asset: assets/fuentes/lucide.ttf
     - family: IBMPlexMono
       fonts:
         - asset: assets/fuentes/IBMPlexMono-Regular.ttf

@@ -274,6 +274,21 @@ La app guarda en el celular el catálogo, contenedores, pendientes, préstamos a
 - Se envía a nombre de quien lo capturó: si la sesión venció, la app pide que entre esa misma persona.
 - Menú → **Conflictos sin conexión** (responsable y sub administración). Lo recibido más de 72 h después queda marcado "Registrado tarde".
 
+## Fase 9: optimización
+
+| Qué | Antes | Ahora |
+|---|---|---|
+| **APK** | 89 MB (un archivo con los tres tipos de procesador) | **30 MB** el de los celulares de hoy (`arm64-v8a`); `scripts/desplegar.py apk` los genera por separado |
+| **Fuentes de iconos** | 7 archivos (2.8 MB): el paquete traía una por grosor y se bajaban todas al abrir la web | **una sola de 55 KB**, empacada en `app/assets/fuentes/lucide.ttf` y recortada a los 141 iconos que se usan |
+| **Arranque de la web** | pantalla en blanco varios segundos | icono y «Cargando el inventario…» desde el primer instante |
+
+El paquete `lucide_icons_flutter` ya no se usa: los iconos son constantes propias en `app/lib/ui/diseno/iconos.dart` con la misma fuente (licencia ISC, ver `app/assets/fuentes/LICENSE-lucide.txt`). Si se agrega un icono nuevo hay que sacar su código de la fuente.
+
+## Fase 10: trabajo sin conexión, segunda parte
+
+- **Devolver sin señal** lo que también se prestó sin señal. El celular no conoce el identificador del préstamo (todavía no llega al servidor), así que manda el del comando; el servidor lo reconoce porque es el mismo que guardó en `movimiento.comando_id`. En la pantalla de devolución aparecen también los préstamos que siguen en la cola.
+- **Buscar por nombre** a quien ya pidió o ya recibió material, cuando no se recuerda la matrícula. A un alumno nuevo se le sigue buscando **solo por matrícula exacta**; la búsqueda por nombre no alcanza a quien nunca ha pedido y cada búsqueda queda en la bitácora.
+
 ## Fase 8: pruebas completas sin tocar la base real
 
 Hay un **proyecto de Supabase aparte para pruebas** (`inventario-maker-pruebas`). Tiene la misma estructura que el real, el catálogo cargado de los mismos Excel y cuentas de prueba con el Gmail del responsable con `+` (todos los correos llegan a su bandeja). Ahí se puede prestar, dar de baja, ajustar y sacar actas sin gastar folios oficiales ni ensuciar la bitácora real.

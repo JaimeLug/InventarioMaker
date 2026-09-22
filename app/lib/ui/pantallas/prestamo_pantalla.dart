@@ -322,6 +322,7 @@ class _BuscarPersona extends ConsumerStatefulWidget {
 class _BuscarPersonaState extends ConsumerState<_BuscarPersona> {
   final _matricula = TextEditingController();
   List<SolicitanteEncontrado>? _resultados;
+  List<SolicitanteEncontrado>? _porNombre;
   bool _buscando = false;
 
   @override
@@ -333,7 +334,10 @@ class _BuscarPersonaState extends ConsumerState<_BuscarPersona> {
   Future<void> _buscar() async {
     final m = _matricula.text.trim();
     if (m.isEmpty) return;
-    setState(() => _buscando = true);
+    setState(() {
+      _buscando = true;
+      _porNombre = null;
+    });
     try {
       final r = await conAcceso(
         context,
@@ -344,7 +348,17 @@ class _BuscarPersonaState extends ConsumerState<_BuscarPersona> {
       );
       if (!mounted || r == null) return;
       setState(() => _resultados = r);
-      if (r.length == 1) widget.alElegir(r.first);
+      if (r.length == 1) {
+        widget.alElegir(r.first);
+      } else if (r.isEmpty && m.length >= 3) {
+        // Quizá escribió el nombre: se busca entre quienes ya pasaron por el taller.
+        try {
+          final porNombre = await ref.read(repositorioProvider).buscarSolicitantePorNombre(m);
+          if (mounted) setState(() => _porNombre = porNombre);
+        } on Object {
+          // Sin señal o texto muy corto: se queda con la opción de registrar.
+        }
+      }
     } on Object catch (e) {
       if (mounted) avisarError(context, e);
     } finally {
@@ -415,17 +429,36 @@ class _BuscarPersonaState extends ConsumerState<_BuscarPersona> {
           Expanded(
             child: TextField(
               controller: _matricula,
-              decoration: const InputDecoration(labelText: 'Matrícula o clave', helperText: 'Se busca por matrícula exacta'),
+              decoration: const InputDecoration(
+                labelText: 'Matrícula o clave',
+                helperText: 'Matrícula exacta; o el nombre, si ya pidió antes',
+              ),
               onSubmitted: (_) => _buscar(),
             ),
           ),
           const SizedBox(width: 8),
           FilledButton.tonal(onPressed: _buscando ? null : _buscar, child: const Text('Buscar')),
         ]),
+        if (_porNombre != null && _porNombre!.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text('Por nombre, entre quienes ya han pedido:', style: tema.textTheme.bodySmall),
+          ),
+          for (final s in _porNombre!)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Ico.persona),
+              title: Text(s.nombre),
+              subtitle: Text([s.tipo.nombre, if (s.grupo != null) s.grupo!].join(' · ')),
+              onTap: () => widget.alElegir(s),
+            ),
+        ],
         if (_resultados != null && _resultados!.isEmpty)
           ListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('No hay nadie registrado con esa matrícula.'),
+            title: Text(_porNombre == null || _porNombre!.isEmpty
+                ? 'No hay nadie registrado con esa matrícula.'
+                : '¿No es ninguno de arriba?'),
             trailing: FilledButton(onPressed: _crear, child: const Text('Registrar')),
           ),
         if (_resultados != null && _resultados!.length > 1)

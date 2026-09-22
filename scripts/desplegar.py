@@ -177,17 +177,25 @@ def web(_args) -> None:
 
 
 def apk(_args) -> None:
-    """Compila el APK. Con el proyecto de pruebas sale como otra app ("Maker PRUEBAS") que se instala junto a la real."""
+    """Compila el APK, uno por tipo de procesador (así pesa ~31 MB en vez de ~89 MB).
+
+    El de los celulares de hoy es el de arm64-v8a. Con el proyecto de pruebas sale como otra
+    app ("Maker PRUEBAS") que se instala junto a la real.
+    """
     flutter = "flutter.bat" if os.name == "nt" else "flutter"
     extra = ["--android-project-arg", f"entorno={db.ENTORNO}"] if db.ENTORNO else []
-    if subprocess.run([flutter, "build", "apk", "--release", *definiciones_app(), *extra], cwd=db.RAIZ / "app").returncode != 0:
+    if subprocess.run([flutter, "build", "apk", "--release", "--split-per-abi", *definiciones_app(), *extra],
+                      cwd=db.RAIZ / "app").returncode != 0:
         sys.exit("No compiló el APK.")
-    origen = db.RAIZ / "app" / "build" / "app" / "outputs" / "flutter-apk" / "app-release.apk"
+    carpeta = db.RAIZ / "app" / "build" / "app" / "outputs" / "flutter-apk"
+    for archivo in sorted(carpeta.glob("app-*-release.apk")):
+        print(f"  {archivo.name:<34}{archivo.stat().st_size / 1048576:5.1f} MB")
+    origen = carpeta / "app-arm64-v8a-release.apk"
     if db.ENTORNO:
         destino = origen.with_name(f"app-{db.ENTORNO}.apk")
         destino.write_bytes(origen.read_bytes())
         origen = destino
-    print(f"APK listo: {origen}")
+    print(f"APK para instalar (celulares de hoy): {origen}")
 
 
 def main() -> None:
