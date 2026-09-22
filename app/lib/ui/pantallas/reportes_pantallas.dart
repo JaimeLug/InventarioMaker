@@ -144,13 +144,13 @@ class _ReportesPantallaState extends ConsumerState<ReportesPantalla> {
           if (ocupado) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(_estado!, style: Theme.of(context).textTheme.bodyLarge)),
           Card(
             child: ListTile(
-              leading: const Icon(Icons.date_range),
+              leading: const Icon(Ico.periodo),
               title: Text(esCiclo ? 'Ciclo escolar ${ciclo.desde.year}-${ciclo.hasta.year}' : 'Periodo elegido'),
               subtitle: Text('${textoPeriodo(_periodo)}\nAplica a pérdidas y daños, bajas y movimientos.'),
               isThreeLine: true,
               trailing: Wrap(spacing: 4, children: [
-                if (!esCiclo) IconButton(tooltip: 'Volver al ciclo actual', icon: const Icon(Icons.restart_alt), onPressed: () => setState(() => _periodo = ciclo)),
-                IconButton(tooltip: 'Cambiar periodo', icon: const Icon(Icons.edit_calendar), onPressed: _cambiarPeriodo),
+                if (!esCiclo) IconButton(tooltip: 'Volver al ciclo actual', icon: const Icon(Ico.reiniciar), onPressed: () => setState(() => _periodo = ciclo)),
+                IconButton(tooltip: 'Cambiar periodo', icon: const Icon(Ico.cambiarFecha), onPressed: _cambiarPeriodo),
               ]),
             ),
           ),
@@ -158,17 +158,17 @@ class _ReportesPantallaState extends ConsumerState<ReportesPantalla> {
           Card(
             child: Column(children: [
               ListTile(
-                leading: const Icon(Icons.bolt),
+                leading: const Icon(Ico.energia),
                 title: const Text('Consulta rápida'),
                 subtitle: const Text('Vencidos, consumibles bajo mínimo y lo que falta verificar'),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const Icon(Ico.avanzar),
                 onTap: () => context.push('/consulta-rapida'),
               ),
               ListTile(
-                leading: const Icon(Icons.checklist),
+                leading: const Icon(Ico.contar),
                 title: const Text('Revisiones de kits'),
                 subtitle: const Text('Lo que se encontró de cada kit contra su lista de fábrica'),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const Icon(Ico.avanzar),
                 onTap: () => context.push('/revisiones-kit'),
               ),
             ]),
@@ -227,18 +227,18 @@ class _ReportesPantallaState extends ConsumerState<ReportesPantalla> {
           Card(
             child: Column(children: [
               ListTile(
-                leading: const Icon(Icons.fact_check_outlined),
+                leading: const Icon(Ico.revisar),
                 title: const Text('Acta de inventario periódico'),
                 subtitle: const Text('Con folio, resultado del conteo y firmas'),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const Icon(Ico.avanzar),
                 enabled: !ocupado,
                 onTap: _actaInventario,
               ),
               ListTile(
-                leading: const Icon(Icons.handshake_outlined),
+                leading: const Icon(Ico.entrega),
                 title: const Text('Acta de entrega-recepción'),
                 subtitle: Text(sesion?.rol == Rol.subadmin ? 'Con folio, inventario completo en anexos y firmas' : 'La genera sub administración'),
-                trailing: const Icon(Icons.chevron_right),
+                trailing: const Icon(Ico.avanzar),
                 enabled: !ocupado && sesion?.rol == Rol.subadmin,
                 onTap: () => context.push('/acta-entrega'),
               ),
@@ -275,8 +275,8 @@ class _Reporte extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Wrap(spacing: 8, runSpacing: 8, children: [
-                OutlinedButton.icon(icon: const Icon(Icons.table_view), label: const Text('Excel'), onPressed: ocupado ? null : () => generar(false)),
-                OutlinedButton.icon(icon: const Icon(Icons.picture_as_pdf_outlined), label: const Text('PDF'), onPressed: ocupado ? null : () => generar(true)),
+                OutlinedButton.icon(icon: const Icon(Ico.excel), label: const Text('Excel'), onPressed: ocupado ? null : () => generar(false)),
+                OutlinedButton.icon(icon: const Icon(Ico.pdf), label: const Text('PDF'), onPressed: ocupado ? null : () => generar(true)),
               ]),
             ),
           ]),
@@ -306,7 +306,7 @@ class ConsultaRapidaPantalla extends ConsumerWidget {
               Card(
                 child: ExpansionTile(
                   initiallyExpanded: c.vencidos.isNotEmpty,
-                  leading: Icon(Icons.alarm, color: c.vencidos.isEmpty ? null : tema.colorScheme.error),
+                  leading: Icon(Ico.alarma, color: c.vencidos.isEmpty ? null : tema.colorScheme.error),
                   title: Text('Préstamos vencidos: ${c.vencidos.length}'),
                   children: [
                     if (c.vencidos.isEmpty) const ListTile(title: Text('Nada vencido.')),
@@ -326,7 +326,7 @@ class ConsultaRapidaPantalla extends ConsumerWidget {
               Card(
                 child: ExpansionTile(
                   initiallyExpanded: c.bajoMinimo.isNotEmpty,
-                  leading: Icon(Icons.inventory_outlined, color: c.bajoMinimo.isEmpty ? null : Avisos.pendiente),
+                  leading: Icon(Ico.inventarios, color: c.bajoMinimo.isEmpty ? null : Avisos.pendiente),
                   title: Text('Consumibles en su mínimo o abajo: ${c.bajoMinimo.length}'),
                   children: [
                     if (c.bajoMinimo.isEmpty) const ListTile(title: Text('Ninguno (solo cuentan los que tienen mínimo definido).')),
@@ -334,7 +334,7 @@ class ConsultaRapidaPantalla extends ConsumerWidget {
                       ListTile(
                         title: Text(a.nombre),
                         subtitle: Text('Quedan ${conUnidad(a.existencia - a.prestado - a.fueraServicio, a.unidad)} · mínimo ${a.minimoReposicion}'),
-                        trailing: const Icon(Icons.chevron_right),
+                        trailing: const Icon(Ico.avanzar),
                         onTap: () => context.push('/articulo/${a.id}'),
                       ),
                   ],
@@ -345,7 +345,7 @@ class ConsultaRapidaPantalla extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     ListTile(
-                      leading: const Icon(Icons.verified_outlined),
+                      leading: const Icon(Ico.verificado),
                       title: Text('Sin verificar: $totalSin de $total'),
                       subtitle: LinearProgressIndicator(value: total == 0 ? 0 : (total - totalSin) / total),
                     ),
@@ -369,9 +369,9 @@ class ConsultaRapidaPantalla extends ConsumerWidget {
               ),
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.flag_outlined),
+                  leading: const Icon(Ico.reportar),
                   title: Text('Pendientes abiertos: ${c.pendientes}'),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const Icon(Ico.avanzar),
                   onTap: () => context.push('/pendientes'),
                 ),
               ),
@@ -479,7 +479,7 @@ class _RevisionesKitPantallaState extends ConsumerState<RevisionesKitPantalla> {
                     if (r['actualizada_en'] != null) 'Última vez: ${fechaHora(DateTime.parse('${r['actualizada_en']}'))}${r['actualizada_por'] == null ? '' : ' por ${r['actualizada_por']}'}',
                   ].join('\n')),
                   isThreeLine: true,
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const Icon(Ico.avanzar),
                   onTap: () async {
                     await context.push('/revision-kit/${r['id']}');
                     await recargar();
@@ -685,7 +685,7 @@ class _EditorRevisionState extends ConsumerState<_EditorRevision> {
         bottom: 16,
         child: FloatingActionButton.extended(
           onPressed: _guardando ? null : _guardar,
-          icon: _guardando ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.save),
+          icon: _guardando ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Ico.guardar),
           label: const Text('Guardar'),
         ),
       ),
@@ -724,7 +724,7 @@ class _EditorFirmantesState extends State<EditorFirmantes> {
                   ),
                   IconButton(
                     tooltip: 'Quitar',
-                    icon: const Icon(Icons.delete_outline),
+                    icon: const Icon(Ico.quitar),
                     onPressed: () => setState(() => widget.firmantes.remove(f)),
                   ),
                 ]),
@@ -736,7 +736,7 @@ class _EditorFirmantesState extends State<EditorFirmantes> {
             ),
           ),
         TextButton.icon(
-          icon: const Icon(Icons.person_add_alt),
+          icon: const Icon(Ico.agregarPersona),
           label: const Text('Agregar quien firma'),
           onPressed: () => setState(() => widget.firmantes.add(Firmante(papel: 'Firma'))),
         ),
@@ -892,8 +892,8 @@ class _FormActaState extends ConsumerState<_FormActa> {
             const SizedBox(height: 8),
             Wrap(spacing: 8, runSpacing: 8, children: [
               FilledButton.icon(
-                  icon: const Icon(Icons.picture_as_pdf_outlined), label: const Text('Generar PDF'), onPressed: _estado != null ? null : () => _generar(true)),
-              OutlinedButton.icon(icon: const Icon(Icons.table_view), label: const Text('Excel'), onPressed: _estado != null ? null : () => _generar(false)),
+                  icon: const Icon(Ico.pdf), label: const Text('Generar PDF'), onPressed: _estado != null ? null : () => _generar(true)),
+              OutlinedButton.icon(icon: const Icon(Ico.excel), label: const Text('Excel'), onPressed: _estado != null ? null : () => _generar(false)),
             ]),
           ]),
         ),

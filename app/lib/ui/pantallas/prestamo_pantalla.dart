@@ -199,21 +199,21 @@ class _PrestamoPantallaState extends ConsumerState<PrestamoPantalla> {
                     alCambiar: (v) => setState(() => l.cantidad = v),
                   ),
                   if (_lineas.length > 1)
-                    IconButton(icon: const Icon(Icons.close), tooltip: 'Quitar', onPressed: () => setState(() => _lineas.remove(l))),
+                    IconButton(icon: const Icon(Ico.cerrar), tooltip: 'Quitar', onPressed: () => setState(() => _lineas.remove(l))),
                 ]),
               ),
             ),
           Align(
             alignment: Alignment.centerLeft,
-            child: TextButton.icon(onPressed: _agregarArticulo, icon: const Icon(Icons.add), label: const Text('Agregar otro artículo')),
+            child: TextButton.icon(onPressed: _agregarArticulo, icon: const Icon(Ico.nuevo), label: const Text('Agregar otro artículo')),
           ),
           const SizedBox(height: 16),
           Text('Para quién', style: tema.textTheme.titleMedium),
           const SizedBox(height: 8),
           SegmentedButton<_ParaQuien>(
             segments: const [
-              ButtonSegment(value: _ParaQuien.yo, icon: Icon(Icons.person), label: Text('Para mí')),
-              ButtonSegment(value: _ParaQuien.persona, icon: Icon(Icons.school_outlined), label: Text('Alumno o maestro')),
+              ButtonSegment(value: _ParaQuien.yo, icon: Icon(Ico.persona), label: Text('Para mí')),
+              ButtonSegment(value: _ParaQuien.persona, icon: Icon(Ico.escuela), label: Text('Alumno o maestro')),
             ],
             selected: {_para},
             onSelectionChanged: (s) => setState(() {
@@ -280,7 +280,7 @@ class _BuscarArticuloState extends State<BuscarArticulo> {
             padding: const EdgeInsets.all(16),
             child: TextField(
               autofocus: true,
-              decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Buscar artículo disponible'),
+              decoration: const InputDecoration(prefixIcon: Icon(Ico.buscar), hintText: 'Buscar artículo disponible'),
               onChanged: (t) => setState(() => _texto = t),
             ),
           ),
@@ -383,7 +383,7 @@ class _BuscarPersonaState extends ConsumerState<_BuscarPersona> {
         margin: const EdgeInsets.only(top: 12),
         color: p.bloqueado ? tema.colorScheme.errorContainer : null,
         child: ListTile(
-          leading: const Icon(Icons.badge_outlined),
+          leading: const Icon(Ico.credencial),
           title: Text(p.nombre),
           subtitle: Text([
             p.tipo.nombre,

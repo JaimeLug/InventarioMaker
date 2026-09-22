@@ -15,7 +15,8 @@ Control de inventario en tiempo real del Laboratorio Maker. Diseño aprobado en 
 | 7a | Rediseño: sistema de diseño, tema claro/oscuro y componentes | Hecha |
 | 7b | Rediseño: navegación, tablero, inventario y ficha | Hecha |
 | 7c | Rediseño: herramientas, contenedores, pendientes, conteos, inventarios y kits | Hecha |
-| 7d | Rediseño: préstamo, devolución, solicitudes, adeudos, reportes y administración | **Lista para probar** |
+| 7d | Rediseño: préstamo, devolución, solicitudes, adeudos, reportes y administración | Hecha |
+| 7e | Pulido del rediseño: barras de navegación, gestos y transiciones | **Lista para probar** |
 
 ## Fase 1: cómo probarla
 
@@ -125,6 +126,8 @@ flutter test
 | PIN | Nombre + PIN, por la función `acceso-pin` | Acciones de docente (agregar fotos) | La base lee en el token si la sesión se abrió con PIN o contraseña |
 | Contraseña | Correo + contraseña | Todo lo que permita el rol | `app.exigir()` en cada función |
 | Reconfirmar | Volver a escribir la contraseña | Acciones graves (VEX ↔ FTC, cuentas, PIN) | `public.confirmar_contrasena` + `app.exigir_confirmacion()`; vale 5 min y una sola acción |
+
+Cada quien cambia su propia contraseña en **Mi cuenta → Cambiar mi contraseña** (pide la actual). El PIN se cambia en la misma pantalla, reconfirmando la contraseña.
 
 La jornada dura 8 horas desde que se abrió la sesión (la base lo revisa en cada acción). En web, además, la sesión se cierra tras 30 minutos sin tocar la pantalla.
 
@@ -270,6 +273,45 @@ La app guarda en el celular el catálogo, contenedores, pendientes, préstamos a
 - Todo entra al servidor por `comando_sin_conexion`: se aplica una sola vez aunque llegue repetido. Si el material ya se movió en físico (dos préstamos de la última pieza) se acepta **con conflicto**, se crea el pendiente "Contar físicamente" y se avisa. Si es imposible (devolver dos veces) va a *Por resolver*.
 - Se envía a nombre de quien lo capturó: si la sesión venció, la app pide que entre esa misma persona.
 - Menú → **Conflictos sin conexión** (responsable y sub administración). Lo recibido más de 72 h después queda marcado "Registrado tarde".
+
+## Icono de la app
+
+El icono es un cubo dentro de unas marcas de escaneo, en tinta `#16211F`, óxido `#C4571F` y papel `#F2EEE6`.
+Los archivos originales están en `app/assets/marca/` (no se empacan dentro de la app: solo sirven para generar los iconos).
+
+| Dónde | Qué se usa |
+|---|---|
+| **Celular** | Icono adaptativo: fondo tinta + dibujo, más la versión de un solo color que Android usa en el tema con color del sistema |
+| **Web (pestaña)** | `favicon.svg`, que es solo el cubo, porque abajo de 32 px las marcas de las esquinas se pierden; queda `favicon.png` de respaldo |
+| **Web (instalada)** | `web/icons/` y `manifest.json`, con fondo tinta |
+
+Para volver a generarlos después de cambiar los archivos de `app/assets/marca/`:
+
+```
+cd app
+flutter pub run flutter_launcher_icons
+```
+
+Eso reescribe `android/app/src/main/res/`, `web/icons/` y los colores del `manifest.json`. El archivo `mipmap-anydpi-v26/ic_launcher.xml` se deja sin el margen extra que agrega la herramienta, porque el dibujo ya trae el suyo.
+
+### Una sola familia de iconos
+
+Toda la app usa **Lucide** a través de `Ico` (`app/lib/ui/diseno/iconos.dart`). Ningún widget llama a un icono directo: si algún día cambiamos de librería, se toca un solo archivo. Ya no queda ningún icono de Material ni ningún emoji en la interfaz.
+
+Reglas: un icono por acción (préstamo y devolución nunca comparten forma); el color nunca va solo, siempre con texto (por daltonismo y porque los reportes se imprimen en blanco y negro); 24 px en general y 20 px en listas apretadas, y de 14 a 16 px solo como adorno dentro de una insignia que ya lleva su texto; todo botón de solo icono lleva su globito de ayuda y 44 px de área para el dedo.
+
+El color y las tipografías de la interfaz **no** cambiaron: siguen siendo los del sistema "Taller Maker" (fase 7a), que van empacados para que se vean igual sin conexión.
+
+## Fase 7e: pulido
+
+| Qué | Detalle |
+|---|---|
+| **Barra lateral** | Se pliega a solo iconos con el botón «/» y lo recuerda el dispositivo; resalta al pasar el mouse y con el teclado; la franja roja de "estás aquí" queda pegada al borde; el contenido se desplaza con su propia barra y la cuenta queda fija abajo |
+| **Barra inferior (celular)** | **Escanear** sobresale al centro con borde y sombra; el destino activo lleva una barrita arriba; los nombres no se parten; vibración corta al tocar |
+| **Transiciones** | Todas las pantallas entran con el mismo desvanecido corto (170 ms); se desactiva si el celular tiene "reducir movimiento" |
+| **Gestos** | En la computadora y la web las listas se arrastran también con el mouse, y se puede jalar hacia abajo para recargar aunque la lista sea corta |
+
+Sobre los datos: el catálogo y los contadores se quedan en memoria mientras la app está abierta, así que cambiar de pantalla no vuelve a pedirlos al servidor.
 
 ## Fase 7d: flujos y administración
 

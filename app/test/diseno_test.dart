@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:inventario_maker/ui/diseno/iconos.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:inventario_maker/modelos/articulo.dart';
 import 'package:inventario_maker/modelos/catalogos.dart';
@@ -108,12 +109,12 @@ void main() {
 
     testWidgets('en pantalla angosta la navegación va abajo y en ancha a un lado', (tester) async {
       const grupos = [
-        TmGrupoNav('Operación', [TmDestino('/', 'Tablero', Icons.dashboard), TmDestino('/inventario', 'Inventario', Icons.inventory)]),
+        TmGrupoNav('Operación', [TmDestino('/', 'Tablero', Ico.tablero), TmDestino('/inventario', 'Inventario', Ico.inventario)]),
       ];
       const barra = [
-        TmDestino('/', 'Inicio', Icons.home),
-        TmDestino('/escanear', 'Escanear', Icons.qr_code),
-        TmDestino('/mas', 'Más', Icons.menu),
+        TmDestino('/', 'Inicio', Ico.inicio),
+        TmDestino('/escanear', 'Escanear', Ico.escanear),
+        TmDestino('/mas', 'Más', Ico.menu),
       ];
       Widget shell(Size tamano) => MaterialApp(
             theme: temaClaro(),

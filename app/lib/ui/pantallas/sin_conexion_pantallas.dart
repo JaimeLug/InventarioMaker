@@ -29,11 +29,11 @@ class IndicadorConexion extends StatelessWidget {
         final porEnviar = cola.porEnviar.length;
         final porResolver = cola.porResolver.length;
         final (icono, color, texto) = switch (true) {
-          _ when porResolver > 0 => (Icons.error_outline, Theme.of(context).colorScheme.error, '$porResolver por resolver'),
-          _ when cola.hayAtrasados => (Icons.cloud_off, Theme.of(context).colorScheme.error, '$porEnviar sin enviar desde hace más de 24 h'),
-          _ when cola.sinSenal => (Icons.cloud_off, Colors.grey.shade600, porEnviar == 0 ? 'Sin conexión' : 'Sin conexión · $porEnviar por enviar'),
-          _ when porEnviar > 0 => (Icons.cloud_upload_outlined, Avisos.pendiente, '$porEnviar por enviar'),
-          _ => (Icons.cloud_done_outlined, Colors.green.shade700, 'En línea'),
+          _ when porResolver > 0 => (Ico.alerta, Theme.of(context).colorScheme.error, '$porResolver por resolver'),
+          _ when cola.hayAtrasados => (Ico.sinConexion, Theme.of(context).colorScheme.error, '$porEnviar sin enviar desde hace más de 24 h'),
+          _ when cola.sinSenal => (Ico.sinConexion, Colors.grey.shade600, porEnviar == 0 ? 'Sin conexión' : 'Sin conexión · $porEnviar por enviar'),
+          _ when porEnviar > 0 => (Ico.porEnviar, Avisos.pendiente, '$porEnviar por enviar'),
+          _ => (Ico.enLinea, Colors.green.shade700, 'En línea'),
         };
         return IconButton(
           tooltip: texto,
@@ -88,7 +88,7 @@ class SinConexionPantalla extends ConsumerWidget {
               child: Column(children: [
                 if (cola.enviando || cola.actualizando) const LinearProgressIndicator(),
                 ListTile(
-                  leading: Icon(cola.sinSenal ? Icons.cloud_off : Icons.cloud_done_outlined),
+                  leading: Icon(cola.sinSenal ? Ico.sinConexion : Ico.enLinea),
                   title: Text(cola.sinSenal ? 'Sin conexión' : 'En línea'),
                   subtitle: Text(cola.datosDe == null
                       ? 'Todavía no hay datos guardados para trabajar sin señal.'
@@ -136,7 +136,7 @@ class SinConexionPantalla extends ConsumerWidget {
                       hijos: [
                         for (final c in cola.porEnviar)
                           ListTile(
-                            leading: const Icon(Icons.schedule),
+                            leading: const Icon(Ico.reloj),
                             title: Text(c.resumen),
                             subtitle: Text('${fechaHora(c.capturado)} · ${c.usuarioNombre}'
                                 '${c.fotos.isEmpty ? '' : ' · ${c.fotos.where((f) => f.subida).length} de ${c.fotos.length} fotos subidas'}'),
@@ -181,7 +181,7 @@ class SinConexionPantalla extends ConsumerWidget {
                       hijos: [
                         for (final e in cola.enviados.take(40))
                           ListTile(
-                            leading: Icon(e.conflicto == null ? Icons.check_circle_outline : Icons.warning_amber, color: e.conflicto == null ? Colors.green.shade700 : Avisos.pendiente),
+                            leading: Icon(e.conflicto == null ? Ico.ok : Ico.aviso, color: e.conflicto == null ? Colors.green.shade700 : Avisos.pendiente),
                             title: Text(e.resumen),
                             subtitle: Text([
                               'Enviado: ${fechaHora(e.enviado)}',
@@ -251,7 +251,7 @@ class ConflictosPantalla extends StatelessWidget {
               if (lista.isEmpty) const ListTile(title: Text('No hay conflictos.')),
               for (final c in lista)
                 ListTile(
-                  leading: Icon(c['conflicto'] == true ? Icons.warning_amber : Icons.history, color: c['conflicto'] == true ? Avisos.pendiente : null),
+                  leading: Icon(c['conflicto'] == true ? Ico.aviso : Ico.historial, color: c['conflicto'] == true ? Avisos.pendiente : null),
                   title: Text('${c['articulo']} · ${nombresMovimiento[c['tipo']] ?? c['tipo']} ×${c['cantidad']}'),
                   subtitle: Text([
                     if (c['motivo'] != null) '${c['motivo']}',
@@ -260,7 +260,7 @@ class ConflictosPantalla extends StatelessWidget {
                         '${c['a_cargo'] == null ? '' : ' · a cargo de ${c['a_cargo']}'}',
                   ].join('\n')),
                   isThreeLine: true,
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const Icon(Ico.avanzar),
                   onTap: () => context.push('/articulo/${c['articulo_id']}'),
                 ),
             ]),

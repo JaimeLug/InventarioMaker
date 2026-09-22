@@ -40,14 +40,10 @@ class HerramientasPantalla extends ConsumerWidget {
       ],
       child: articulos.when(
         loading: () => ListView(padding: const EdgeInsets.all(Espacio.x4), children: const [TmCargandoLista()]),
-        error: (e, _) => TmErrorCarga(
-          mensaje: 'No se pudo leer el taller. Revisa la conexión.',
-          onReintentar: () => ref.invalidate(articulosProvider),
-        ),
+        error: (e, _) =>
+            TmErrorCarga(mensaje: 'No se pudo leer el taller. Revisa la conexión.', onReintentar: () => ref.invalidate(articulosProvider)),
         data: (todos) {
-          final herramientas = todos
-              .where((a) => a.categoria == Categoria.herramientas || a.categoria == Categoria.herramientasElectricas)
-              .toList()
+          final herramientas = todos.where((a) => a.categoria == Categoria.herramientas || a.categoria == Categoria.herramientasElectricas).toList()
             ..sort((x, y) => x.nombre.compareTo(y.nombre));
           if (herramientas.isEmpty) {
             return const TmVacio(
@@ -66,7 +62,9 @@ class HerramientasPantalla extends ConsumerWidget {
           final porGrupo = <String, List<Articulo>>{};
           for (final a in herramientas) {
             final clave = _grupos.keys.firstWhere(
-              (k) => (a.subcategoria ?? '').toLowerCase().contains(k.toLowerCase()) || (k == 'Mano' && (a.subcategoria ?? '').toLowerCase().contains('manual')),
+              (k) =>
+                  (a.subcategoria ?? '').toLowerCase().contains(k.toLowerCase()) ||
+                  (k == 'Mano' && (a.subcategoria ?? '').toLowerCase().contains('manual')),
               orElse: () => 'Otras',
             );
             (porGrupo[clave] ??= []).add(a);
@@ -77,35 +75,51 @@ class HerramientasPantalla extends ConsumerWidget {
               ref.invalidate(articulosProvider);
               await ref.read(articulosProvider.future);
             },
-            child: ListView(padding: const EdgeInsets.all(Espacio.x4), children: [
-              GridView.count(
-                crossAxisCount: MediaQuery.sizeOf(context).width < Quiebre.compacto ? 2 : 4,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: Espacio.x3,
-                crossAxisSpacing: Espacio.x3,
-                childAspectRatio: MediaQuery.sizeOf(context).width < Quiebre.compacto ? 2.1 : 2.3,
-                children: [
-                  TmKpi(etiqueta: 'En su lugar', valor: '$enSuLugar', pie: 'listas para usarse', iconoPie: Ico.ok),
-                  TmKpi(etiqueta: 'Prestadas', valor: '$prestadas', pie: 'fuera del taller', iconoPie: Ico.prestamos, tono: prestadas > 0 ? TonoKpi.atencion : TonoKpi.normal),
-                  TmKpi(etiqueta: 'Fuera de servicio', valor: '$fuera', pie: 'esperan reparación', iconoPie: Ico.aviso, tono: fuera > 0 ? TonoKpi.critico : TonoKpi.normal),
-                  TmKpi(etiqueta: 'Equipo fijo', valor: '$fijas', pie: 'no sale del taller', iconoPie: Ico.noSePresta),
-                ],
-              ),
-              const SizedBox(height: Espacio.x4),
-              const _Leyenda(),
-              const SizedBox(height: Espacio.x4),
-              for (final clave in [..._grupos.keys.where(porGrupo.containsKey), if (porGrupo.containsKey('Otras')) 'Otras'])
-                Padding(
-                  padding: const EdgeInsets.only(bottom: Espacio.x4),
-                  child: _Tablero(
-                    titulo: _grupos[clave]?.$1 ?? 'Otras herramientas',
-                    icono: _grupos[clave]?.$2 ?? Ico.herramientas,
-                    herramientas: porGrupo[clave]!,
-                  ),
+            child: ListView(
+              padding: const EdgeInsets.all(Espacio.x4),
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                GridView.count(
+                  crossAxisCount: MediaQuery.sizeOf(context).width < Quiebre.compacto ? 2 : 4,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  mainAxisSpacing: Espacio.x3,
+                  crossAxisSpacing: Espacio.x3,
+                  childAspectRatio: MediaQuery.sizeOf(context).width < Quiebre.compacto ? 2.1 : 2.3,
+                  children: [
+                    TmKpi(etiqueta: 'En su lugar', valor: '$enSuLugar', pie: 'listas para usarse', iconoPie: Ico.ok),
+                    TmKpi(
+                      etiqueta: 'Prestadas',
+                      valor: '$prestadas',
+                      pie: 'fuera del taller',
+                      iconoPie: Ico.prestamos,
+                      tono: prestadas > 0 ? TonoKpi.atencion : TonoKpi.normal,
+                    ),
+                    TmKpi(
+                      etiqueta: 'Fuera de servicio',
+                      valor: '$fuera',
+                      pie: 'esperan reparación',
+                      iconoPie: Ico.aviso,
+                      tono: fuera > 0 ? TonoKpi.critico : TonoKpi.normal,
+                    ),
+                    TmKpi(etiqueta: 'Equipo fijo', valor: '$fijas', pie: 'no sale del taller', iconoPie: Ico.noSePresta),
+                  ],
                 ),
-              const SizedBox(height: Espacio.x10),
-            ]),
+                const SizedBox(height: Espacio.x4),
+                const _Leyenda(),
+                const SizedBox(height: Espacio.x4),
+                for (final clave in [..._grupos.keys.where(porGrupo.containsKey), if (porGrupo.containsKey('Otras')) 'Otras'])
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: Espacio.x4),
+                    child: _Tablero(
+                      titulo: _grupos[clave]?.$1 ?? 'Otras herramientas',
+                      icono: _grupos[clave]?.$2 ?? Ico.herramientas,
+                      herramientas: porGrupo[clave]!,
+                    ),
+                  ),
+                const SizedBox(height: Espacio.x10),
+              ],
+            ),
           );
         },
       ),
@@ -119,22 +133,33 @@ class _Leyenda extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.tm;
-    Widget punto(Color borde, Color fondo, String texto, {bool punteado = false}) => Row(mainAxisSize: MainAxisSize.min, children: [
-          Container(
-            width: 16,
-            height: 12,
-            decoration: BoxDecoration(color: fondo, borderRadius: BorderRadius.circular(3), border: Border.all(color: borde, width: 1.5)),
-            child: punteado ? CustomPaint(painter: _Rayas(borde)) : null,
+    Widget punto(Color borde, Color fondo, String texto, {bool punteado = false}) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 16,
+          height: 12,
+          decoration: BoxDecoration(
+            color: fondo,
+            borderRadius: BorderRadius.circular(3),
+            border: Border.all(color: borde, width: 1.5),
           ),
-          const SizedBox(width: 5),
-          Text(texto, style: Tipografia.chico.copyWith(fontSize: 12.5, color: c.textoSecundario)),
-        ]);
-    return Wrap(spacing: Espacio.x4, runSpacing: Espacio.x2, children: [
-      punto(c.deCategoria(Categoria.herramientas), c.avisoSuave, 'En su lugar'),
-      punto(c.infoRelleno, c.infoSuave, 'Prestada', punteado: true),
-      punto(c.bordeFuerte, c.superficieHundida, 'Fuera de servicio'),
-      punto(c.bordeFuerte, c.superficie, 'Equipo fijo'),
-    ]);
+          child: punteado ? CustomPaint(painter: _Rayas(borde)) : null,
+        ),
+        const SizedBox(width: 5),
+        Text(texto, style: Tipografia.chico.copyWith(fontSize: 12.5, color: c.textoSecundario)),
+      ],
+    );
+    return Wrap(
+      spacing: Espacio.x4,
+      runSpacing: Espacio.x2,
+      children: [
+        punto(c.deCategoria(Categoria.herramientas), c.avisoSuave, 'En su lugar'),
+        punto(c.infoRelleno, c.infoSuave, 'Prestada', punteado: true),
+        punto(c.bordeFuerte, c.superficieHundida, 'Fuera de servicio'),
+        punto(c.bordeFuerte, c.superficie, 'Equipo fijo'),
+      ],
+    );
   }
 }
 
@@ -175,21 +200,26 @@ class _Tablero extends StatelessWidget {
         borderRadius: Redondeo.rLg,
         border: Border.all(color: c.borde),
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Icon(icono, size: 20, color: c.textoSecundario),
-          const SizedBox(width: Espacio.x2),
-          Text(titulo.toUpperCase(), style: Tipografia.etiqueta.copyWith(fontSize: 14, color: c.texto)),
-          const SizedBox(width: Espacio.x2),
-          Text('${herramientas.length}', style: Tipografia.codigo.copyWith(color: c.textoTenue)),
-        ]),
-        const SizedBox(height: Espacio.x3),
-        Wrap(
-          spacing: Espacio.x3,
-          runSpacing: Espacio.x3,
-          children: [for (final h in herramientas) SizedBox(width: 196, child: _Hueco(articulo: h))],
-        ),
-      ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icono, size: 20, color: c.textoSecundario),
+              const SizedBox(width: Espacio.x2),
+              Text(titulo.toUpperCase(), style: Tipografia.etiqueta.copyWith(fontSize: 14, color: c.texto)),
+              const SizedBox(width: Espacio.x2),
+              Text('${herramientas.length}', style: Tipografia.codigo.copyWith(color: c.textoTenue)),
+            ],
+          ),
+          const SizedBox(height: Espacio.x3),
+          Wrap(
+            spacing: Espacio.x3,
+            runSpacing: Espacio.x3,
+            children: [for (final h in herramientas) SizedBox(width: 196, child: _Hueco(articulo: h))],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -209,25 +239,25 @@ class _Hueco extends StatelessWidget {
     final (borde, fondo, punteado, detalle, tono) = switch (situacion) {
       SituacionStock.noSePresta => (c.bordeFuerte, c.superficie, false, 'Equipo fijo: no sale del taller', c.textoSecundario),
       SituacionStock.agotado || SituacionStock.ningunoDisponible when a.prestado > 0 => (
-          c.infoRelleno,
-          c.infoSuave,
-          true,
-          a.prestadoHasta == null ? 'Prestada' : 'Prestada · regresa ${fecha(a.prestadoHasta!)}',
-          c.info
-        ),
+        c.infoRelleno,
+        c.infoSuave,
+        true,
+        a.prestadoHasta == null ? 'Prestada' : 'Prestada · regresa ${fecha(a.prestadoHasta!)}',
+        c.info,
+      ),
       SituacionStock.agotado || SituacionStock.ningunoDisponible => (c.bordeFuerte, c.superficieHundida, false, 'Fuera de servicio', c.textoTenue),
       SituacionStock.sinContar => (c.bordeFuerte, c.superficie, false, 'Sin contar', c.textoTenue),
       _ => (
-          c.deCategoria(Categoria.herramientas),
-          Color.alphaBlend(c.avisoSuave.withValues(alpha: .6), c.superficie),
-          false,
-          [
-            '$enTaller en su lugar',
-            if (a.prestado > 0) '${a.prestado} prestada${a.prestado == 1 ? '' : 's'}',
-            if (a.fueraServicio > 0) '${a.fueraServicio} fuera',
-          ].join(' · '),
-          c.exito
-        ),
+        c.deCategoria(Categoria.herramientas),
+        Color.alphaBlend(c.avisoSuave.withValues(alpha: .6), c.superficie),
+        false,
+        [
+          '$enTaller en su lugar',
+          if (a.prestado > 0) '${a.prestado} prestada${a.prestado == 1 ? '' : 's'}',
+          if (a.fueraServicio > 0) '${a.fueraServicio} fuera',
+        ].join(' · '),
+        c.exito,
+      ),
     };
 
     return Semantics(
@@ -236,32 +266,55 @@ class _Hueco extends StatelessWidget {
       child: InkWell(
         onTap: () => context.push('/articulo/${a.id}'),
         borderRadius: Redondeo.rMd,
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-          Container(
-            height: 76,
-            width: double.infinity,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(color: fondo, borderRadius: Redondeo.rMd),
-            foregroundDecoration: BoxDecoration(
-              borderRadius: Redondeo.rMd,
-              border: punteado ? null : Border.all(color: borde, width: 1.5),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              height: 76,
+              width: double.infinity,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: fondo, borderRadius: Redondeo.rMd),
+              foregroundDecoration: BoxDecoration(
+                borderRadius: Redondeo.rMd,
+                border: punteado ? null : Border.all(color: borde, width: 1.5),
+              ),
+              child: CustomPaint(
+                painter: punteado ? _Punteado(borde) : null,
+                child: Center(child: Icon(Ico.deSubcategoria(a.subcategoria), size: 30, color: tono)),
+              ),
             ),
-            child: CustomPaint(
-              painter: punteado ? _Punteado(borde) : null,
-              child: Center(child: Icon(Ico.deSubcategoria(a.subcategoria), size: 30, color: tono)),
+            const SizedBox(height: Espacio.x2),
+            Text(
+              a.nombre,
+              style: Tipografia.chicoFuerte.copyWith(color: c.texto),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-          ),
-          const SizedBox(height: Espacio.x2),
-          Text(a.nombre, style: Tipografia.chicoFuerte.copyWith(color: c.texto), maxLines: 2, overflow: TextOverflow.ellipsis),
-          if (a.marcaModelo != null)
-            Text(a.marcaModelo!, style: Tipografia.chico.copyWith(fontSize: 12.5, color: c.textoTenue), maxLines: 1, overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 2),
-          Row(children: [
-            Icon(situacion.icono, size: 14, color: tono),
-            const SizedBox(width: 4),
-            Expanded(child: Text(detalle, style: Tipografia.chicoFuerte.copyWith(fontSize: 12.5, color: tono), maxLines: 2, overflow: TextOverflow.ellipsis)),
-          ]),
-        ]),
+            if (a.marcaModelo != null)
+              Text(
+                a.marcaModelo!,
+                style: Tipografia.chico.copyWith(fontSize: 12.5, color: c.textoTenue),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                Icon(situacion.icono, size: 14, color: tono),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    detalle,
+                    style: Tipografia.chicoFuerte.copyWith(fontSize: 12.5, color: tono),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

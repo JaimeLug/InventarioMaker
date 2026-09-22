@@ -82,7 +82,7 @@ class _PendientesPantallaState extends ConsumerState<PendientesPantalla> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                   child: TextField(
-                    decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Buscar artículo o pendiente'),
+                    decoration: const InputDecoration(prefixIcon: Icon(Ico.buscar), hintText: 'Buscar artículo o pendiente'),
                     onChanged: (t) => setState(() => _texto = t),
                   ),
                 ),
@@ -107,7 +107,7 @@ class _PendientesPantallaState extends ConsumerState<PendientesPantalla> {
                     children: [
                       for (final p in grupos[g]!)
                         ListTile(
-                          leading: Icon(Icons.flag_outlined, color: p.prioridadAlta ? Avisos.sinClasificar : Avisos.pendiente),
+                          leading: Icon(Ico.reportar, color: p.prioridadAlta ? Avisos.sinClasificar : Avisos.pendiente),
                           title: Text('${articulos[p.articuloId]!.codigo} · ${articulos[p.articuloId]!.nombre}'),
                           subtitle: Text([if (_agrupar != _Agrupar.tipo) nombresTarea[p.tipo] ?? p.tipo, p.descripcion].join('\n'),
                               maxLines: 3, overflow: TextOverflow.ellipsis),
@@ -275,7 +275,7 @@ class _HojaPendienteState extends ConsumerState<_HojaPendiente> {
                     Navigator.pop(context);
                     await contarArticulo(context, ref, a);
                   },
-            icon: const Icon(Icons.pin_outlined),
+            icon: const Icon(Ico.conteo),
             label: const Text('Contar ahora'),
           ),
         ],
@@ -348,7 +348,11 @@ class _HojaPendienteState extends ConsumerState<_HojaPendiente> {
           TextButton(onPressed: () => context.push('/articulo/${a.id}'), child: const Text('Ver ficha')),
           if (_aportes != null && _aportes!.isNotEmpty) ...[
             const Divider(),
-            for (final x in _aportes!) Text('💬 ${x.autor} (${fecha(x.en)}): ${x.nota}', style: tema.textTheme.bodySmall),
+            for (final x in _aportes!) Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Padding(padding: const EdgeInsets.only(top: 2), child: Icon(Ico.comentario, size: 14, color: tema.colorScheme.outline)),
+                        const SizedBox(width: 6),
+                        Expanded(child: Text('${x.autor} (${fecha(x.en)}): ${x.nota}', style: tema.textTheme.bodySmall)),
+                      ]),
           ],
           const Divider(height: 24),
           if (sesion == null)
@@ -536,8 +540,8 @@ class _ConteosState extends ConsumerState<_Conteos> {
     final elegidos = widget.lista.where((c) => _elegidos.contains(c.id)).toList();
     return ListView(padding: const EdgeInsets.all(12), children: [
       Wrap(spacing: 8, runSpacing: 8, children: [
-        FilledButton.tonalIcon(onPressed: _contarOtro, icon: const Icon(Icons.add), label: const Text('Contar un artículo')),
-        OutlinedButton.icon(onPressed: () => context.push('/pendientes'), icon: const Icon(Icons.flag_outlined), label: const Text('Pendientes de contar')),
+        FilledButton.tonalIcon(onPressed: _contarOtro, icon: const Icon(Ico.nuevo), label: const Text('Contar un artículo')),
+        OutlinedButton.icon(onPressed: () => context.push('/pendientes'), icon: const Icon(Ico.reportar), label: const Text('Pendientes de contar')),
       ]),
       const SizedBox(height: 12),
       if (widget.lista.isEmpty)
@@ -590,7 +594,7 @@ class _ConteosState extends ConsumerState<_Conteos> {
         const SizedBox(height: 8),
         FilledButton.icon(
           onPressed: _trabajando ? null : () => _aplicar(elegidos),
-          icon: const Icon(Icons.done_all),
+          icon: const Icon(Ico.todoListo),
           label: Text('Aplicar ${elegidos.length} (una sola contraseña)'),
         ),
         TextButton(onPressed: _trabajando ? null : () => _descartar(elegidos), child: const Text('Descartar los elegidos')),

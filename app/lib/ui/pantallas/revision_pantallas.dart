@@ -1,4 +1,5 @@
 import '../armazon.dart';
+import '../diseno/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -166,7 +167,11 @@ class _RevisionState extends ConsumerState<_Revision> {
                 if (i.aCargo != null) 'A cargo de: ${i.aCargo}',
               ].join('\n'), style: tema.textTheme.bodySmall),
               for (final c in i.comentarios)
-                Padding(padding: const EdgeInsets.only(top: 4), child: Text('💬 ${c.autor}: ${c.texto}', style: tema.textTheme.bodySmall)),
+                Padding(padding: const EdgeInsets.only(top: 4), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Padding(padding: const EdgeInsets.only(top: 2), child: Icon(Ico.comentario, size: 14, color: tema.colorScheme.outline)),
+                        const SizedBox(width: 6),
+                        Expanded(child: Text('${c.autor}: ${c.texto}', style: tema.textTheme.bodySmall)),
+                      ])),
               const SizedBox(height: 8),
               Wrap(spacing: 8, runSpacing: 8, children: [
                 FilledButton(onPressed: () => _resolver([i], confirmar: true), child: const Text('Confirmar')),
@@ -232,7 +237,11 @@ class MisReportesPantalla extends ConsumerWidget {
                       if (i.resueltaPor != null)
                         Text('${i.nombreEstado} por ${i.resueltaPor}${i.motivoResolucion == null ? '' : ': ${i.motivoResolucion}'}',
                             style: tema.textTheme.bodySmall),
-                      for (final c in i.comentarios) Text('💬 ${c.autor}: ${c.texto}', style: tema.textTheme.bodySmall),
+                      for (final c in i.comentarios) Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Padding(padding: const EdgeInsets.only(top: 2), child: Icon(Ico.comentario, size: 14, color: tema.colorScheme.outline)),
+                        const SizedBox(width: 6),
+                        Expanded(child: Text('${c.autor}: ${c.texto}', style: tema.textTheme.bodySmall)),
+                      ]),
                       if (i.estado == 'PENDIENTE' && i.comentarios.isNotEmpty)
                         TextButton(
                           onPressed: () async {

@@ -1,3 +1,4 @@
+import '../diseno/iconos.dart';
 import '../armazon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,18 +42,18 @@ class AvisosPantalla extends ConsumerWidget {
             return ListView(padding: const EdgeInsets.symmetric(vertical: 8), children: [
               if (!AvisosCelular.disponible)
                 const ListTile(
-                  leading: Icon(Icons.info_outline),
+                  leading: Icon(Ico.info),
                   title: Text('En este dispositivo los avisos solo se ven aquí.'),
                   subtitle: Text('En la app de Android con avisos activados también llegan al celular.'),
                 ),
               if (lista.isEmpty) const Padding(padding: EdgeInsets.all(32), child: Center(child: Text('No tienes avisos.'))),
               for (final a in lista)
                 ListTile(
-                  leading: Icon(a.titulo.startsWith('Alerta') ? Icons.warning_amber : Icons.notifications_outlined,
+                  leading: Icon(a.titulo.startsWith('Alerta') ? Ico.aviso : Ico.campana,
                       color: a.titulo.startsWith('Alerta') ? tema.colorScheme.error : null),
                   title: Text(a.titulo, style: a.leido ? null : const TextStyle(fontWeight: FontWeight.w700)),
                   subtitle: Text([if (a.cuerpo != null) a.cuerpo!, fechaHora(a.creadoEn)].join('\n')),
-                  trailing: a.ruta == null ? null : const Icon(Icons.chevron_right),
+                  trailing: a.ruta == null ? null : const Icon(Ico.avanzar),
                   onTap: a.ruta == null ? null : () => context.push(a.ruta!),
                 ),
             ]);
@@ -141,7 +142,7 @@ class AjustesPantalla extends ConsumerWidget {
                   },
                   if (a.$3.isNotEmpty) a.$3,
                 ].join('\n')),
-                trailing: const Icon(Icons.edit_outlined),
+                trailing: const Icon(Ico.editar),
                 onTap: () => _cambiar(context, ref, a.$1, a.$2, c[a.$1]),
               ),
           ]),

@@ -242,7 +242,7 @@ class _DevolucionState extends ConsumerState<_Devolucion> {
       const SizedBox(height: 24),
       FilledButton.icon(
         onPressed: _guardando ? null : _guardar,
-        icon: _guardando ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.move_to_inbox),
+        icon: _guardando ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Ico.devolver),
         label: const Text('Registrar devolución'),
       ),
     ]);

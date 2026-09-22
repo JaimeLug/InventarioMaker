@@ -58,6 +58,7 @@ abstract final class Ico {
   static const alerta = LucideIcons.circleAlert;
   static const reloj = LucideIcons.clock;
   static const campana = LucideIcons.bell;
+  static const comentario = LucideIcons.messageSquare;
   static const verificado = LucideIcons.badgeCheck;
   static const porVerificar = LucideIcons.eye;
   static const noSePresta = LucideIcons.lock;
@@ -70,6 +71,90 @@ abstract final class Ico {
   static const vacio = LucideIcons.packageOpen;
   static const sinResultados = LucideIcons.search;
   static const sinSenal = LucideIcons.wifiOff;
+
+  // Navegacion y objetos
+  static const inicio = LucideIcons.house;
+  static const arbol = LucideIcons.listTree;
+  static const caja = LucideIcons.package;
+  static const carpeta = LucideIcons.folder;
+  static const nuevaCarpeta = LucideIcons.folderPlus;
+  static const subnivel = LucideIcons.cornerDownRight;
+  static const mover = LucideIcons.folderInput;
+  static const inventarios = LucideIcons.clipboardList;
+  static const lista = LucideIcons.list;
+  static const cuadricula = LucideIcons.layoutGrid;
+  static const escuela = LucideIcons.graduationCap;
+  static const maestro = LucideIcons.presentation;
+  static const expediente = LucideIcons.contact;
+  static const credencial = LucideIcons.idCard;
+  static const acta = LucideIcons.receiptText;
+  static const oficio = LucideIcons.fileText;
+  static const nota = LucideIcons.stickyNote;
+
+  // Acciones
+  static const agregarFoto = LucideIcons.imagePlus;
+  static const galeria = LucideIcons.images;
+  static const enlazar = LucideIcons.link;
+  static const articuloNuevo = LucideIcons.packagePlus;
+  static const agregarALista = LucideIcons.listPlus;
+  static const apartar = LucideIcons.bookmarkPlus;
+  static const quitar = LucideIcons.trash;
+  static const quitarUno = LucideIcons.minus;
+  static const quitarCirculo = LucideIcons.circleMinus;
+  static const desactivar = LucideIcons.ban;
+  static const reactivar = LucideIcons.archiveRestore;
+  static const desarchivar = LucideIcons.archiveRestore;
+  static const reparar = LucideIcons.hammer;
+  static const revisar = LucideIcons.clipboardCheck;
+  static const aprobar = LucideIcons.userCheck;
+  static const aprobado = LucideIcons.thumbsUp;
+  static const entrega = LucideIcons.handshake;
+  static const enviar = LucideIcons.send;
+  static const entrar = LucideIcons.logIn;
+  static const salir = LucideIcons.logOut;
+  static const listo = LucideIcons.check;
+  static const todoListo = LucideIcons.checkCheck;
+  static const reiniciar = LucideIcons.rotateCcw;
+  static const ver = LucideIcons.eye;
+  static const ocultar = LucideIcons.eyeOff;
+  static const avanzarFlecha = LucideIcons.arrowRight;
+  static const plegar = LucideIcons.chevronsLeft;
+  static const desplegar = LucideIcons.chevronsRight;
+  static const linterna = LucideIcons.flashlight;
+  static const enEsteAparato = LucideIcons.smartphone;
+  static const agregarPersona = LucideIcons.userPlus;
+  static const buscarPersona = LucideIcons.userSearch;
+  static const cambiarFecha = LucideIcons.calendarCog;
+
+  // Estados, conteos y avisos
+  static const conteo = LucideIcons.hash;
+  static const pin = LucideIcons.squareAsterisk;
+  static const contrasena = LucideIcons.keyRound;
+  static const conContrasena = LucideIcons.shieldCheck;
+  static const categoria = LucideIcons.tag;
+  static const energia = LucideIcons.zap;
+  static const alarma = LucideIcons.alarmClock;
+  static const fecha = LucideIcons.calendar;
+  static const periodo = LucideIcons.calendarRange;
+  static const vence = LucideIcons.calendarX;
+  static const enEspera = LucideIcons.hourglass;
+  static const enCurso = LucideIcons.listTodo;
+  static const sinMarcar = LucideIcons.circle;
+  static const bloqueado = LucideIcons.ban;
+  static const abierto = LucideIcons.lockOpen;
+  static const perdida = LucideIcons.packageX;
+  static const noDisponible = LucideIcons.circleMinus;
+  static const imagenRota = LucideIcons.imageOff;
+  static const sinUbicacion = LucideIcons.mapPinOff;
+  static const personaInactiva = LucideIcons.userX;
+  static const sinCoincidencias = LucideIcons.searchX;
+  static const correo = LucideIcons.mail;
+  static const correoLeido = LucideIcons.mailCheck;
+  static const correoSinLeer = LucideIcons.mailOpen;
+  static const avisoActivo = LucideIcons.bellRing;
+  static const problemaSincronia = LucideIcons.refreshCwOff;
+  static const carrito = LucideIcons.shoppingBasket;
+  static const historial = LucideIcons.history;
 
   /// El icono de cada categoría (el nombre siempre se escribe junto).
   static IconData deCategoria(Categoria c) => switch (c) {

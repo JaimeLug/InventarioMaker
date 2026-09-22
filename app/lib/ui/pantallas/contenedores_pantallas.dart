@@ -112,7 +112,7 @@ class _ContenedoresPantallaState extends ConsumerState<ContenedoresPantalla> {
                 for (final (c, nivel) in arbol)
                   ListTile(
                     contentPadding: EdgeInsets.only(left: 16.0 + nivel * 24, right: 16),
-                    leading: Icon(nivel == 0 ? Icons.inventory_2_outlined : Icons.subdirectory_arrow_right,
+                    leading: Icon(nivel == 0 ? Ico.caja : Ico.subnivel,
                         color: c.activo ? null : Theme.of(context).colorScheme.outline),
                     title: Text(c.nombre, style: c.activo ? null : TextStyle(color: Theme.of(context).colorScheme.outline)),
                     subtitle: Text([
@@ -122,7 +122,7 @@ class _ContenedoresPantallaState extends ConsumerState<ContenedoresPantalla> {
                       '${c.articulos} artículo${c.articulos == 1 ? '' : 's'}',
                       if (!c.activo) 'desactivado',
                     ].join(' · ')),
-                    trailing: const Icon(Icons.chevron_right),
+                    trailing: const Icon(Ico.avanzar),
                     onTap: () => context.push('/contenedor/${c.codigo}'),
                   ),
               ]),
@@ -258,14 +258,14 @@ class _ContenedorPantallaState extends ConsumerState<ContenedorPantalla> {
                 _ => _activar(c),
               },
               itemBuilder: (_) => [
-                const PopupMenuItem(value: 'editar', child: ListTile(leading: Icon(Icons.edit_outlined), title: Text('Editar'))),
+                const PopupMenuItem(value: 'editar', child: ListTile(leading: Icon(Ico.editar), title: Text('Editar'))),
                 if (c.activo)
                   const PopupMenuItem(
-                      value: 'adentro', child: ListTile(leading: Icon(Icons.create_new_folder_outlined), title: Text('Nuevo contenedor adentro'))),
-                const PopupMenuItem(value: 'etiqueta', child: ListTile(leading: Icon(Icons.qr_code_2), title: Text('Imprimir etiqueta'))),
+                      value: 'adentro', child: ListTile(leading: Icon(Ico.nuevaCarpeta), title: Text('Nuevo contenedor adentro'))),
+                const PopupMenuItem(value: 'etiqueta', child: ListTile(leading: Icon(Ico.qr), title: Text('Imprimir etiqueta'))),
                 PopupMenuItem(
                     value: 'activo',
-                    child: ListTile(leading: Icon(c.activo ? Icons.block : Icons.restore), title: Text(c.activo ? 'Desactivar' : 'Reactivar'))),
+                    child: ListTile(leading: Icon(c.activo ? Ico.desactivar : Ico.reactivar), title: Text(c.activo ? 'Desactivar' : 'Reactivar'))),
               ],
             ),
           const BarraSesion(),
@@ -282,7 +282,7 @@ class _ContenedorPantallaState extends ConsumerState<ContenedorPantalla> {
                     onPressed: _elegidos.isEmpty
                         ? null
                         : () => context.push('/prestar?lineas=${_elegidos.entries.map((e) => '${e.key}:${e.value}').join(',')}'),
-                    icon: const Icon(Icons.outbox),
+                    icon: const Icon(Ico.prestar),
                     label: const Text('Prestar'),
                   ),
                 ]),
@@ -292,7 +292,7 @@ class _ContenedorPantallaState extends ConsumerState<ContenedorPantalla> {
         child: RefreshIndicator(
           onRefresh: () async => _refrescar(ref),
           child: ListView(padding: const EdgeInsets.only(bottom: 32), children: [
-            if (!c.activo) const MaterialBanner(content: Text('Contenedor desactivado.'), leading: Icon(Icons.block), actions: [SizedBox.shrink()]),
+            if (!c.activo) const MaterialBanner(content: Text('Contenedor desactivado.'), leading: Icon(Ico.desactivar), actions: [SizedBox.shrink()]),
             if (c.foto != null)
               SizedBox(
                 height: 200,
@@ -308,7 +308,7 @@ class _ContenedorPantallaState extends ConsumerState<ContenedorPantalla> {
                 Wrap(spacing: 6, runSpacing: 6, children: [
                   Insignia(c.nombreTipo, color: tema.colorScheme.primary),
                   Insignia(c.nombreCategoria,
-                      color: c.categoriaExclusiva == null ? tema.colorScheme.outline : Avisos.estimado, icono: Icons.category_outlined),
+                      color: c.categoriaExclusiva == null ? tema.colorScheme.outline : Avisos.estimado, icono: Ico.categoria),
                 ]),
                 if (c.nota != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text(c.nota!)),
               ]),
@@ -318,7 +318,7 @@ class _ContenedorPantallaState extends ConsumerState<ContenedorPantalla> {
                 margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 color: tema.colorScheme.errorContainer,
                 child: ListTile(
-                  leading: const Icon(Icons.warning_amber),
+                  leading: const Icon(Ico.aviso),
                   title: Text('Aquí hay un artículo ${a.categoria.nombre} en un contenedor ${c.nombreCategoria.toLowerCase()}: "${a.nombre}". Muévelo.'),
                 ),
               ),
@@ -328,7 +328,7 @@ class _ContenedorPantallaState extends ConsumerState<ContenedorPantalla> {
                 if (c.activo)
                   FilledButton.tonalIcon(
                     onPressed: () => _agregarArticulos(c, articulos),
-                    icon: const Icon(Icons.playlist_add),
+                    icon: const Icon(Ico.agregarALista),
                     label: Text(administra || sesion == null ? 'Agregar artículos' : 'Aquí hay algo que falta en la lista'),
                   ),
                 if (aqui.isNotEmpty)
@@ -337,13 +337,13 @@ class _ContenedorPantallaState extends ConsumerState<ContenedorPantalla> {
                       _seleccionando = !_seleccionando;
                       _elegidos.clear();
                     }),
-                    icon: Icon(_seleccionando ? Icons.close : Icons.checklist),
+                    icon: Icon(_seleccionando ? Ico.cerrar : Ico.contar),
                     label: Text(_seleccionando ? 'Terminar selección' : 'Prestar varios'),
                   ),
                 if (hayPrestado)
                   OutlinedButton.icon(
                     onPressed: () => context.push('/contenedor/${c.codigo}/devolver'),
-                    icon: const Icon(Icons.move_to_inbox),
+                    icon: const Icon(Ico.devolver),
                     label: const Text('Devolver varios'),
                   ),
               ]),
@@ -352,10 +352,10 @@ class _ContenedorPantallaState extends ConsumerState<ContenedorPantalla> {
               const _Titulo('Contenedores adentro'),
               for (final h in hijos)
                 ListTile(
-                  leading: const Icon(Icons.folder_outlined),
+                  leading: const Icon(Ico.carpeta),
                   title: Text(h.nombre),
                   subtitle: Text('${h.codigo} · ${h.articulos} artículo${h.articulos == 1 ? '' : 's'}'),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const Icon(Ico.avanzar),
                   onTap: () => context.push('/contenedor/${h.codigo}'),
                 ),
             ],
@@ -375,7 +375,7 @@ class _ContenedorPantallaState extends ConsumerState<ContenedorPantalla> {
                   subtitle: Text('${a.codigo} · ${a.cantidadMostrada} · ${a.disponibilidad}'),
                   onTap: () => context.push('/articulo/${a.id}'),
                   trailing: administra
-                      ? IconButton(icon: const Icon(Icons.drive_file_move_outlined), tooltip: 'Mover', onPressed: () => _quitar(c, a))
+                      ? IconButton(icon: const Icon(Ico.mover), tooltip: 'Mover', onPressed: () => _quitar(c, a))
                       : null,
                 ),
           ]),
@@ -461,7 +461,7 @@ class _ElegirArticulosState extends State<ElegirArticulos> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: TextField(
-              decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Buscar artículo'),
+              decoration: const InputDecoration(prefixIcon: Icon(Ico.buscar), hintText: 'Buscar artículo'),
               onChanged: (t) => setState(() => _texto = t),
             ),
           ),
@@ -551,7 +551,7 @@ class _ElegirContenedorState extends State<_ElegirContenedor> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: TextField(
-              decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Buscar contenedor'),
+              decoration: const InputDecoration(prefixIcon: Icon(Ico.buscar), hintText: 'Buscar contenedor'),
               onChanged: (t) => setState(() => _texto = t),
             ),
           ),
@@ -559,7 +559,7 @@ class _ElegirContenedorState extends State<_ElegirContenedor> {
             child: ListView(children: [
               if (widget.permitirNinguno)
                 ListTile(
-                  leading: const Icon(Icons.location_off_outlined),
+                  leading: const Icon(Ico.sinUbicacion),
                   title: const Text('Sin ubicación'),
                   onTap: () => Navigator.pop(
                       context, const Contenedor(id: '', codigo: '', nombre: '', tipo: 'OTRO', activo: true, ruta: '', articulos: 0, subcontenedores: 0)),
@@ -702,7 +702,7 @@ class _ContenedorFormPantallaState extends ConsumerState<ContenedorFormPantalla>
                 const SizedBox(height: 12),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.account_tree_outlined),
+                  leading: const Icon(Ico.arbol),
                   title: Text(_padre == null ? 'En la raíz (no está dentro de otro)' : 'Dentro de: ${_padre!.ruta}'),
                   trailing: TextButton(
                     onPressed: () async {
@@ -829,7 +829,7 @@ class _DevolverVariosState extends ConsumerState<_DevolverVarios> {
     final total = _regresan.values.fold(0, (s, v) => s + v);
     return ListView(padding: const EdgeInsets.all(12), children: [
       const ListTile(
-        leading: Icon(Icons.info_outline),
+        leading: Icon(Ico.info),
         title: Text('Marca lo que regresa en buen estado. Si algo viene dañado o incompleto, recíbelo desde la ficha del artículo.'),
       ),
       for (final p in widget.lista)
@@ -857,7 +857,7 @@ class _DevolverVariosState extends ConsumerState<_DevolverVarios> {
       const SizedBox(height: 8),
       FilledButton.icon(
         onPressed: _guardando || total == 0 ? null : _guardar,
-        icon: const Icon(Icons.move_to_inbox),
+        icon: const Icon(Ico.devolver),
         label: Text(total == 0 ? 'Marca lo que regresa' : 'Recibir $total pieza${total == 1 ? '' : 's'}'),
       ),
     ]);

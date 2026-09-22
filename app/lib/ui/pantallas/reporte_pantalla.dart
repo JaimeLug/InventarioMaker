@@ -1,3 +1,4 @@
+import '../diseno/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -142,8 +143,8 @@ class _ReportePantallaState extends ConsumerState<ReportePantalla> {
               ),
               SegmentedButton<String>(
                 segments: const [
-                  ButtonSegment(value: 'DANO', icon: Icon(Icons.build_circle_outlined), label: Text('Se dañó')),
-                  ButtonSegment(value: 'PERDIDA', icon: Icon(Icons.search_off), label: Text('Se perdió')),
+                  ButtonSegment(value: 'DANO', icon: Icon(Ico.reparar), label: Text('Se dañó')),
+                  ButtonSegment(value: 'PERDIDA', icon: Icon(Ico.perdida), label: Text('Se perdió')),
                 ],
                 selected: {_tipo},
                 onSelectionChanged: (s) => setState(() {
@@ -200,7 +201,7 @@ class _ReportePantallaState extends ConsumerState<ReportePantalla> {
               const SizedBox(height: 24),
               FilledButton.icon(
                 onPressed: _guardando ? null : () => _guardar(a),
-                icon: _guardando ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.flag),
+                icon: _guardando ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Ico.reportar),
                 label: const Text('Enviar reporte'),
               ),
             ]),

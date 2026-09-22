@@ -38,3 +38,34 @@ class ModoTema extends Notifier<ThemeMode> {
 }
 
 final modoTemaProvider = NotifierProvider<ModoTema, ThemeMode>(ModoTema.new);
+
+/// Si la barra lateral está plegada (solo iconos). null = como quepa según el ancho.
+class MenuPlegado extends Notifier<bool?> {
+  static const _clave = 'menu_plegado';
+
+  @override
+  bool? build() {
+    _leer();
+    return null;
+  }
+
+  Future<void> _leer() async {
+    try {
+      final p = await SharedPreferences.getInstance();
+      if (p.containsKey(_clave)) state = p.getBool(_clave);
+    } on Object {
+      // Si no se puede leer, se decide por el ancho de la pantalla.
+    }
+  }
+
+  Future<void> cambiar(bool plegado) async {
+    state = plegado;
+    try {
+      await (await SharedPreferences.getInstance()).setBool(_clave, plegado);
+    } on Object {
+      // No es grave: solo no se recuerda para la próxima vez.
+    }
+  }
+}
+
+final menuPlegadoProvider = NotifierProvider<MenuPlegado, bool?>(MenuPlegado.new);

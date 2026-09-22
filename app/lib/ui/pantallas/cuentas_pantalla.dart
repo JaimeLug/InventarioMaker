@@ -122,7 +122,7 @@ class _CuentasPantallaState extends ConsumerState<CuentasPantalla> {
                 child: ListView(padding: const EdgeInsets.only(bottom: 96), children: [
                   for (final c in _cuentas!)
                     ListTile(
-                      leading: CircleAvatar(child: Icon(c.activo ? Icons.person : Icons.person_off)),
+                      leading: CircleAvatar(child: Icon(c.activo ? Ico.persona : Ico.personaInactiva)),
                       title: Text(c.nombre, style: c.activo ? null : const TextStyle(decoration: TextDecoration.lineThrough)),
                       subtitle: Text([
                         c.rol.nombre,

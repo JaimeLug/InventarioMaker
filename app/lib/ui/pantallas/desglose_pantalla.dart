@@ -1,3 +1,4 @@
+import '../diseno/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -197,7 +198,7 @@ class _DesglosePantallaState extends ConsumerState<DesglosePantalla> {
           title: Text('Desglose ${articulo?.codigo ?? ''}'),
           actions: [
             if (d != null)
-              IconButton(icon: const Icon(Icons.save_outlined), tooltip: 'Guardar borrador', onPressed: _trabajando ? null : () => _guardar()),
+              IconButton(icon: const Icon(Ico.guardar), tooltip: 'Guardar borrador', onPressed: _trabajando ? null : () => _guardar()),
           ],
         ),
         bottomNavigationBar: d == null
@@ -207,7 +208,7 @@ class _DesglosePantallaState extends ConsumerState<DesglosePantalla> {
                   padding: const EdgeInsets.all(12),
                   child: FilledButton.icon(
                     onPressed: _trabajando ? null : _terminar,
-                    icon: const Icon(Icons.done_all),
+                    icon: const Icon(Ico.todoListo),
                     label: const Text('Terminar desglose'),
                   ),
                 ),
@@ -322,7 +323,7 @@ class _DesglosePantallaState extends ConsumerState<DesglosePantalla> {
             });
           }
         },
-        icon: const Icon(Icons.add),
+        icon: const Icon(Ico.nuevo),
         label: const Text('Agregar algo que no está en la lista'),
       ),
       TextButton(
@@ -401,13 +402,13 @@ class _RenglonDesgloseState extends State<_RenglonDesglose> {
                 },
               ),
             ),
-            if (widget.alQuitar != null) IconButton(icon: const Icon(Icons.close), tooltip: 'Quitar', onPressed: widget.alQuitar),
+            if (widget.alQuitar != null) IconButton(icon: const Icon(Ico.cerrar), tooltip: 'Quitar', onPressed: widget.alQuitar),
           ]),
           if (l.faltante > 0) Text('Faltan ${l.faltante}', style: TextStyle(color: tema.colorScheme.error, fontWeight: FontWeight.w600)),
           if ((l.encontrada ?? 0) > 0)
             Wrap(spacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
               ActionChip(
-                avatar: Icon(l.articuloDestinoId == null ? Icons.fiber_new_outlined : Icons.add_link, size: 18),
+                avatar: Icon(l.articuloDestinoId == null ? Ico.articuloNuevo : Ico.enlazar, size: 18),
                 label: Text(l.articuloDestino == null ? 'Artículo nuevo' : 'Sumar a ${l.articuloDestino}'),
                 onPressed: widget.alSumar,
               ),

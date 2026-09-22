@@ -1,3 +1,4 @@
+import '../diseno/iconos.dart';
 import '../armazon.dart';
 import '../componentes/componentes.dart';
 import 'package:flutter/material.dart';
@@ -209,7 +210,7 @@ class _ArticuloFormPantallaState extends ConsumerState<ArticuloFormPantalla> {
               onPressed: _guardando ? null : _guardar,
               icon: _guardando
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.check),
+                  : const Icon(Ico.listo),
               label: Text(_esAlta ? 'Dar de alta' : 'Guardar cambios'),
             ),
           ),
@@ -420,7 +421,7 @@ class _FotosElegidas extends StatelessWidget {
               ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.memory(f.bytes, width: 140, height: 140, fit: BoxFit.cover)),
               Positioned(
                 right: 0,
-                child: IconButton.filledTonal(icon: const Icon(Icons.close), tooltip: 'Quitar', onPressed: () => alQuitar(f)),
+                child: IconButton.filledTonal(icon: const Icon(Ico.cerrar), tooltip: 'Quitar', onPressed: () => alQuitar(f)),
               ),
               if (i == 0)
                 const Positioned(left: 6, bottom: 6, child: Chip(label: Text('Principal'), visualDensity: VisualDensity.compact)),
@@ -444,7 +445,7 @@ class _FotosElegidas extends StatelessWidget {
           onPressed: alAgregar,
           style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
           child: const Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.add_a_photo_outlined, size: 32),
+            Icon(Ico.agregarFoto, size: 32),
             SizedBox(height: 8),
             Text('Agregar foto', textAlign: TextAlign.center),
           ]),

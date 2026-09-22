@@ -321,7 +321,7 @@ class _GaleriaState extends ConsumerState<_Galeria> {
       onPressed: _subiendo || !widget.articulo.activo ? null : _agregar,
       icon: _subiendo
           ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-          : const Icon(Icons.add_a_photo_outlined),
+          : const Icon(Ico.agregarFoto),
       label: const Text('Agregar foto'),
     );
 
@@ -334,7 +334,7 @@ class _GaleriaState extends ConsumerState<_Galeria> {
             height: 220,
             color: tema.colorScheme.surfaceContainerHighest,
             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Icon(Icons.photo_camera_outlined, size: 48, color: tema.colorScheme.outline),
+              Icon(Ico.foto, size: 48, color: tema.colorScheme.outline),
               const SizedBox(height: 8),
               const Text('Este artículo todavía no tiene foto.'),
               const SizedBox(height: 12),
@@ -355,7 +355,7 @@ class _GaleriaState extends ConsumerState<_Galeria> {
                 child: Container(
                   color: Colors.black,
                   child: FotoConCopia(ruta: lista[i].ruta, url: lista[i].url, fit: BoxFit.contain,
-                      errorBuilder: (_, _, _) => const Center(child: Icon(Icons.broken_image, color: Colors.white54, size: 48))),
+                      errorBuilder: (_, _, _) => const Center(child: Icon(Ico.imagenRota, color: Colors.white54, size: 48))),
                 ),
               ),
             ),
@@ -528,10 +528,10 @@ class _Ubicacion extends ConsumerWidget {
       subtitle: Text(a.ubicacion ?? 'Sin asignar', style: Theme.of(context).textTheme.bodyLarge),
       onTap: a.contenedorCodigo == null ? null : () => context.push('/contenedor/${a.contenedorCodigo}'),
       trailing: !a.activo || sesion == null
-          ? (a.contenedorCodigo == null ? null : const Icon(Icons.chevron_right))
+          ? (a.contenedorCodigo == null ? null : const Icon(Ico.avanzar))
           : Row(mainAxisSize: MainAxisSize.min, children: [
               if (administra && a.etiquetado == Etiquetado.individual)
-                IconButton(icon: const Icon(Icons.qr_code_2), tooltip: 'Imprimir su etiqueta', onPressed: () => context.push('/etiquetas?codigos=${a.codigo}')),
+                IconButton(icon: const Icon(Ico.qr), tooltip: 'Imprimir su etiqueta', onPressed: () => context.push('/etiquetas?codigos=${a.codigo}')),
               TextButton(
                 onPressed: () => _cambiar(context, ref, administra),
                 child: Text(administra ? 'Cambiar' : 'Está en otro lugar'),
@@ -555,10 +555,10 @@ class _Pendientes extends ConsumerWidget {
       const _Titulo('Pendientes por verificar'),
       for (final p in abiertos)
         ListTile(
-          leading: Icon(Icons.flag_outlined, color: p.prioridadAlta ? Avisos.sinClasificar : Avisos.pendiente),
+          leading: Icon(Ico.reportar, color: p.prioridadAlta ? Avisos.sinClasificar : Avisos.pendiente),
           title: Text(nombresTarea[p.tipo] ?? p.tipo),
           subtitle: Text(p.descripcion),
-          trailing: const Icon(Icons.chevron_right),
+          trailing: const Icon(Ico.avanzar),
           onTap: () => abrirPendiente(context, ref, p, articulo),
         ),
     ]);
@@ -584,7 +584,7 @@ class _Historial extends ConsumerWidget {
       for (final m in lista)
         ListTile(
           dense: true,
-          leading: const Icon(Icons.history),
+          leading: const Icon(Ico.historial),
           title: Text('${m.nombre} · ${m.cantidad}'),
           subtitle: Text([fechaHora(m.fecha), if (m.prestadoHasta != null) 'prestado hasta el ${fecha(m.prestadoHasta!)}'].join(' · ')),
         ),
@@ -611,7 +611,7 @@ class _Acciones extends ConsumerWidget {
           child: Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
             FilledButton.tonalIcon(
               onPressed: () => pedirAvisoDisponible(context, ref, a),
-              icon: const Icon(Icons.notifications_active_outlined),
+              icon: const Icon(Ico.avisoActivo),
               label: const Text('Avísame cuando regrese'),
             ),
             TextButton(onPressed: () => pedirAcceso(context, descripcion: 'prestar o recibir material'), child: const Text('Soy docente')),
@@ -628,7 +628,7 @@ class _Acciones extends ConsumerWidget {
                     ref.read(carritoProvider.notifier).agregar(a);
                     context.push('/solicitud');
                   },
-            icon: Icon(enCarrito ? Icons.shopping_basket : Icons.shopping_basket_outlined),
+            icon: Icon(enCarrito ? Ico.ok : Ico.carrito),
             label: Text(enCarrito ? 'Ya está en tu solicitud' : 'Pedir prestado'),
           ),
           if (a.esConsumible) const Text('Los consumibles se piden en persona en el laboratorio.'),
@@ -645,29 +645,29 @@ class _Acciones extends ConsumerWidget {
         if (a.esConsumible)
           FilledButton.icon(
             onPressed: a.prestable && a.disponible > 0 ? () => acciones.registrarUso(context, ref, a) : null,
-            icon: const Icon(Icons.remove_circle_outline),
+            icon: const Icon(Ico.quitarCirculo),
             label: const Text('Registrar uso'),
           )
         else
           FilledButton.icon(
             onPressed: a.prestable && a.disponible > 0 ? () => context.push('/articulo/${a.id}/prestar') : null,
-            icon: const Icon(Icons.outbox),
+            icon: const Icon(Ico.prestar),
             label: const Text('Prestar'),
           ),
         if (a.prestado > 0)
           OutlinedButton.icon(
             onPressed: () => context.push('/articulo/${a.id}/devolver'),
-            icon: const Icon(Icons.move_to_inbox),
+            icon: const Icon(Ico.devolver),
             label: const Text('Recibir devolución'),
           ),
         OutlinedButton.icon(
           onPressed: () => context.push('/articulo/${a.id}/reportar'),
-          icon: const Icon(Icons.flag_outlined),
+          icon: const Icon(Ico.reportar),
           label: const Text('Reportar problema'),
         ),
         OutlinedButton.icon(
           onPressed: () => contarArticulo(context, ref, a),
-          icon: const Icon(Icons.pin_outlined),
+          icon: const Icon(Ico.conteo),
           label: const Text('Contar'),
         ),
       ]),
@@ -707,7 +707,7 @@ class _MenuAdministracion extends ConsumerWidget {
     final a = articulo;
     return PopupMenuButton<String>(
       tooltip: 'Administrar',
-      icon: const Icon(Icons.more_vert),
+      icon: const Icon(Ico.mas),
       onSelected: (opcion) => switch (opcion) {
         'conteo' => acciones.ajustarConteo(context, ref, a),
         'reparacion' => acciones.registrarReparacion(context, ref, a),
@@ -719,21 +719,21 @@ class _MenuAdministracion extends ConsumerWidget {
       },
       itemBuilder: (_) => [
         if (a.activo) ...[
-          const PopupMenuItem(value: 'conteo', child: ListTile(leading: Icon(Icons.pin_outlined), title: Text('Ajustar conteo'))),
-          const PopupMenuItem(value: 'desglose', child: ListTile(leading: Icon(Icons.unarchive_outlined), title: Text('Abrir y desglosar'))),
+          const PopupMenuItem(value: 'conteo', child: ListTile(leading: Icon(Ico.conteo), title: Text('Ajustar conteo'))),
+          const PopupMenuItem(value: 'desglose', child: ListTile(leading: Icon(Ico.desarchivar), title: Text('Abrir y desglosar'))),
           PopupMenuItem(
               value: 'prestable',
               child: ListTile(
-                  leading: Icon(a.noSePresta ? Icons.outbox : Icons.do_not_disturb_on_outlined),
+                  leading: Icon(a.noSePresta ? Ico.prestar : Ico.noSePresta),
                   title: Text(a.noSePresta ? 'Permitir que se preste' : 'Marcar que no se presta'))),
           if (a.fueraServicio > 0)
-            const PopupMenuItem(value: 'reparacion', child: ListTile(leading: Icon(Icons.build_outlined), title: Text('Regresa a servicio'))),
-          const PopupMenuItem(value: 'baja', child: ListTile(leading: Icon(Icons.delete_forever_outlined), title: Text('Dar de baja'))),
+            const PopupMenuItem(value: 'reparacion', child: ListTile(leading: Icon(Ico.herramientas), title: Text('Regresa a servicio'))),
+          const PopupMenuItem(value: 'baja', child: ListTile(leading: Icon(Ico.baja), title: Text('Dar de baja'))),
         ] else ...[
           if (a.bajaEnTramite)
-            const PopupMenuItem(value: 'oficio', child: ListTile(leading: Icon(Icons.description_outlined), title: Text('Registrar oficio'))),
+            const PopupMenuItem(value: 'oficio', child: ListTile(leading: Icon(Ico.oficio), title: Text('Registrar oficio'))),
           if (a.estadoInventario == EstadoInventario.dadoDeBaja)
-            const PopupMenuItem(value: 'reactivar', child: ListTile(leading: Icon(Icons.restore), title: Text('Reactivar'))),
+            const PopupMenuItem(value: 'reactivar', child: ListTile(leading: Icon(Ico.reactivar), title: Text('Reactivar'))),
         ],
       ],
     );
@@ -761,7 +761,7 @@ class _HistorialDetallado extends ConsumerWidget {
           for (final m in lista)
             ListTile(
               dense: true,
-              leading: Icon(m.conflicto ? Icons.sync_problem : Icons.history, color: m.conflicto ? tema.colorScheme.error : null),
+              leading: Icon(m.conflicto ? Ico.problemaSincronia : Ico.historial, color: m.conflicto ? tema.colorScheme.error : null),
               title: Text('${m.nombre}${m.cantidad == null ? '' : ' · ${m.cantidad}'}${m.aCargo == null ? '' : ' · a cargo de ${m.aCargo}'}'),
               subtitle: Text([
                 '${fechaHora(m.fecha)}${m.autorizo == null ? '' : ' · ${m.autorizo}'}',

@@ -55,7 +55,7 @@ class _EscanearPantallaState extends State<EscanearPantalla> {
       appBar: AppBar(
         title: Text(widget.devolver ? 'Escanear lo que regresa' : 'Escanear etiqueta'),
         actions: [
-          TmBotonIcono(Icons.flashlight_on_outlined, etiqueta: 'Linterna', onTap: () => _camara.toggleTorch()),
+          TmBotonIcono(Ico.linterna, etiqueta: 'Linterna', onTap: () => _camara.toggleTorch()),
           const SizedBox(width: Espacio.x2),
         ],
       ),

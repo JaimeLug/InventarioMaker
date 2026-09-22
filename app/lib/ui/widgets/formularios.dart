@@ -1,3 +1,4 @@
+import '../diseno/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -24,13 +25,13 @@ class SelectorCantidad extends StatelessWidget {
     return Row(mainAxisSize: MainAxisSize.min, children: [
       if (etiqueta != null) Padding(padding: const EdgeInsets.only(right: 12), child: Text(etiqueta!, style: tema.textTheme.bodyLarge)),
       IconButton.filledTonal(
-        icon: const Icon(Icons.remove),
+        icon: const Icon(Ico.quitarUno),
         tooltip: 'Menos',
         onPressed: valor > minimo ? () => alCambiar(valor - 1) : null,
       ),
       SizedBox(width: 56, child: Text('$valor', textAlign: TextAlign.center, style: tema.textTheme.headlineSmall)),
       IconButton.filledTonal(
-        icon: const Icon(Icons.add),
+        icon: const Icon(Ico.nuevo),
         tooltip: 'Más',
         onPressed: valor < maximo ? () => alCambiar(valor + 1) : null,
       ),
@@ -57,7 +58,7 @@ class SelectorFotos extends StatelessWidget {
             right: 0,
             child: IconButton.filledTonal(
               visualDensity: VisualDensity.compact,
-              icon: const Icon(Icons.close, size: 18),
+              icon: const Icon(Ico.cerrar, size: 18),
               tooltip: 'Quitar',
               onPressed: () {
                 fotos.remove(f);
@@ -80,7 +81,7 @@ class SelectorFotos extends StatelessWidget {
             }
           },
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.add_a_photo_outlined),
+            const Icon(Ico.agregarFoto),
             const SizedBox(height: 4),
             Text(texto, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12)),
           ]),
@@ -104,7 +105,7 @@ class FotoPrivada extends ConsumerWidget {
       builder: (context, snap) {
         final caja = SizedBox(width: tamano, height: tamano);
         if (!snap.hasData) {
-          return snap.hasError ? SizedBox(width: tamano, height: tamano, child: const Icon(Icons.lock_outline)) : caja;
+          return snap.hasError ? SizedBox(width: tamano, height: tamano, child: const Icon(Ico.noSePresta)) : caja;
         }
         return GestureDetector(
           onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(

@@ -1,3 +1,4 @@
+import '../diseno/iconos.dart';
 import '../armazon.dart';
 import 'dart:async';
 
@@ -81,7 +82,7 @@ class _Lista extends ConsumerWidget {
       itemBuilder: (context, i) {
         if (grupo == 'SIN_CONFIRMAR' && i == 0) {
           return const ListTile(
-            leading: Icon(Icons.info_outline),
+            leading: Icon(Ico.info),
             title: Text('Quien pidió todavía no abre el enlace de su correo. Si está aquí en persona, abre su solicitud y confírmala.'),
           );
         }
@@ -93,7 +94,7 @@ class _Lista extends ConsumerWidget {
           },
           leading: CircleAvatar(
             backgroundColor: s.vencida ? tema.colorScheme.errorContainer : tema.colorScheme.secondaryContainer,
-            child: Icon(s.verificada ? Icons.verified_user_outlined : Icons.person_outline),
+            child: Icon(s.verificada ? Ico.conContrasena : Ico.persona),
           ),
           title: Text('${s.folio} · ${s.solicitante}'),
           subtitle: Text([
@@ -106,7 +107,7 @@ class _Lista extends ConsumerWidget {
             },
             if (!s.verificada && s.estado.abierta) 'ficha sin verificar',
           ].join(' · ')),
-          trailing: s.alerta == null ? const Icon(Icons.chevron_right) : Icon(Icons.warning_amber, color: tema.colorScheme.error),
+          trailing: s.alerta == null ? const Icon(Ico.avanzar) : Icon(Ico.aviso, color: tema.colorScheme.error),
         );
       },
     );
@@ -302,12 +303,12 @@ class _Detalle extends ConsumerWidget {
           FilledButton.icon(
             onPressed: () => _accion(context, ref, 'confirmar en persona la solicitud ${s.folio}', (r) => r.confirmarEnPersona(s.id),
                 'Solicitud confirmada en persona.'),
-            icon: const Icon(Icons.how_to_reg_outlined),
+            icon: const Icon(Ico.aprobar),
             label: const Text('Confirmar en persona'),
           ),
         if (s.estado == EstadoSolicitud.pendiente && s.confirmadaEn != null) ...[
-          FilledButton.icon(onPressed: () => _aprobar(context, ref), icon: const Icon(Icons.check), label: const Text('Aprobar')),
-          OutlinedButton.icon(onPressed: () => _rechazar(context, ref), icon: const Icon(Icons.block), label: const Text('Rechazar')),
+          FilledButton.icon(onPressed: () => _aprobar(context, ref), icon: const Icon(Ico.listo), label: const Text('Aprobar')),
+          OutlinedButton.icon(onPressed: () => _rechazar(context, ref), icon: const Icon(Ico.desactivar), label: const Text('Rechazar')),
         ],
         if (s.estado == EstadoSolicitud.aprobada)
           FilledButton.icon(
@@ -315,7 +316,7 @@ class _Detalle extends ConsumerWidget {
               await context.push('/solicitudes/${s.id}/entrega');
               await recargar();
             },
-            icon: const Icon(Icons.outbox),
+            icon: const Icon(Ico.prestar),
             label: const Text('Entregar'),
           ),
         if (s.estado.abierta) TextButton(onPressed: () => _cancelar(context, ref), child: const Text('Cancelar solicitud')),
@@ -328,7 +329,7 @@ class _Detalle extends ConsumerWidget {
             contentPadding: EdgeInsets.zero,
             title: Text('${pr['cantidad']} × ${pr['articulo']}'),
             subtitle: Text((pr['pendiente'] as int) == 0 ? 'Cerrado' : 'Por devolver: ${pr['pendiente']} · vence ${fechaHora(DateTime.parse(pr['vence_en'] as String))}'),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const Icon(Ico.avanzar),
             onTap: () => context.push('/expediente/${pr['prestamo_id']}'),
           ),
       ],
@@ -350,7 +351,7 @@ class _Detalle extends ConsumerWidget {
           ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.pin_outlined),
+            leading: const Icon(Ico.conteo),
             title: Text(c.nombreEstado),
             subtitle: Text(c.usadoEn == null ? 'Vigencia hasta ${fechaHora(c.expiraEn)}' : 'Usado el ${fechaHora(c.usadoEn!)}'),
           ),
@@ -368,7 +369,7 @@ class _Alerta extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Card(
         color: color ?? Avisos.pendiente.withValues(alpha: 0.15),
-        child: ListTile(leading: const Icon(Icons.warning_amber), title: Text(texto)),
+        child: ListTile(leading: const Icon(Ico.aviso), title: Text(texto)),
       );
 }
 
@@ -404,7 +405,7 @@ class _VerIdentificacionState extends ConsumerState<VerIdentificacion> {
     if (_urls == null) {
       return OutlinedButton.icon(
         onPressed: _cargando ? null : _ver,
-        icon: const Icon(Icons.badge_outlined),
+        icon: const Icon(Ico.credencial),
         label: const Text('Ver identificación (queda registrado)'),
       );
     }
@@ -485,7 +486,7 @@ class _HojaAprobarState extends State<_HojaAprobar> {
             ),
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.event),
+            leading: const Icon(Ico.fecha),
             title: Text('Devolver el ${fecha(_fecha ?? widget.s.fechaDevolucion)}'),
             trailing: TextButton(
               onPressed: () async {
@@ -680,7 +681,7 @@ class _EntregaPantallaState extends ConsumerState<EntregaPantalla> {
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
-          icon: const Icon(Icons.check_circle, size: 40, color: Colors.green),
+          icon: const Icon(Ico.ok, size: 40, color: Colors.green),
           title: const Text('Entregado'),
           content: Text('El material quedó a cargo de ${s.solicitante.nombre}. ${s.autorizo} solo autorizó la entrega.'),
           actions: [FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Listo'))],
@@ -747,14 +748,14 @@ class _EntregaPantallaState extends ConsumerState<EntregaPantalla> {
                 ]),
                 const SizedBox(height: 12),
                 Wrap(spacing: 8, children: [
-                  OutlinedButton.icon(onPressed: _capturarAqui, icon: const Icon(Icons.phonelink_lock), label: const Text('No trae celular: capturar aquí')),
+                  OutlinedButton.icon(onPressed: _capturarAqui, icon: const Icon(Ico.enEsteAparato), label: const Text('No trae celular: capturar aquí')),
                 ]),
               ] else ...[
                 Text(c == null ? 'No hay código todavía.' : 'El código ${c.nombreEstado.toLowerCase()}.'),
                 const SizedBox(height: 8),
                 FilledButton.icon(
                   onPressed: _trabajando ? null : () => _hacer('generar un código nuevo', (r) => r.codigoNuevo(s.id, 'RATO')),
-                  icon: const Icon(Icons.refresh),
+                  icon: const Icon(Ico.reintentar),
                   label: const Text('Generar código nuevo (1 h 30 min)'),
                 ),
               ],
@@ -762,13 +763,13 @@ class _EntregaPantallaState extends ConsumerState<EntregaPantalla> {
           ),
         )
       else ...[
-        const Card(child: ListTile(leading: Icon(Icons.verified, color: Colors.green), title: Text('Código aceptado.'))),
+        const Card(child: ListTile(leading: Icon(Ico.verificado, color: Colors.green), title: Text('Código aceptado.'))),
         const SizedBox(height: 8),
         if (s.solicitante.verificadaEn == null)
           Card(
             color: Avisos.pendiente.withValues(alpha: 0.12),
             child: ListTile(
-              leading: const Icon(Icons.badge_outlined),
+              leading: const Icon(Ico.credencial),
               title: Text('Compara la identificación con: ${s.solicitante.nombre}, ${s.solicitante.matricula}'),
               subtitle: const Text('Al cerrar la entrega, la ficha queda verificada con tu nombre.'),
             ),
@@ -793,7 +794,7 @@ class _EntregaPantallaState extends ConsumerState<EntregaPantalla> {
           const SizedBox(height: 16),
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: Icon(Icons.event_busy, color: tema.colorScheme.error),
+            leading: Icon(Ico.vence, color: tema.colorScheme.error),
             title: Text(_nuevaFecha == null ? 'La fecha de devolución ya pasó' : 'Nueva fecha: ${fecha(_nuevaFecha!)}'),
             trailing: TextButton(
               onPressed: () async {
@@ -808,7 +809,7 @@ class _EntregaPantallaState extends ConsumerState<EntregaPantalla> {
         const SizedBox(height: 16),
         FilledButton.icon(
           onPressed: _trabajando ? null : _cerrar,
-          icon: _trabajando ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.done_all),
+          icon: _trabajando ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Ico.todoListo),
           label: const Text('Cerrar entrega'),
         ),
         const SizedBox(height: 8),

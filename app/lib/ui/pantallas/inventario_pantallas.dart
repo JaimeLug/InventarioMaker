@@ -67,13 +67,13 @@ class InventariosPantalla extends ConsumerWidget {
             for (final i in lista)
               Card(
                 child: ListTile(
-                  leading: Icon(i.abierto ? Icons.playlist_play : Icons.playlist_add_check_circle_outlined),
+                  leading: Icon(i.abierto ? Ico.enCurso : Ico.ok),
                   title: Text(i.nombre),
                   subtitle: Text([
                     i.abierto ? 'Abierto desde ${fecha(i.fechaInicio)}' : 'Cerrado el ${fecha(i.fechaCierre!)} por ${i.cerro}',
                     'Contados ${i.contados} de ${i.articulos}',
                   ].join(' · ')),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const Icon(Ico.avanzar),
                   onTap: () async {
                     await context.push('/inventario/${i.id}');
                     await recargar();
@@ -301,11 +301,11 @@ class _ContarState extends ConsumerState<_Contar> {
       Row(children: [
         Expanded(
           child: TextField(
-            decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Buscar', isDense: true),
+            decoration: const InputDecoration(prefixIcon: Icon(Ico.buscar), hintText: 'Buscar', isDense: true),
             onChanged: (t) => setState(() => _texto = t),
           ),
         ),
-        IconButton.filledTonal(icon: const Icon(Icons.qr_code_scanner), tooltip: 'Escanear contenedor', onPressed: _escanearContenedor),
+        IconButton.filledTonal(icon: const Icon(Ico.escanear), tooltip: 'Escanear contenedor', onPressed: _escanearContenedor),
       ]),
       Wrap(spacing: 8, children: [
         FilterChip(label: const Text('Sin contar'), selected: _soloSinContar, onSelected: (v) => setState(() => _soloSinContar = v)),
@@ -314,7 +314,7 @@ class _ContarState extends ConsumerState<_Contar> {
       for (final a in visibles)
         ListTile(
           enabled: widget.abierto && !a.decidido,
-          leading: Icon(a.conteos > 0 ? Icons.check_circle : Icons.radio_button_unchecked, color: a.conteos > 0 ? tema.colorScheme.primary : null),
+          leading: Icon(a.conteos > 0 ? Ico.ok : Ico.sinMarcar, color: a.conteos > 0 ? tema.colorScheme.primary : null),
           title: Text(a.nombre),
           subtitle: Text([
             a.codigo,
@@ -410,7 +410,7 @@ class _Hallazgos extends ConsumerWidget {
     final administra = ref.watch(sesionProvider).value?.administra ?? false;
     final repo = ref.read(repositorioProvider);
     return ListView(padding: const EdgeInsets.all(12), children: [
-      FilledButton.tonalIcon(onPressed: () => _nuevo(context, ref), icon: const Icon(Icons.add), label: const Text('Registrar hallazgo')),
+      FilledButton.tonalIcon(onPressed: () => _nuevo(context, ref), icon: const Icon(Ico.nuevo), label: const Text('Registrar hallazgo')),
       if (lista.isEmpty) const Padding(padding: EdgeInsets.all(24), child: Text('Sin hallazgos.')),
       for (final h in lista)
         Card(
@@ -550,7 +550,7 @@ class _DiferenciasState extends ConsumerState<_Diferencias> {
       const SizedBox(height: 12),
       FilledButton.icon(
         onPressed: pendientes > 0 ? null : _cerrar,
-        icon: const Icon(Icons.lock_outline),
+        icon: const Icon(Ico.noSePresta),
         label: Text(pendientes > 0 ? 'Faltan $pendientes decisiones para cerrar' : 'Cerrar inventario'),
       ),
     ]);

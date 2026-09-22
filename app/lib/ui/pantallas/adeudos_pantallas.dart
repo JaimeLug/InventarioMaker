@@ -1,3 +1,4 @@
+import '../diseno/iconos.dart';
 import '../armazon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -55,7 +56,7 @@ class AdeudosPantalla extends StatelessWidget {
                     if (a.vencidos > 0) '${a.vencidos} vencido${a.vencidos == 1 ? '' : 's'}',
                     if (a.bloqueado) 'bloqueado',
                   ].join(' · ')),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: const Icon(Ico.avanzar),
                 );
               },
             );
@@ -183,13 +184,13 @@ class _Persona extends ConsumerWidget {
 
     Widget prestamo(Map<String, dynamic> x) => ListTile(
           contentPadding: EdgeInsets.zero,
-          leading: Icon(x['vencido'] == true ? Icons.warning_amber : (x['con_retraso'] == true ? Icons.schedule : Icons.inventory_2_outlined),
+          leading: Icon(x['vencido'] == true ? Ico.aviso : (x['con_retraso'] == true ? Ico.reloj : Ico.caja),
               color: x['vencido'] == true ? tema.colorScheme.error : null),
           title: Text('${x['cantidad']} × ${x['nombre']}${x['folio'] == null ? '' : ' · ${x['folio']}'}'),
           subtitle: Text((x['pendiente'] as int) > 0
               ? 'Debe ${x['pendiente']} · ${x['vencido'] == true ? 'VENCIDO desde' : 'vence'} ${fechaHora(_f(x['vence_en'])!)}'
               : 'Prestado ${fecha(_f(x['fecha'])!)} · devuelto ${fecha(_f(x['cerrado_en'])!)}${x['con_retraso'] == true ? ' (con retraso)' : ''}'),
-          trailing: const Icon(Icons.chevron_right),
+          trailing: const Icon(Ico.avanzar),
           onTap: () => context.push('/expediente/${x['prestamo_id']}'),
         );
 
@@ -197,7 +198,7 @@ class _Persona extends ConsumerWidget {
       Text(p['nombre'] as String, style: tema.textTheme.headlineSmall),
       Text([nombreTipo, if (p['matricula'] != null) p['matricula'], if (p['grupo'] != null) p['grupo']].join(' · ')),
       if (p['impedimento'] != null)
-        Card(color: tema.colorScheme.errorContainer, child: ListTile(leading: const Icon(Icons.block), title: Text(p['impedimento'] as String))),
+        Card(color: tema.colorScheme.errorContainer, child: ListTile(leading: const Icon(Ico.desactivar), title: Text(p['impedimento'] as String))),
       if (_esSolicitante) ...[
         if (p['verificada_en'] != null)
           Text('Ficha verificada por ${p['verificada_por']} el ${fecha(_f(p['verificada_en'])!)}', style: tema.textTheme.bodySmall)
@@ -208,12 +209,12 @@ class _Persona extends ConsumerWidget {
         if (p['posible_duplicado'] == true) const Text('Posible duplicado de otra ficha con la misma matrícula.'),
         const SizedBox(height: 8),
         Wrap(spacing: 8, runSpacing: 8, children: [
-          OutlinedButton.icon(onPressed: () => _editar(context, ref), icon: const Icon(Icons.edit_outlined), label: const Text('Corregir datos')),
+          OutlinedButton.icon(onPressed: () => _editar(context, ref), icon: const Icon(Ico.editar), label: const Text('Corregir datos')),
           if (p['bloqueo_manual'] == true || p['impedimento'] != null)
             OutlinedButton.icon(
-                onPressed: () => _bloqueo(context, ref, bloquear: false), icon: const Icon(Icons.lock_open), label: const Text('Desbloquear'))
+                onPressed: () => _bloqueo(context, ref, bloquear: false), icon: const Icon(Ico.abierto), label: const Text('Desbloquear'))
           else
-            OutlinedButton.icon(onPressed: () => _bloqueo(context, ref, bloquear: true), icon: const Icon(Icons.lock_outline), label: const Text('Bloquear')),
+            OutlinedButton.icon(onPressed: () => _bloqueo(context, ref, bloquear: true), icon: const Icon(Ico.noSePresta), label: const Text('Bloquear')),
         ]),
       ],
       const SizedBox(height: 16),
@@ -226,7 +227,7 @@ class _Persona extends ConsumerWidget {
         for (final i in incidencias)
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.flag_outlined),
+            leading: const Icon(Ico.reportar),
             title: Text('${i['tipo'] == 'PERDIDA' ? 'Pérdida' : 'Daño'}: ${i['cantidad']} × ${i['articulo']}'),
             subtitle: Text('${switch (i['estado']) {
               'CONFIRMADA' => 'Confirmado',
@@ -243,7 +244,7 @@ class _Persona extends ConsumerWidget {
             contentPadding: EdgeInsets.zero,
             title: Text('${s['folio']} · ${EstadoSolicitud.desde(s['estado'] as String).nombre}'),
             subtitle: Text('Pedida ${fecha(_f(s['creada_en'])!)}'),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const Icon(Ico.avanzar),
             onTap: () => context.push('/solicitudes/${s['id']}'),
           ),
       ],
@@ -359,7 +360,7 @@ class _Expediente extends StatelessWidget {
       const SizedBox(height: 16),
       OutlinedButton.icon(
         onPressed: () => context.push('/persona/${e['persona_tipo']}/${e['persona_id']}'),
-        icon: const Icon(Icons.person_search_outlined),
+        icon: const Icon(Ico.buscarPersona),
         label: const Text('Todo lo de esta persona'),
       ),
     ]);

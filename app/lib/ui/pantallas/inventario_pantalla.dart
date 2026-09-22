@@ -94,7 +94,7 @@ class _InventarioPantallaState extends ConsumerState<InventarioPantalla> {
         ]),
         data: (todos) {
           final lista = _filtrar(todos);
-          return CustomScrollView(slivers: [
+          return CustomScrollView(physics: const AlwaysScrollableScrollPhysics(), slivers: [
             SliverToBoxAdapter(child: _barraHerramientas(todos, compacto, riel)),
             if (lista.isEmpty)
               SliverFillRemaining(
@@ -215,7 +215,7 @@ class _InventarioPantallaState extends ConsumerState<InventarioPantalla> {
             const SizedBox(width: Espacio.x2),
             TmSegmento<_Vista>(
               valor: _vista,
-              opciones: const [(_Vista.tabla, 'Tabla', Icons.view_list_outlined), (_Vista.tarjetas, 'Tarjetas', Icons.grid_view_outlined)],
+              opciones: const [(_Vista.tabla, 'Tabla', Ico.lista), (_Vista.tarjetas, 'Tarjetas', Ico.cuadricula)],
               onCambio: (v) => setState(() => _vista = v),
             ),
           ] else ...[

@@ -1,3 +1,4 @@
+import '../diseno/iconos.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -148,7 +149,7 @@ class _SolicitudPantallaState extends ConsumerState<SolicitudPantalla> {
             onPressed: _enviando || carrito.isEmpty ? null : _enviar,
             icon: _enviando
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.send),
+                : const Icon(Ico.enviar),
             label: const Text('Enviar solicitud'),
           ),
         ),
@@ -186,7 +187,7 @@ class _SolicitudPantallaState extends ConsumerState<SolicitudPantalla> {
                       alCambiar: (v) => ref.read(carritoProvider.notifier).cambiarCantidad(l.articuloId, v),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close),
+                      icon: const Icon(Ico.cerrar),
                       tooltip: 'Quitar',
                       onPressed: () => ref.read(carritoProvider.notifier).quitar(l.articuloId),
                     ),
@@ -195,15 +196,15 @@ class _SolicitudPantallaState extends ConsumerState<SolicitudPantalla> {
               ),
             Align(
               alignment: Alignment.centerLeft,
-              child: TextButton.icon(onPressed: _agregar, icon: const Icon(Icons.add), label: const Text('Agregar otro artículo')),
+              child: TextButton.icon(onPressed: _agregar, icon: const Icon(Ico.nuevo), label: const Text('Agregar otro artículo')),
             ),
             const SizedBox(height: 16),
             Text('Tus datos', style: tema.textTheme.titleMedium),
             const SizedBox(height: 8),
             SegmentedButton<TipoSolicitante>(
               segments: const [
-                ButtonSegment(value: TipoSolicitante.alumno, icon: Icon(Icons.school_outlined), label: Text('Alumno')),
-                ButtonSegment(value: TipoSolicitante.maestro, icon: Icon(Icons.co_present_outlined), label: Text('Maestro')),
+                ButtonSegment(value: TipoSolicitante.alumno, icon: Icon(Ico.escuela), label: Text('Alumno')),
+                ButtonSegment(value: TipoSolicitante.maestro, icon: Icon(Ico.maestro), label: Text('Maestro')),
                 ButtonSegment(value: TipoSolicitante.otro, label: Text('Otro')),
               ],
               selected: {_tipo},
@@ -280,7 +281,7 @@ class _SolicitudPantallaState extends ConsumerState<SolicitudPantalla> {
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.event),
+              leading: const Icon(Ico.fecha),
               title: Text('Devolver a más tardar el ${fecha(vence)}'),
               subtitle: Text('Puede ser hasta ${_plazoMaximo(config)} días. El responsable puede ajustarla.'),
               trailing: TextButton(
@@ -341,7 +342,7 @@ class _DialogoEnviada extends StatelessWidget {
             'Te enviamos un enlace a ${r.correo}. Ábrelo y toca "Sí, yo lo pedí". '
             'Hasta que lo confirmes, tu solicitud no le llega al responsable. Si no lo ves en unos minutos, revisa la carpeta de correo no deseado (spam).';
     return AlertDialog(
-      icon: const Icon(Icons.mark_email_unread_outlined, size: 40),
+      icon: const Icon(Ico.correoSinLeer, size: 40),
       title: Text('Folio ${r.folio}'),
       content: Text(texto),
       actions: [
@@ -469,10 +470,10 @@ class _EstadoSolicitudPantallaState extends ConsumerState<EstadoSolicitudPantall
     return Scaffold(
       appBar: AppBar(
         // Abierta desde el enlace del correo no hay a dónde regresar: se ofrece ir al inventario.
-        leading: context.canPop() ? null : IconButton(icon: const Icon(Icons.home_outlined), tooltip: 'Inventario', onPressed: () => context.go('/')),
+        leading: context.canPop() ? null : IconButton(icon: const Icon(Ico.inicio), tooltip: 'Inventario', onPressed: () => context.go('/')),
         title: Text(s == null ? 'Mi solicitud' : 'Solicitud ${s.folio}'),
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), tooltip: 'Actualizar', onPressed: _cargando ? null : _cargar),
+          IconButton(icon: const Icon(Ico.reintentar), tooltip: 'Actualizar', onPressed: _cargando ? null : _cargar),
         ],
       ),
       body: Centrado(
@@ -514,7 +515,7 @@ class _EstadoSolicitudPantallaState extends ConsumerState<EstadoSolicitudPantall
                     Wrap(spacing: 8, runSpacing: 8, children: [
                       FilledButton.icon(
                         onPressed: _trabajando ? null : () => _hacer((r) => r.confirmarSolicitud(widget.token), 'Solicitud confirmada.'),
-                        icon: const Icon(Icons.check),
+                        icon: const Icon(Ico.listo),
                         label: const Text('Sí, yo lo pedí'),
                       ),
                       OutlinedButton(
@@ -540,22 +541,22 @@ class _EstadoSolicitudPantallaState extends ConsumerState<EstadoSolicitudPantall
           ),
         ),
       if (s.confirmada && s.estado == EstadoSolicitud.pendiente)
-        const _Mensaje(icono: Icons.hourglass_top, texto: 'Tu solicitud está en revisión. Aquí verás cuando la aprueben.'),
+        const _Mensaje(icono: Ico.enEspera, texto: 'Tu solicitud está en revisión. Aquí verás cuando la aprueben.'),
       if (s.estado == EstadoSolicitud.aprobada) ...[
         _Mensaje(
-          icono: Icons.thumb_up_alt_outlined,
+          icono: Ico.aprobado,
           texto: 'Aprobada. Pasa al laboratorio por tu material'
               '${s.recogerHasta == null ? '' : ' antes del ${fechaHora(s.recogerHasta!)}'}. '
               'Lleva una identificación con foto (credencial de transporte, documento escolar con foto u otra).',
         ),
-        if (s.notaAprobacion != null) _Mensaje(icono: Icons.sticky_note_2_outlined, texto: 'Nota del laboratorio: ${s.notaAprobacion}'),
+        if (s.notaAprobacion != null) _Mensaje(icono: Ico.nota, texto: 'Nota del laboratorio: ${s.notaAprobacion}'),
         const SizedBox(height: 8),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: s.codigoAceptado
                 ? const Row(children: [
-                    Icon(Icons.verified, color: Colors.green),
+                    Icon(Ico.verificado, color: Colors.green),
                     SizedBox(width: 12),
                     Expanded(child: Text('Código aceptado. Espera a que el responsable termine la entrega.')),
                   ])
@@ -585,9 +586,9 @@ class _EstadoSolicitudPantallaState extends ConsumerState<EstadoSolicitudPantall
       ],
       if (s.estado.conMaterial || s.estado == EstadoSolicitud.devuelta) _Comprobante(s: s),
       if (s.estado == EstadoSolicitud.rechazada)
-        _Mensaje(icono: Icons.block, texto: 'No fue aprobada. Motivo: ${s.motivoRechazo ?? 'sin motivo'}', color: colores.errorContainer),
+        _Mensaje(icono: Ico.desactivar, texto: 'No fue aprobada. Motivo: ${s.motivoRechazo ?? 'sin motivo'}', color: colores.errorContainer),
       if (s.estado == EstadoSolicitud.cancelada)
-        _Mensaje(icono: Icons.cancel_outlined, texto: 'Cancelada: ${s.motivoCancelacion ?? ''}', color: colores.surfaceContainerHighest),
+        _Mensaje(icono: Ico.error, texto: 'Cancelada: ${s.motivoCancelacion ?? ''}', color: colores.surfaceContainerHighest),
       const SizedBox(height: 16),
       Text('Material', style: tema.textTheme.titleMedium),
       for (final l in s.lineas)
@@ -615,7 +616,7 @@ class _EstadoSolicitudPantallaState extends ConsumerState<EstadoSolicitudPantall
                       await _hacer((r) => r.cancelarSolicitudPublica(widget.token), 'Solicitud cancelada.');
                     }
                   },
-            icon: const Icon(Icons.close),
+            icon: const Icon(Ico.cerrar),
             label: const Text('Cancelar solicitud'),
           ),
         if (!_guardada)
@@ -625,7 +626,7 @@ class _EstadoSolicitudPantallaState extends ConsumerState<EstadoSolicitudPantall
               ref.invalidate(solicitudesGuardadasProvider);
               if (mounted) setState(() => _guardada = true);
             },
-            icon: const Icon(Icons.bookmark_add_outlined),
+            icon: const Icon(Ico.apartar),
             label: const Text('Guardar en este dispositivo'),
           ),
         if (s.enlaceDeCorreo && s.confirmada && (s.estado.conMaterial || s.estado == EstadoSolicitud.devuelta))
@@ -672,7 +673,7 @@ class _LineaDeTiempo extends StatelessWidget {
       const SizedBox(height: 8),
       Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
         for (var i = 0; i < pasos.length; i++) ...[
-          Icon(pasos[i].$2 ? Icons.check_circle : Icons.radio_button_unchecked,
+          Icon(pasos[i].$2 ? Ico.ok : Ico.sinMarcar,
               size: 18, color: pasos[i].$2 ? colores.primary : colores.outline),
           Padding(padding: const EdgeInsets.only(left: 4, right: 8), child: Text(pasos[i].$1)),
         ],
@@ -780,12 +781,12 @@ class MisSolicitudesPantalla extends ConsumerWidget {
             for (final s in lista)
               Card(
                 child: ListTile(
-                  leading: const Icon(Icons.receipt_long_outlined),
+                  leading: const Icon(Ico.acta),
                   title: Text('Folio ${s.folio}'),
                   subtitle: Text('Enviada el ${fechaHora(s.enviadaEn)}'),
                   onTap: () => context.push('/s/${s.token}'),
                   trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline),
+                    icon: const Icon(Ico.quitar),
                     tooltip: 'Quitar de este dispositivo',
                     onPressed: () async {
                       await AlmacenLocal.olvidarSolicitud(s.token);
@@ -797,7 +798,7 @@ class MisSolicitudesPantalla extends ConsumerWidget {
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: () => _recuperar(context, ref),
-              icon: const Icon(Icons.mark_email_read_outlined),
+              icon: const Icon(Ico.correoLeido),
               label: const Text('¿Perdiste el enlace? Recupéralo por correo'),
             ),
           ]),

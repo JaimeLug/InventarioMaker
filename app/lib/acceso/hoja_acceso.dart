@@ -1,3 +1,4 @@
+import '../ui/diseno/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -70,7 +71,7 @@ class _HojaAcceso extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     encabezado,
-                    const TabBar(tabs: [Tab(icon: Icon(Icons.dialpad), text: 'PIN'), Tab(icon: Icon(Icons.password), text: 'Contraseña')]),
+                    const TabBar(tabs: [Tab(icon: Icon(Ico.pin), text: 'PIN'), Tab(icon: Icon(Ico.contrasena), text: 'Contraseña')]),
                     const Flexible(child: TabBarView(children: [_FormularioPin(), SingleChildScrollView(child: _FormularioContrasena())])),
                   ],
                 ),
@@ -225,7 +226,7 @@ class _FormularioPinState extends ConsumerState<_FormularioPin> {
                       ),
                     FilledButton(
                       onPressed: _pin.length >= 4 && !_enviando ? _entrar : null,
-                      child: const Icon(Icons.arrow_forward, size: 32),
+                      child: const Icon(Ico.avanzarFlecha, size: 32),
                     ),
                   ],
                 ),
@@ -293,7 +294,7 @@ class _FormularioContrasenaState extends ConsumerState<_FormularioContrasena> {
           children: [
             TextField(
               controller: _correo,
-              decoration: const InputDecoration(labelText: 'Correo', prefixIcon: Icon(Icons.mail_outline)),
+              decoration: const InputDecoration(labelText: 'Correo', prefixIcon: Icon(Ico.correo)),
               keyboardType: TextInputType.emailAddress,
               autofillHints: const [AutofillHints.email],
               textInputAction: TextInputAction.next,
@@ -304,10 +305,10 @@ class _FormularioContrasenaState extends ConsumerState<_FormularioContrasena> {
               obscureText: !_ver,
               decoration: InputDecoration(
                 labelText: 'Contraseña',
-                prefixIcon: const Icon(Icons.lock_outline),
+                prefixIcon: const Icon(Ico.noSePresta),
                 suffixIcon: IconButton(
                   tooltip: _ver ? 'Ocultar' : 'Mostrar',
-                  icon: Icon(_ver ? Icons.visibility_off : Icons.visibility),
+                  icon: Icon(_ver ? Ico.ocultar : Ico.ver),
                   onPressed: () => setState(() => _ver = !_ver),
                 ),
               ),

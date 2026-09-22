@@ -1,3 +1,4 @@
+import '../diseno/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -12,12 +13,12 @@ Future<FotoNueva?> elegirFoto(BuildContext context) async {
     builder: (context) => SafeArea(
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         ListTile(
-          leading: const Icon(Icons.photo_camera),
+          leading: const Icon(Ico.foto),
           title: const Text('Tomar foto'),
           onTap: () => Navigator.pop(context, ImageSource.camera),
         ),
         ListTile(
-          leading: const Icon(Icons.photo_library_outlined),
+          leading: const Icon(Ico.galeria),
           title: const Text('Elegir archivo o de la galería'),
           onTap: () => Navigator.pop(context, ImageSource.gallery),
         ),

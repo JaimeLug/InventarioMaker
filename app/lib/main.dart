@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -140,6 +141,7 @@ class _InventarioAppState extends ConsumerState<InventarioApp> with WidgetsBindi
       onPointerDown: (_) => _reiniciarInactividad(),
       child: MaterialApp.router(
         scaffoldMessengerKey: _mensajes,
+        scrollBehavior: const _Arrastrable(),
         title: 'Inventario Maker',
         theme: temaClaro(),
         darkTheme: temaOscuro(),
@@ -152,4 +154,18 @@ class _InventarioAppState extends ConsumerState<InventarioApp> with WidgetsBindi
       ),
     );
   }
+}
+
+/// En la computadora y en la web las listas también se arrastran con el mouse,
+/// como en el celular (si no, solo se puede con la rueda).
+class _Arrastrable extends MaterialScrollBehavior {
+  const _Arrastrable();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.trackpad,
+        PointerDeviceKind.stylus,
+      };
 }

@@ -152,6 +152,13 @@ class Repositorio {
     return r['ok'] == true ? null : r['mensaje'] as String;
   }
 
+  /// Cambiar la contraseña de quien entró: primero se revisa la actual, luego se guarda la nueva.
+  Future<void> cambiarMiContrasena(String actual, String nueva) async {
+    final problema = await confirmarContrasena(actual);
+    if (problema != null) throw ErrorApp(problema);
+    await _c.auth.updateUser(UserAttributes(password: nueva));
+  }
+
   Future<void> salir() => _c.auth.signOut();
 
   Future<void> establecerPin(String usuarioId, String pin) =>

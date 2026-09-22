@@ -11,6 +11,7 @@ import '../sin_conexion/cola.dart';
 import '../util/texto.dart';
 import 'componentes/componentes.dart';
 import 'diseno/iconos.dart';
+import 'diseno/modo_tema.dart';
 import 'diseno/tipografia.dart';
 import 'diseno/tokens.dart';
 import 'widgets/comunes.dart';
@@ -101,7 +102,7 @@ class TmArmazon extends ConsumerWidget {
       if (sesion != null)
         TmDestino('/inventario', 'Inventario', Ico.inventario)
       else
-        TmDestino('/mis-solicitudes', 'Mis solicitudes', Ico.solicitudes),
+        TmDestino('/mis-solicitudes', 'Solicitudes', Ico.solicitudes),
       TmDestino('/escanear', 'Escanear', Ico.escanear),
       if (administra)
         TmDestino('/prestamos-abiertos', 'Préstamos', Ico.prestamos, conteo: vencidos, urgente: vencidos > 0)
@@ -129,6 +130,8 @@ class TmArmazon extends ConsumerWidget {
       usuario: sesion?.nombre,
       rolUsuario: sesion == null ? null : '${sesion.rol.nombre} · ${sesion.nivel == NivelSesion.pin ? 'PIN' : 'Contraseña'}',
       estadoConexion: const _EstadoConexion(),
+      lateralPlegada: ref.watch(menuPlegadoProvider),
+      alPlegar: (v) => ref.read(menuPlegadoProvider.notifier).cambiar(v),
       fab: fab,
       appBar: AppBar(
         leading: conRegresar ? const _Regresar() : null,
@@ -209,7 +212,7 @@ class TmArmazon extends ConsumerWidget {
           }),
           if (sesion == null)
             ListTile(
-              leading: const Icon(Icons.login),
+              leading: const Icon(Ico.entrar),
               title: const Text('Entrar'),
               onTap: () async {
                 Navigator.pop(context);

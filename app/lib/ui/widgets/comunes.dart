@@ -1,3 +1,4 @@
+import '../diseno/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -26,10 +27,10 @@ class BarraSesion extends ConsumerWidget {
   Widget _sesion(BuildContext context, WidgetRef ref, AsyncValue<Sesion?> sesion) {
     return sesion.when(
       loading: () => const Padding(padding: EdgeInsets.all(16), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
-      error: (_, _) => IconButton(icon: const Icon(Icons.sync_problem), tooltip: 'Reintentar', onPressed: () => ref.invalidate(sesionProvider)),
+      error: (_, _) => IconButton(icon: const Icon(Ico.problemaSincronia), tooltip: 'Reintentar', onPressed: () => ref.invalidate(sesionProvider)),
       data: (s) => s == null
           ? TextButton.icon(
-              icon: const Icon(Icons.login),
+              icon: const Icon(Ico.entrar),
               label: const Text('Entrar'),
               onPressed: () async {
                 if (await pedirAcceso(context, descripcion: 'entrar al inventario')) ref.invalidate(sesionProvider);
@@ -47,36 +48,36 @@ class BarraSesion extends ConsumerWidget {
               },
               itemBuilder: (_) => [
                 PopupMenuItem(enabled: false, child: Text('${s.nombre}\n${s.rol.nombre}')),
-                const PopupMenuItem(value: 'mis-prestamos', child: ListTile(leading: Icon(Icons.outbox_outlined), title: Text('Mis préstamos'))),
-                const PopupMenuItem(value: 'mis-reportes', child: ListTile(leading: Icon(Icons.flag_outlined), title: Text('Mis reportes'))),
-                const PopupMenuItem(value: 'avisos', child: ListTile(leading: Icon(Icons.notifications_outlined), title: Text('Avisos'))),
-                const PopupMenuItem(value: 'contenedores', child: ListTile(leading: Icon(Icons.inventory_2_outlined), title: Text('Contenedores'))),
-                const PopupMenuItem(value: 'pendientes', child: ListTile(leading: Icon(Icons.flag_outlined), title: Text('Pendientes'))),
-                const PopupMenuItem(value: 'conteos', child: ListTile(leading: Icon(Icons.pin_outlined), title: Text('Conteos'))),
-                const PopupMenuItem(value: 'inventarios', child: ListTile(leading: Icon(Icons.fact_check_outlined), title: Text('Inventarios'))),
+                const PopupMenuItem(value: 'mis-prestamos', child: ListTile(leading: Icon(Ico.prestar), title: Text('Mis préstamos'))),
+                const PopupMenuItem(value: 'mis-reportes', child: ListTile(leading: Icon(Ico.reportar), title: Text('Mis reportes'))),
+                const PopupMenuItem(value: 'avisos', child: ListTile(leading: Icon(Ico.campana), title: Text('Avisos'))),
+                const PopupMenuItem(value: 'contenedores', child: ListTile(leading: Icon(Ico.caja), title: Text('Contenedores'))),
+                const PopupMenuItem(value: 'pendientes', child: ListTile(leading: Icon(Ico.reportar), title: Text('Pendientes'))),
+                const PopupMenuItem(value: 'conteos', child: ListTile(leading: Icon(Ico.conteo), title: Text('Conteos'))),
+                const PopupMenuItem(value: 'inventarios', child: ListTile(leading: Icon(Ico.revisar), title: Text('Inventarios'))),
                 if (s.administra) ...[
-                  const PopupMenuItem(value: 'conflictos', child: ListTile(leading: Icon(Icons.sync_problem), title: Text('Conflictos sin conexión'))),
-                  const PopupMenuItem(value: 'reportes', child: ListTile(leading: Icon(Icons.summarize_outlined), title: Text('Reportes'))),
-                  const PopupMenuItem(value: 'solicitudes', child: ListTile(leading: Icon(Icons.inbox_outlined), title: Text('Solicitudes'))),
-                  const PopupMenuItem(value: 'adeudos', child: ListTile(leading: Icon(Icons.assignment_ind_outlined), title: Text('Adeudos'))),
-                  const PopupMenuItem(value: 'etiquetas', child: ListTile(leading: Icon(Icons.qr_code_2), title: Text('Imprimir etiquetas'))),
-                  const PopupMenuItem(value: 'por-revisar', child: ListTile(leading: Icon(Icons.fact_check_outlined), title: Text('Por revisar'))),
+                  const PopupMenuItem(value: 'conflictos', child: ListTile(leading: Icon(Ico.problemaSincronia), title: Text('Conflictos sin conexión'))),
+                  const PopupMenuItem(value: 'reportes', child: ListTile(leading: Icon(Ico.reportes), title: Text('Reportes'))),
+                  const PopupMenuItem(value: 'solicitudes', child: ListTile(leading: Icon(Ico.solicitudes), title: Text('Solicitudes'))),
+                  const PopupMenuItem(value: 'adeudos', child: ListTile(leading: Icon(Ico.adeudos), title: Text('Adeudos'))),
+                  const PopupMenuItem(value: 'etiquetas', child: ListTile(leading: Icon(Ico.qr), title: Text('Imprimir etiquetas'))),
+                  const PopupMenuItem(value: 'por-revisar', child: ListTile(leading: Icon(Ico.revisar), title: Text('Por revisar'))),
                   const PopupMenuItem(
-                      value: 'prestamos-abiertos', child: ListTile(leading: Icon(Icons.schedule), title: Text('Préstamos abiertos'))),
-                  const PopupMenuItem(value: 'cuentas', child: ListTile(leading: Icon(Icons.group_outlined), title: Text('Cuentas'))),
+                      value: 'prestamos-abiertos', child: ListTile(leading: Icon(Ico.reloj), title: Text('Préstamos abiertos'))),
+                  const PopupMenuItem(value: 'cuentas', child: ListTile(leading: Icon(Ico.cuentas), title: Text('Cuentas'))),
                 ],
                 if (s.rol == Rol.subadmin) ...[
-                  const PopupMenuItem(value: 'bitacora', child: ListTile(leading: Icon(Icons.history_edu), title: Text('Bitácora'))),
-                  const PopupMenuItem(value: 'ajustes', child: ListTile(leading: Icon(Icons.tune), title: Text('Ajustes'))),
+                  const PopupMenuItem(value: 'bitacora', child: ListTile(leading: Icon(Ico.bitacora), title: Text('Bitácora'))),
+                  const PopupMenuItem(value: 'ajustes', child: ListTile(leading: Icon(Ico.filtros), title: Text('Ajustes'))),
                 ],
-                const PopupMenuItem(value: 'mi-cuenta', child: ListTile(leading: Icon(Icons.person_outline), title: Text('Mi cuenta'))),
-                const PopupMenuItem(value: 'diseno', child: ListTile(leading: Icon(Icons.palette_outlined), title: Text('Sistema de diseño'))),
-                const PopupMenuItem(value: 'salir', child: ListTile(leading: Icon(Icons.logout), title: Text('Cerrar sesión'))),
+                const PopupMenuItem(value: 'mi-cuenta', child: ListTile(leading: Icon(Ico.persona), title: Text('Mi cuenta'))),
+                const PopupMenuItem(value: 'diseno', child: ListTile(leading: Icon(Ico.diseno), title: Text('Sistema de diseño'))),
+                const PopupMenuItem(value: 'salir', child: ListTile(leading: Icon(Ico.salir), title: Text('Cerrar sesión'))),
               ],
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Chip(
-                  avatar: Icon(s.nivel == NivelSesion.pin ? Icons.dialpad : Icons.verified_user_outlined, size: 18),
+                  avatar: Icon(s.nivel == NivelSesion.pin ? Ico.pin : Ico.conContrasena, size: 18),
                   label: Text('${s.nombreCorto} · ${s.nivel == NivelSesion.pin ? 'PIN' : 'Contraseña'}'),
                 ),
               ),
@@ -99,7 +100,7 @@ class Miniatura extends ConsumerWidget {
       height: tamano,
       decoration: BoxDecoration(color: colores.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.photo_camera_outlined, size: tamano * 0.35, color: colores.outline),
+        Icon(Ico.foto, size: tamano * 0.35, color: colores.outline),
         if (tamano >= 56) Text('Sin foto', style: TextStyle(fontSize: 10, color: colores.outline)),
       ]),
     );
@@ -142,13 +143,13 @@ class Insignia extends StatelessWidget {
 
 List<Widget> insigniasDe(Articulo a) => [
       if (a.estadoInventario == EstadoInventario.sinClasificar)
-        const Insignia('Sin clasificar: no usar', color: Avisos.sinClasificar, icono: Icons.block),
+        const Insignia('Sin clasificar: no usar', color: Avisos.sinClasificar, icono: Ico.desactivar),
       if (a.cantidadEstimada && !a.conteoDesconocido)
-        const Insignia('Cantidad estimada', color: Avisos.estimado, icono: Icons.pin_outlined),
-      if (a.conteoDesconocido) const Insignia('Sin contar', color: Avisos.estimado, icono: Icons.pin_outlined),
+        const Insignia('Cantidad estimada', color: Avisos.estimado, icono: Ico.conteo),
+      if (a.conteoDesconocido) const Insignia('Sin contar', color: Avisos.estimado, icono: Ico.conteo),
       if (a.pendientesAbiertos > 0)
         Insignia('${a.pendientesAbiertos} pendiente${a.pendientesAbiertos == 1 ? '' : 's'}',
-            color: Avisos.pendiente, icono: Icons.flag_outlined),
+            color: Avisos.pendiente, icono: Ico.reportar),
       if (a.fueraServicio > 0) Insignia('${a.fueraServicio} fuera de servicio', color: Avisos.sinClasificar),
     ];
 
@@ -169,7 +170,7 @@ class Cargando<T> extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.cloud_off, size: 48, color: Theme.of(context).colorScheme.outline),
+            Icon(Ico.sinConexion, size: 48, color: Theme.of(context).colorScheme.outline),
             const SizedBox(height: 12),
             Text(traducir(e).mensaje, textAlign: TextAlign.center),
             if (alReintentar != null) ...[

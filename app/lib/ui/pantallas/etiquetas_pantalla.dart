@@ -1,3 +1,4 @@
+import '../diseno/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:printing/printing.dart';
@@ -79,7 +80,7 @@ class _EtiquetasPantallaState extends ConsumerState<EtiquetasPantalla> {
           padding: const EdgeInsets.all(12),
           child: FilledButton.icon(
             onPressed: elegidas.isEmpty || _generando || !publicada ? null : () => _imprimir(elegidas, urlApp),
-            icon: _generando ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.print),
+            icon: _generando ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Ico.imprimir),
             label: Text(elegidas.isEmpty ? 'Elige qué imprimir' : 'Imprimir ${elegidas.length} en $hojas hoja${hojas == 1 ? '' : 's'}'),
           ),
         ),
@@ -90,7 +91,7 @@ class _EtiquetasPantallaState extends ConsumerState<EtiquetasPantalla> {
             Card(
               color: tema.colorScheme.errorContainer,
               child: ListTile(
-                leading: const Icon(Icons.warning_amber),
+                leading: const Icon(Ico.aviso),
                 title: const Text('Todavía no se publica la app web.'),
                 subtitle: Text('Los QR llevan la dirección de la app (ahora es ${urlApp ?? 'ninguna'}). '
                     'Una etiqueta impresa con esa dirección no abriría en otros celulares.'),
@@ -127,7 +128,7 @@ class _EtiquetasPantallaState extends ConsumerState<EtiquetasPantalla> {
           ]),
           const SizedBox(height: 12),
           TextField(
-            decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Buscar por código o nombre'),
+            decoration: const InputDecoration(prefixIcon: Icon(Ico.buscar), hintText: 'Buscar por código o nombre'),
             onChanged: (t) => setState(() => _texto = t),
           ),
           for (final e in visibles)

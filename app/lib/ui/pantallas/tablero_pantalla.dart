@@ -75,103 +75,138 @@ class _Tablero extends ConsumerWidget {
         ref.invalidate(articulosProvider);
         await ref.read(articulosProvider.future);
       },
-      child: ListView(padding: const EdgeInsets.all(Espacio.x4), children: [
-        Text('Hola, ${sesion.nombreCorto}', style: Tipografia.display.copyWith(color: c.texto)),
-        Text('${_saludo()} · la jornada termina a las 15:00', style: Tipografia.cuerpo.copyWith(color: c.textoSecundario)),
-        const SizedBox(height: Espacio.x4),
+      child: ListView(
+        padding: const EdgeInsets.all(Espacio.x4),
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          Text('Hola, ${sesion.nombreCorto}', style: Tipografia.display.copyWith(color: c.texto)),
+          Text('${_saludo()} · la jornada termina a las 15:00', style: Tipografia.cuerpo.copyWith(color: c.textoSecundario)),
+          const SizedBox(height: Espacio.x4),
 
-        articulos.when(
-          loading: () => const TmCargandoLista(renglones: 3),
-          error: (e, _) => TmErrorCarga(
-            mensaje: 'No se pudieron leer las cifras del taller. Revisa la conexión.',
-            onReintentar: () => ref.invalidate(articulosProvider),
-          ),
-          data: (todos) {
-            final situaciones = {for (final s in SituacionStock.values) s: todos.where((a) => SituacionStock.de(a) == s).length};
-            final disponibles = todos.where((a) => a.prestable && a.disponible > 0).length;
-            final herramientas = todos.where((a) => a.categoria == Categoria.herramientas || a.categoria == Categoria.herramientasElectricas).toList();
-            return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              GridView.count(
-                crossAxisCount: anchoKpi,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: Espacio.x3,
-                crossAxisSpacing: Espacio.x3,
-                childAspectRatio: compacto ? 1.9 : 2.2,
+          articulos.when(
+            loading: () => const TmCargandoLista(renglones: 3),
+            error: (e, _) => TmErrorCarga(
+              mensaje: 'No se pudieron leer las cifras del taller. Revisa la conexión.',
+              onReintentar: () => ref.invalidate(articulosProvider),
+            ),
+            data: (todos) {
+              final situaciones = {for (final s in SituacionStock.values) s: todos.where((a) => SituacionStock.de(a) == s).length};
+              final disponibles = todos.where((a) => a.prestable && a.disponible > 0).length;
+              final herramientas = todos
+                  .where((a) => a.categoria == Categoria.herramientas || a.categoria == Categoria.herramientasElectricas)
+                  .toList();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  TmKpi(etiqueta: 'Artículos', valor: '${todos.length}', pie: 'renglones en 7 categorías', icono: Ico.inventario, onTap: () => context.push('/inventario')),
-                  TmKpi(etiqueta: 'Disponibles', valor: '$disponibles', pie: 'listos para prestar', iconoPie: Ico.ok, onTap: () => context.push('/inventario')),
-                  TmKpi(
-                    etiqueta: 'En su mínimo',
-                    valor: '${situaciones[SituacionStock.enMinimo] ?? 0}',
-                    pie: 'consumibles por reponer',
-                    iconoPie: Ico.aviso,
-                    tono: (situaciones[SituacionStock.enMinimo] ?? 0) > 0 ? TonoKpi.atencion : TonoKpi.normal,
-                    onTap: () => context.push('/inventario'),
+                  GridView.count(
+                    crossAxisCount: anchoKpi,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    mainAxisSpacing: Espacio.x3,
+                    crossAxisSpacing: Espacio.x3,
+                    childAspectRatio: compacto ? 1.9 : 2.2,
+                    children: [
+                      TmKpi(
+                        etiqueta: 'Artículos',
+                        valor: '${todos.length}',
+                        pie: 'renglones en 7 categorías',
+                        icono: Ico.inventario,
+                        onTap: () => context.push('/inventario'),
+                      ),
+                      TmKpi(
+                        etiqueta: 'Disponibles',
+                        valor: '$disponibles',
+                        pie: 'listos para prestar',
+                        iconoPie: Ico.ok,
+                        onTap: () => context.push('/inventario'),
+                      ),
+                      TmKpi(
+                        etiqueta: 'En su mínimo',
+                        valor: '${situaciones[SituacionStock.enMinimo] ?? 0}',
+                        pie: 'consumibles por reponer',
+                        iconoPie: Ico.aviso,
+                        tono: (situaciones[SituacionStock.enMinimo] ?? 0) > 0 ? TonoKpi.atencion : TonoKpi.normal,
+                        onTap: () => context.push('/inventario'),
+                      ),
+                      TmKpi(
+                        etiqueta: 'Sin existencias',
+                        valor: '${(situaciones[SituacionStock.agotado] ?? 0) + (situaciones[SituacionStock.ningunoDisponible] ?? 0)}',
+                        pie: 'agotados o todos prestados',
+                        iconoPie: Ico.error,
+                        tono: TonoKpi.critico,
+                        onTap: () => context.push('/inventario'),
+                      ),
+                      TmKpi(
+                        etiqueta: 'Herramientas',
+                        valor: '${herramientas.where((a) => a.disponible > 0).length}',
+                        pie: 'de ${herramientas.length} en su lugar',
+                        iconoPie: Ico.herramientas,
+                        onTap: () => context.push('/inventario'),
+                      ),
+                      if (administra)
+                        TmKpi(
+                          etiqueta: 'Préstamos',
+                          valor: '${prestamos.isEmpty ? vencidos : prestamos.length}',
+                          pie: vencidos > 0 ? '$vencidos vencido${vencidos == 1 ? '' : 's'}' : 'ninguno vencido',
+                          iconoPie: Ico.reloj,
+                          tono: vencidos > 0 ? TonoKpi.critico : TonoKpi.normal,
+                          onTap: () => context.push('/prestamos-abiertos'),
+                        )
+                      else
+                        TmKpi(
+                          etiqueta: 'Mis préstamos',
+                          valor: '${mios.length}',
+                          pie: mios.any((p) => p.vencido) ? 'tienes uno vencido' : 'a tu nombre',
+                          iconoPie: Ico.prestamos,
+                          tono: mios.any((p) => p.vencido) ? TonoKpi.critico : TonoKpi.normal,
+                          onTap: () => context.push('/mis-prestamos'),
+                        ),
+                    ],
                   ),
-                  TmKpi(
-                    etiqueta: 'Sin existencias',
-                    valor: '${(situaciones[SituacionStock.agotado] ?? 0) + (situaciones[SituacionStock.ningunoDisponible] ?? 0)}',
-                    pie: 'agotados o todos prestados',
-                    iconoPie: Ico.error,
-                    tono: TonoKpi.critico,
-                    onTap: () => context.push('/inventario'),
+                  const SizedBox(height: Espacio.x4),
+                  _AtenderHoy(
+                    vencidos: vencidos,
+                    porRevisar: porRevisar,
+                    solicitudes: solicitudes,
+                    pendientes: pendientes,
+                    bajoMinimo: todos
+                        .where((a) => SituacionStock.de(a) == SituacionStock.enMinimo || SituacionStock.de(a) == SituacionStock.agotado)
+                        .toList(),
+                    administra: administra,
                   ),
-                  TmKpi(
-                    etiqueta: 'Herramientas',
-                    valor: '${herramientas.where((a) => a.disponible > 0).length}',
-                    pie: 'de ${herramientas.length} en su lugar',
-                    iconoPie: Ico.herramientas,
-                    onTap: () => context.push('/inventario'),
-                  ),
-                  if (administra)
-                    TmKpi(
-                      etiqueta: 'Préstamos',
-                      valor: '${prestamos.isEmpty ? vencidos : prestamos.length}',
-                      pie: vencidos > 0 ? '$vencidos vencido${vencidos == 1 ? '' : 's'}' : 'ninguno vencido',
-                      iconoPie: Ico.reloj,
-                      tono: vencidos > 0 ? TonoKpi.critico : TonoKpi.normal,
-                      onTap: () => context.push('/prestamos-abiertos'),
+                  const SizedBox(height: Espacio.x4),
+                  if (MediaQuery.sizeOf(context).width >= Quiebre.lateral)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 3, child: _PorCategoria(todos: todos)),
+                        const SizedBox(width: Espacio.x4),
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            children: [
+                              _Rapidos(administra: administra),
+                              const SizedBox(height: Espacio.x4),
+                              _Proximos(prestamos: administra ? prestamos : mios, administra: administra),
+                            ],
+                          ),
+                        ),
+                      ],
                     )
-                  else
-                    TmKpi(
-                      etiqueta: 'Mis préstamos',
-                      valor: '${mios.length}',
-                      pie: mios.any((p) => p.vencido) ? 'tienes uno vencido' : 'a tu nombre',
-                      iconoPie: Ico.prestamos,
-                      tono: mios.any((p) => p.vencido) ? TonoKpi.critico : TonoKpi.normal,
-                      onTap: () => context.push('/mis-prestamos'),
-                    ),
+                  else ...[
+                    _Rapidos(administra: administra),
+                    const SizedBox(height: Espacio.x4),
+                    _PorCategoria(todos: todos),
+                    const SizedBox(height: Espacio.x4),
+                    _Proximos(prestamos: administra ? prestamos : mios, administra: administra),
+                  ],
                 ],
-              ),
-              const SizedBox(height: Espacio.x4),
-              _AtenderHoy(
-                vencidos: vencidos,
-                porRevisar: porRevisar,
-                solicitudes: solicitudes,
-                pendientes: pendientes,
-                bajoMinimo: todos.where((a) => SituacionStock.de(a) == SituacionStock.enMinimo || SituacionStock.de(a) == SituacionStock.agotado).toList(),
-                administra: administra,
-              ),
-              const SizedBox(height: Espacio.x4),
-              if (MediaQuery.sizeOf(context).width >= Quiebre.lateral)
-                Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Expanded(flex: 3, child: _PorCategoria(todos: todos)),
-                  const SizedBox(width: Espacio.x4),
-                  Expanded(flex: 2, child: Column(children: [_Rapidos(administra: administra), const SizedBox(height: Espacio.x4), _Proximos(prestamos: administra ? prestamos : mios, administra: administra)])),
-                ])
-              else ...[
-                _Rapidos(administra: administra),
-                const SizedBox(height: Espacio.x4),
-                _PorCategoria(todos: todos),
-                const SizedBox(height: Espacio.x4),
-                _Proximos(prestamos: administra ? prestamos : mios, administra: administra),
-              ],
-            ]);
-          },
-        ),
-        const SizedBox(height: Espacio.x10),
-      ]),
+              );
+            },
+          ),
+          const SizedBox(height: Espacio.x10),
+        ],
+      ),
     );
   }
 
@@ -255,12 +290,11 @@ class _AtenderHoy extends StatelessWidget {
       acciones: [if (avisos.isNotEmpty) TmInsignia('${avisos.length}', tono: Tono.error, icono: Ico.alerta)],
       child: avisos.isEmpty
           ? const TmVacio(titulo: 'Todo en orden', texto: 'No hay vencidos, ni reportes por revisar, ni consumibles en su mínimo.', icono: Ico.ok)
-          : Column(children: [
-              for (final (i, a) in avisos.indexed) ...[
-                if (i > 0) const SizedBox(height: Espacio.x2),
-                a,
+          : Column(
+              children: [
+                for (final (i, a) in avisos.indexed) ...[if (i > 0) const SizedBox(height: Espacio.x2), a],
               ],
-            ]),
+            ),
     );
   }
 }
@@ -275,61 +309,85 @@ class _PorCategoria extends StatelessWidget {
     final c = context.tm;
     final datos = [
       for (final cat in Categoria.values)
-        (cat, todos.where((a) => a.categoria == cat).length, todos.where((a) => a.categoria == cat && a.estadoInventario == EstadoInventario.verificado).length),
+        (
+          cat,
+          todos.where((a) => a.categoria == cat).length,
+          todos.where((a) => a.categoria == cat && a.estadoInventario == EstadoInventario.verificado).length,
+        ),
     ].where((d) => d.$2 > 0).toList();
     final maximo = datos.fold<int>(1, (m, d) => d.$2 > m ? d.$2 : m);
     return TmTarjeta(
       titulo: 'Artículos por categoría',
       icono: Ico.inventario,
-      child: Column(children: [
-        for (final (cat, total, verificados) in datos)
-          Padding(
-            padding: const EdgeInsets.only(bottom: Espacio.x3),
-            child: Row(children: [
-              SizedBox(width: 150, child: TmCategoria(cat)),
-              Expanded(
-                child: Semantics(
-                  label: '${cat.nombre}: $verificados de $total verificados',
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: FractionallySizedBox(
-                      widthFactor: total / maximo,
-                      child: Container(
-                        height: 14,
-                        decoration: BoxDecoration(color: c.superficieHundida, borderRadius: BorderRadius.circular(2)),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: FractionallySizedBox(
-                            widthFactor: verificados / total,
-                            child: Container(decoration: BoxDecoration(color: c.exitoRelleno, borderRadius: BorderRadius.circular(2))),
+      child: Column(
+        children: [
+          for (final (cat, total, verificados) in datos)
+            Padding(
+              padding: const EdgeInsets.only(bottom: Espacio.x3),
+              child: Row(
+                children: [
+                  SizedBox(width: 150, child: TmCategoria(cat)),
+                  Expanded(
+                    child: Semantics(
+                      label: '${cat.nombre}: $verificados de $total verificados',
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: FractionallySizedBox(
+                          widthFactor: total / maximo,
+                          child: Container(
+                            height: 14,
+                            decoration: BoxDecoration(color: c.superficieHundida, borderRadius: BorderRadius.circular(2)),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: FractionallySizedBox(
+                                widthFactor: verificados / total,
+                                child: Container(
+                                  decoration: BoxDecoration(color: c.exitoRelleno, borderRadius: BorderRadius.circular(2)),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
+                  const SizedBox(width: Espacio.x2),
+                  SizedBox(
+                    width: 56,
+                    child: Text(
+                      '$verificados/$total',
+                      style: Tipografia.codigo.copyWith(color: c.textoSecundario),
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Row(
+            children: [
+              Container(
+                width: 12,
+                height: 10,
+                decoration: BoxDecoration(color: c.exitoRelleno, borderRadius: BorderRadius.circular(2)),
+              ),
+              const SizedBox(width: Espacio.x1),
+              Text('Verificados', style: Tipografia.chico.copyWith(fontSize: 12.5, color: c.textoSecundario)),
+              const SizedBox(width: Espacio.x3),
+              Container(
+                width: 12,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: c.superficieHundida,
+                  borderRadius: BorderRadius.circular(2),
+                  border: Border.all(color: c.bordeFuerte),
                 ),
               ),
-              const SizedBox(width: Espacio.x2),
-              SizedBox(
-                width: 56,
-                child: Text('$verificados/$total', style: Tipografia.codigo.copyWith(color: c.textoSecundario), textAlign: TextAlign.right),
-              ),
-            ]),
+              const SizedBox(width: Espacio.x1),
+              Text('Falta verificar', style: Tipografia.chico.copyWith(fontSize: 12.5, color: c.textoSecundario)),
+            ],
           ),
-        Row(children: [
-          Container(width: 12, height: 10, decoration: BoxDecoration(color: c.exitoRelleno, borderRadius: BorderRadius.circular(2))),
-          const SizedBox(width: Espacio.x1),
-          Text('Verificados', style: Tipografia.chico.copyWith(fontSize: 12.5, color: c.textoSecundario)),
-          const SizedBox(width: Espacio.x3),
-          Container(
-            width: 12,
-            height: 10,
-            decoration: BoxDecoration(color: c.superficieHundida, borderRadius: BorderRadius.circular(2), border: Border.all(color: c.bordeFuerte)),
-          ),
-          const SizedBox(width: Espacio.x1),
-          Text('Falta verificar', style: Tipografia.chico.copyWith(fontSize: 12.5, color: c.textoSecundario)),
-        ]),
-      ]),
+        ],
+      ),
     );
   }
 }
@@ -341,16 +399,20 @@ class _Rapidos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => TmTarjeta(
-        titulo: 'Accesos rápidos',
-        icono: Ico.escanear,
-        child: Wrap(spacing: Espacio.x2, runSpacing: Espacio.x2, children: [
-          TmBoton('Escanear', icono: Ico.escanear, tamano: TamanoBoton.grande, onTap: () => context.push('/escanear')),
-          TmBoton('Contar', icono: Ico.contar, tamano: TamanoBoton.grande, onTap: () => context.push('/conteos')),
-          TmBoton('Pendientes', icono: Ico.pendientes, tamano: TamanoBoton.grande, onTap: () => context.push('/pendientes')),
-          if (administra) TmBoton('Nuevo artículo', icono: Ico.nuevo, tamano: TamanoBoton.grande, onTap: () => context.push('/articulo/nuevo')),
-          if (administra) TmBoton('Reportes', icono: Ico.reportes, tamano: TamanoBoton.grande, onTap: () => context.push('/reportes')),
-        ]),
-      );
+    titulo: 'Accesos rápidos',
+    icono: Ico.escanear,
+    child: Wrap(
+      spacing: Espacio.x2,
+      runSpacing: Espacio.x2,
+      children: [
+        TmBoton('Escanear', icono: Ico.escanear, tamano: TamanoBoton.grande, onTap: () => context.push('/escanear')),
+        TmBoton('Contar', icono: Ico.contar, tamano: TamanoBoton.grande, onTap: () => context.push('/conteos')),
+        TmBoton('Pendientes', icono: Ico.pendientes, tamano: TamanoBoton.grande, onTap: () => context.push('/pendientes')),
+        if (administra) TmBoton('Nuevo artículo', icono: Ico.nuevo, tamano: TamanoBoton.grande, onTap: () => context.push('/articulo/nuevo')),
+        if (administra) TmBoton('Reportes', icono: Ico.reportes, tamano: TamanoBoton.grande, onTap: () => context.push('/reportes')),
+      ],
+    ),
+  );
 }
 
 class _Proximos extends StatelessWidget {
@@ -367,7 +429,12 @@ class _Proximos extends StatelessWidget {
       titulo: administra ? 'Próximos a vencer' : 'Mis préstamos',
       icono: Ico.reloj,
       acciones: [
-        TmBoton('Ver todos', tipo: TipoBoton.fantasma, tamano: TamanoBoton.chico, onTap: () => context.push(administra ? '/prestamos-abiertos' : '/mis-prestamos')),
+        TmBoton(
+          'Ver todos',
+          tipo: TipoBoton.fantasma,
+          tamano: TamanoBoton.chico,
+          onTap: () => context.push(administra ? '/prestamos-abiertos' : '/mis-prestamos'),
+        ),
       ],
       sinPadding: true,
       child: lista.isEmpty
@@ -375,21 +442,23 @@ class _Proximos extends StatelessWidget {
               padding: EdgeInsets.all(Espacio.x4),
               child: TmVacio(titulo: 'Nada prestado', texto: 'Cuando salga material, aparece aquí con su fecha de regreso.', icono: Ico.prestamos),
             )
-          : Column(children: [
-              for (final p in lista)
-                ListTile(
-                  leading: TmAvatar(p.aCargo),
-                  title: Text('${p.nombre} ×${p.pendiente}', maxLines: 1, overflow: TextOverflow.ellipsis),
-                  subtitle: Text('${p.aCargo} · ${p.codigo}', maxLines: 1, overflow: TextOverflow.ellipsis),
-                  trailing: TmInsignia(
-                    p.vencido ? 'Vencido' : 'Vence ${fecha(p.venceEn)}',
-                    tono: p.vencido ? Tono.error : Tono.neutro,
-                    icono: p.vencido ? Ico.alerta : Ico.reloj,
+          : Column(
+              children: [
+                for (final p in lista)
+                  ListTile(
+                    leading: TmAvatar(p.aCargo),
+                    title: Text('${p.nombre} ×${p.pendiente}', maxLines: 1, overflow: TextOverflow.ellipsis),
+                    subtitle: Text('${p.aCargo} · ${p.codigo}', maxLines: 1, overflow: TextOverflow.ellipsis),
+                    trailing: TmInsignia(
+                      p.vencido ? 'Vencido' : 'Vence ${fecha(p.venceEn)}',
+                      tono: p.vencido ? Tono.error : Tono.neutro,
+                      icono: p.vencido ? Ico.alerta : Ico.reloj,
+                    ),
+                    onTap: () => context.push('/articulo/${p.articuloId}'),
                   ),
-                  onTap: () => context.push('/articulo/${p.articuloId}'),
-                ),
-              const SizedBox(height: Espacio.x2),
-            ]),
+                const SizedBox(height: Espacio.x2),
+              ],
+            ),
     );
   }
 }
