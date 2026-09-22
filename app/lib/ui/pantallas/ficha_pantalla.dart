@@ -39,7 +39,8 @@ class FichaPantalla extends ConsumerWidget {
     return TmArmazon(
       ruta: '/inventario',
       titulo: actual?.codigo ?? 'Artículo',
-      migas: const [('Inventario', '/inventario')],
+      // El visitante ve el catálogo, no el inventario.
+      migas: ref.watch(sesionProvider).value == null ? const [('Catálogo', '/')] : const [('Inventario', '/inventario')],
       conRegresar: true,
       acciones: [
         if (actual?.activo ?? false)
@@ -87,7 +88,12 @@ class _Contenido extends ConsumerWidget {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
               Text('ETIQUETA', style: Tipografia.etiqueta.copyWith(color: c.textoTenue)),
               SelectableText(a.codigo, style: Tipografia.codigoFuerte.copyWith(fontSize: 20, color: c.texto)),
-              Text(a.etiquetado.nombre, style: Tipografia.chico.copyWith(color: c.textoTenue)),
+              // Cómo se etiqueta (no dónde está): "En contenedor" solo se leía como ubicación.
+              Text(switch (a.etiquetado) {
+                Etiquetado.individual => 'Lleva su propio QR',
+                Etiquetado.contenedor => 'El QR va en su contenedor',
+                Etiquetado.lote => 'Sin QR: se cuenta por lote',
+              }, style: Tipografia.chico.copyWith(color: c.textoTenue)),
             ]),
           ),
           if (a.etiquetado == Etiquetado.individual)

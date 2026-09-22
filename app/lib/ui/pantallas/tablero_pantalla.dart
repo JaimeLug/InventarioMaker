@@ -91,6 +91,7 @@ class _Tablero extends ConsumerWidget {
             ),
             data: (todos) {
               final situaciones = {for (final s in SituacionStock.values) s: todos.where((a) => SituacionStock.de(a) == s).length};
+    final sinExistencias = (situaciones[SituacionStock.agotado] ?? 0) + (situaciones[SituacionStock.ningunoDisponible] ?? 0);
               final disponibles = todos.where((a) => a.prestable && a.disponible > 0).length;
               final herramientas = todos
                   .where((a) => a.categoria == Categoria.herramientas || a.categoria == Categoria.herramientasElectricas)
@@ -130,10 +131,11 @@ class _Tablero extends ConsumerWidget {
                       ),
                       TmKpi(
                         etiqueta: 'Sin existencias',
-                        valor: '${(situaciones[SituacionStock.agotado] ?? 0) + (situaciones[SituacionStock.ningunoDisponible] ?? 0)}',
+                        valor: '$sinExistencias',
                         pie: 'agotados o todos prestados',
                         iconoPie: Ico.error,
-                        tono: TonoKpi.critico,
+                        // En rojo solo cuando de verdad hay algo agotado.
+                        tono: sinExistencias > 0 ? TonoKpi.critico : TonoKpi.normal,
                         onTap: () => context.push('/inventario'),
                       ),
                       TmKpi(

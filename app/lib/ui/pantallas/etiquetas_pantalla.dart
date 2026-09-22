@@ -1,3 +1,4 @@
+import '../armazon.dart';
 import '../diseno/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,7 +12,6 @@ import '../../modelos/contenedores.dart';
 import '../../util/etiquetas_pdf.dart';
 import '../../util/texto.dart';
 import '../tema.dart';
-import '../widgets/comunes.dart';
 import '../widgets/formularios.dart';
 
 /// Hoja de etiquetas QR para imprimir (F-12): contenedores y artículos con etiqueta propia.
@@ -67,15 +67,19 @@ class _EtiquetasPantallaState extends ConsumerState<EtiquetasPantalla> {
     final hojas = elegidas.isEmpty ? 0 : ((elegidas.length + _empezarEn - 1) / _formato.porHoja).ceil();
 
     if (!(sesion?.administra ?? false)) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Etiquetas'), actions: const [BarraSesion()]),
-        body: const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('Las etiquetas las imprime el responsable del laboratorio o sub administración.'))),
-      );
+      return TmArmazon(
+               ruta: '/etiquetas',
+               titulo: 'Etiquetas',
+               conRegresar: true,
+               child: const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('Las etiquetas las imprime el responsable del laboratorio o sub administración.'))),
+             );
     }
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Imprimir etiquetas'), actions: const [BarraSesion()]),
-      bottomNavigationBar: SafeArea(
+    return TmArmazon(
+             ruta: '/etiquetas',
+             titulo: 'Imprimir etiquetas',
+             conRegresar: true,
+             barraInferior: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: FilledButton.icon(
@@ -85,7 +89,7 @@ class _EtiquetasPantallaState extends ConsumerState<EtiquetasPantalla> {
           ),
         ),
       ),
-      body: Centrado(
+             child: Centrado(
         child: ListView(padding: const EdgeInsets.all(16), children: [
           if (!publicada)
             Card(
@@ -145,6 +149,6 @@ class _EtiquetasPantallaState extends ConsumerState<EtiquetasPantalla> {
           const SizedBox(height: 80),
         ]),
       ),
-    );
+           );
   }
 }

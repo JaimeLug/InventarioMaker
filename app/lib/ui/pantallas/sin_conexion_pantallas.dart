@@ -12,7 +12,6 @@ import '../../modelos/catalogos.dart';
 import '../../sin_conexion/cola.dart';
 import '../../util/texto.dart';
 import '../tema.dart';
-import '../widgets/comunes.dart';
 import '../widgets/formularios.dart';
 
 /// En la barra superior del celular: verde en línea, gris sin señal, naranja por enviar, rojo por resolver.
@@ -74,17 +73,16 @@ class SinConexionPantalla extends ConsumerWidget {
         final tema = Theme.of(context);
         return DefaultTabController(
           length: 3,
-          child: Scaffold(
-            appBar: AppBar(
-              title: const Text('Sin conexión'),
-              actions: const [BarraSesion()],
-              bottom: TabBar(tabs: [
+          child: TmArmazon(
+                   ruta: '/sin-conexion',
+                   titulo: 'Sin conexión',
+                   conRegresar: true,
+                   bajoTitulo: TabBar(tabs: [
                 Tab(text: 'Por enviar (${cola.porEnviar.length})'),
                 Tab(text: 'Por resolver (${cola.porResolver.length})'),
                 const Tab(text: 'Enviados'),
               ]),
-            ),
-            body: Centrado(
+                   child: Centrado(
               child: Column(children: [
                 if (cola.enviando || cola.actualizando) const LinearProgressIndicator(),
                 ListTile(
@@ -195,7 +193,7 @@ class SinConexionPantalla extends ConsumerWidget {
                 ),
               ]),
             ),
-          ),
+                 ),
         );
       },
     );
@@ -236,9 +234,11 @@ class ConflictosPantalla extends StatelessWidget {
   const ConflictosPantalla({super.key});
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Conflictos sin conexión'), actions: const [BarraSesion(), SizedBox(width: Espacio.x2)]),
-        body: Centrado(
+  Widget build(BuildContext context) => TmArmazon(
+                                          ruta: '/conflictos',
+                                          titulo: 'Conflictos sin conexión',
+                                          conRegresar: true,
+                                          child: Centrado(
           child: CargaConAcceso<List<Map<String, dynamic>>>(
             descripcion: 'ver los conflictos',
             requisito: Requisito.administracion,
@@ -266,5 +266,5 @@ class ConflictosPantalla extends StatelessWidget {
             ]),
           ),
         ),
-      );
+                                        );
 }

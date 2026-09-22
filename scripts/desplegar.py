@@ -5,6 +5,10 @@ Uso:
   python scripts/desplegar.py secretos      Pasa a las funciones la llave de correo y la de Firebase
   python scripts/desplegar.py auth          Cierra el registro público de cuentas
   python scripts/desplegar.py web           Compila la app web y la publica en Cloudflare Pages
+  python scripts/desplegar.py apk           Compila el APK para Android
+
+Con INVENTARIO_ENTORNO=pruebas todo va al proyecto de pruebas (.env.pruebas): la web sale en
+inventario-maker-pruebas.pages.dev y el APK como otra app ("Maker PRUEBAS") junto a la real.
 
 Necesita SUPABASE_ACCESS_TOKEN en .env (supabase.com/dashboard/account/tokens).
 Usa el CLI de Supabase por npx: no hay que instalarlo ni tener Docker.
@@ -113,7 +117,19 @@ def auth(_args) -> None:
     print(f"Registro público de cuentas ahora: {'cerrado' if despues.get('disable_signup') else 'ABIERTO'}")
 
 
-PROYECTO_PAGES = "inventario-maker"
+PROYECTO_PAGES = "inventario-maker" + (f"-{db.ENTORNO}" if db.ENTORNO else "")
+
+
+def definiciones_app() -> list[str]:
+    """Con el proyecto de pruebas, la app se compila apuntando a él y con la franja PRUEBAS."""
+    if not db.ENTORNO:
+        return []
+    env = db.leer_env()
+    if not env.get("SUPABASE_URL") or not env.get("SUPABASE_PUBLISHABLE_KEY"):
+        sys.exit(f"Faltan SUPABASE_URL o SUPABASE_PUBLISHABLE_KEY en {db.ARCHIVO_ENV.name}")
+    return [f"--dart-define=SUPABASE_URL={env['SUPABASE_URL']}",
+            f"--dart-define=SUPABASE_LLAVE_PUBLICA={env['SUPABASE_PUBLISHABLE_KEY']}",
+            f"--dart-define=ENTORNO={db.ENTORNO}"]
 
 
 def web(_args) -> None:
@@ -124,7 +140,7 @@ def web(_args) -> None:
         sys.exit("Faltan CLOUDFLARE_API_TOKEN y CLOUDFLARE_ACCOUNT_ID en .env (ver README, sección Cloudflare).")
     flutter = "flutter.bat" if os.name == "nt" else "flutter"
     print("Compilando la app web…")
-    if subprocess.run([flutter, "build", "web", "--release"], cwd=db.RAIZ / "app").returncode != 0:
+    if subprocess.run([flutter, "build", "web", "--release", *definiciones_app()], cwd=db.RAIZ / "app").returncode != 0:
         sys.exit("No compiló la app web.")
 
     entorno_cf = {**os.environ, "CLOUDFLARE_API_TOKEN": token, "CLOUDFLARE_ACCOUNT_ID": cuenta}
@@ -160,11 +176,25 @@ def web(_args) -> None:
     print(f"App web publicada en {url} (guardada como dirección de la app para QR y correos)")
 
 
+def apk(_args) -> None:
+    """Compila el APK. Con el proyecto de pruebas sale como otra app ("Maker PRUEBAS") que se instala junto a la real."""
+    flutter = "flutter.bat" if os.name == "nt" else "flutter"
+    extra = ["--android-project-arg", f"entorno={db.ENTORNO}"] if db.ENTORNO else []
+    if subprocess.run([flutter, "build", "apk", "--release", *definiciones_app(), *extra], cwd=db.RAIZ / "app").returncode != 0:
+        sys.exit("No compiló el APK.")
+    origen = db.RAIZ / "app" / "build" / "app" / "outputs" / "flutter-apk" / "app-release.apk"
+    if db.ENTORNO:
+        destino = origen.with_name(f"app-{db.ENTORNO}.apk")
+        destino.write_bytes(origen.read_bytes())
+        origen = destino
+    print(f"APK listo: {origen}")
+
+
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8")
     p = argparse.ArgumentParser(description="Publicar en Supabase")
-    p.add_argument("que", choices=["funciones", "secretos", "auth", "web"])
-    {"funciones": funciones, "secretos": secretos, "auth": auth, "web": web}[p.parse_args().que](None)
+    p.add_argument("que", choices=["funciones", "secretos", "auth", "web", "apk"])
+    {"funciones": funciones, "secretos": secretos, "auth": auth, "web": web, "apk": apk}[p.parse_args().que](None)
 
 
 if __name__ == "__main__":

@@ -70,7 +70,7 @@ class TmArmazon extends ConsumerWidget {
         if (sesion != null) TmDestino('/inventario', 'Inventario', Ico.inventario),
         if (sesion != null) TmDestino('/herramientas', 'Herramientas', Ico.herramientas),
         TmDestino('/escanear', 'Escanear', Ico.escanear),
-        if (sesion == null) TmDestino('/solicitud', 'Mi solicitud', Ico.solicitudes, conteo: ref.watch(carritoProvider).length),
+        if (sesion == null) TmDestino('/solicitud', 'Mi solicitud', Ico.carrito, conteo: ref.watch(carritoProvider).length),
         if (sesion != null && !administra) TmDestino('/mis-prestamos', 'Mis préstamos', Ico.prestamos),
         if (administra) TmDestino('/prestamos-abiertos', 'Préstamos', Ico.prestamos, conteo: vencidos, urgente: vencidos > 0),
         if (administra) TmDestino('/solicitudes', 'Solicitudes', Ico.solicitudes, conteo: solicitudes),
@@ -79,8 +79,8 @@ class TmArmazon extends ConsumerWidget {
       if (sesion != null)
         TmGrupoNav('Control', [
           TmDestino('/pendientes', 'Pendientes', Ico.pendientes, conteo: pendientes),
-          TmDestino('/conteos', 'Conteos', Ico.contar),
-          TmDestino('/inventarios', 'Inventarios', Ico.contar),
+          TmDestino('/conteos', 'Conteos', Ico.conteo),
+          TmDestino('/inventarios', 'Inventarios', Ico.inventarios),
           if (administra) TmDestino('/revisiones-kit', 'Kits y revisiones', Ico.kits),
           TmDestino('/contenedores', 'Contenedores', Ico.contenedores),
           if (administra) TmDestino('/por-revisar', 'Por revisar', Ico.aviso, conteo: porRevisar, urgente: porRevisar > 0),
@@ -98,7 +98,7 @@ class TmArmazon extends ConsumerWidget {
     ];
 
     final barra = <TmDestino>[
-      TmDestino('/', sesion == null ? 'Catálogo' : 'Inicio', Ico.tablero),
+      TmDestino('/', sesion == null ? 'Catálogo' : 'Tablero', Ico.tablero),
       if (sesion != null)
         TmDestino('/inventario', 'Inventario', Ico.inventario)
       else
@@ -109,7 +109,7 @@ class TmArmazon extends ConsumerWidget {
       else if (sesion != null)
         TmDestino('/mis-prestamos', 'Préstamos', Ico.prestamos)
       else
-        TmDestino('/solicitud', 'Mi solicitud', Ico.solicitudes, conteo: ref.watch(carritoProvider).length),
+        TmDestino('/solicitud', 'Mi solicitud', Ico.carrito, conteo: ref.watch(carritoProvider).length),
       const TmDestino('mas', 'Más', Ico.menu),
     ];
 

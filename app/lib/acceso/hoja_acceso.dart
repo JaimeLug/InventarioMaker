@@ -124,7 +124,7 @@ class _FormularioPinState extends ConsumerState<_FormularioPin> {
     } on Object catch (e) {
       if (mounted) {
         setState(() {
-          _error = traducir(e).mensaje;
+          _error = mensajeDeEntrada(e);
           _pin = '';
           _enviando = false;
         });
@@ -151,7 +151,7 @@ class _FormularioPinState extends ConsumerState<_FormularioPin> {
       future: _personas,
       builder: (context, snap) {
         if (snap.connectionState != ConnectionState.done) return const Center(child: CircularProgressIndicator());
-        if (snap.hasError) return Center(child: Text(traducir(snap.error!).mensaje));
+        if (snap.hasError) return Center(child: Text(mensajeDeEntrada(snap.error!)));
         final personas = snap.data!;
         if (personas.isEmpty) {
           return const Center(
@@ -276,7 +276,7 @@ class _FormularioContrasenaState extends ConsumerState<_FormularioContrasena> {
     } on Object catch (e) {
       if (mounted) {
         setState(() {
-          _error = traducir(e).mensaje;
+          _error = mensajeDeEntrada(e);
           _enviando = false;
         });
       }
@@ -375,7 +375,7 @@ class _DialogoConfirmarState extends ConsumerState<_DialogoConfirmar> {
     } on Object catch (e) {
       if (mounted) {
         setState(() {
-          _error = traducir(e).mensaje;
+          _error = mensajeDeEntrada(e);
           _enviando = false;
         });
       }
@@ -412,3 +412,8 @@ class _DialogoConfirmarState extends ConsumerState<_DialogoConfirmar> {
     );
   }
 }
+
+/// Sin señal no se puede entrar (el PIN y la contraseña los revisa el servidor), pero ya adentro sí se trabaja sin señal.
+String mensajeDeEntrada(Object e) => esFaltaDeConexion(e)
+    ? 'Para entrar se necesita internet. Ya adentro, la app sigue funcionando sin señal: entra al llegar al laboratorio.'
+    : traducir(e).mensaje;

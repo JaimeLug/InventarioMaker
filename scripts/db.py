@@ -7,6 +7,8 @@ Uso:
   python scripts/db.py detener          Detiene la base local
   python scripts/db.py [--nube] url     Muestra a dónde se conecta (sin contraseña)
 
+Proyecto de pruebas (Fase 8): anteponer INVENTARIO_ENTORNO=pruebas, que lee .env.pruebas.
+
 Por defecto todo trabaja contra la base local. Supabase solo se toca con --nube, para que
 nunca se le escriba por accidente. Con --nube NO se aplican los ajustes de supabase/local.
 """
@@ -26,7 +28,9 @@ RAIZ = Path(__file__).resolve().parent.parent
 MIGRACIONES = RAIZ / "supabase" / "migrations"
 AJUSTES_LOCALES = RAIZ / "supabase" / "local" / "shims_supabase.sql"
 DATOS_LOCALES = RAIZ / ".localdb"
-ARCHIVO_ENV = RAIZ / ".env"
+# Con INVENTARIO_ENTORNO=pruebas todo lo de --nube va al proyecto de pruebas (.env.pruebas).
+ENTORNO = os.environ.get("INVENTARIO_ENTORNO", "").strip().lower()
+ARCHIVO_ENV = RAIZ / (f".env.{ENTORNO}" if ENTORNO else ".env")
 PUERTO_LOCAL = 54329
 BASE_LOCAL = "inventario"
 
@@ -130,6 +134,9 @@ def leer_env() -> dict[str, str]:
                 continue
             clave, _, valor = linea.partition("=")
             valores[clave.strip()] = valor.strip().strip('"').strip("'")
+    # El panel de Supabase muestra la dirección con /rest/v1/ al final: aquí solo va la raíz.
+    if valores.get("SUPABASE_URL"):
+        valores["SUPABASE_URL"] = valores["SUPABASE_URL"].rstrip("/").removesuffix("/rest/v1")
     return valores
 
 
@@ -149,7 +156,8 @@ def parametros_nube() -> dict:
 def describir(nube: bool) -> str:
     if nube:
         n = parametros_nube()
-        return f"Supabase: {n['user']}@{n['host']}:{n['port']}/{n['dbname']}"
+        cual = f" [{ENTORNO.upper()}]" if ENTORNO else ""
+        return f"Supabase{cual}: {n['user']}@{n['host']}:{n['port']}/{n['dbname']}"
     return f"Base local: {Cluster().url()}"
 
 

@@ -11,7 +11,6 @@ import '../../modelos/catalogos.dart';
 import '../../modelos/solicitudes.dart';
 import '../../util/texto.dart';
 import '../tema.dart';
-import '../widgets/comunes.dart';
 import '../widgets/formularios.dart';
 import 'solicitudes_pantallas.dart' show VerIdentificacion;
 
@@ -265,9 +264,11 @@ class ExpedientePantalla extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Expediente del préstamo'), actions: const [BarraSesion()]),
-      body: Centrado(
+    return TmArmazon(
+             ruta: '/adeudos',
+             titulo: 'Expediente del préstamo',
+             conRegresar: true,
+             child: Centrado(
         child: CargaConAcceso<Map<String, dynamic>>(
           descripcion: 'ver el expediente',
           requisito: Requisito.administracion,
@@ -275,7 +276,7 @@ class ExpedientePantalla extends StatelessWidget {
           construir: (context, e, recargar) => _Expediente(e: e),
         ),
       ),
-    );
+           );
   }
 }
 

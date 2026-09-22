@@ -12,6 +12,11 @@ abstract final class Configuracion {
     defaultValue: 'sb_publishable_Hnud27yTrhtvrhQC5xtX4Q_pXS1FPQD',
   );
 
+  /// Vacío en la app real. "pruebas" en la que apunta al proyecto de pruebas (Fase 8):
+  /// muestra una franja para que nadie la confunda con la real.
+  static const entorno = String.fromEnvironment('ENTORNO');
+  static bool get esPruebas => entorno.isNotEmpty;
+
   /// Almacén de las fotos del catálogo (público para ver).
   static const almacenFotos = 'fotos';
 

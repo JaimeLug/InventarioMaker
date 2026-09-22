@@ -210,9 +210,11 @@ class MisReportesPantalla extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Mis reportes')),
-      body: Centrado(
+    return TmArmazon(
+             ruta: '/mis-reportes',
+             titulo: 'Mis reportes',
+             conRegresar: true,
+             child: Centrado(
         child: CargaConAcceso<List<Incidencia>>(
           descripcion: 'ver tus reportes',
           requisito: Requisito.docente,
@@ -266,6 +268,6 @@ class MisReportesPantalla extends ConsumerWidget {
           },
         ),
       ),
-    );
+           );
   }
 }

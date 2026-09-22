@@ -18,7 +18,6 @@ import '../../util/documento_pdf.dart';
 import '../../util/guardar_archivo.dart';
 import '../../util/texto.dart';
 import '../tema.dart';
-import '../widgets/comunes.dart';
 import '../widgets/formularios.dart';
 
 /// Pide acceso, registra el reporte (y su folio), lo arma en el dispositivo y lo guarda.
@@ -291,9 +290,11 @@ class ConsultaRapidaPantalla extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Consulta rápida'), actions: const [BarraSesion()]),
-      body: Centrado(
+    return TmArmazon(
+             ruta: '/reportes',
+             titulo: 'Consulta rápida',
+             conRegresar: true,
+             child: Centrado(
         child: CargaConAcceso<ConsultaRapida>(
           descripcion: 'ver la consulta rápida',
           requisito: Requisito.administracion,
@@ -379,7 +380,7 @@ class ConsultaRapidaPantalla extends ConsumerWidget {
           },
         ),
       ),
-    );
+           );
   }
 }
 
@@ -497,9 +498,11 @@ class RevisionKitPantalla extends StatelessWidget {
   final String id;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Revisión de kit'), actions: const [BarraSesion()]),
-        body: Centrado(
+  Widget build(BuildContext context) => TmArmazon(
+                                          ruta: '/revisiones-kit',
+                                          titulo: 'Revisión de kit',
+                                          conRegresar: true,
+                                          child: Centrado(
           child: CargaConAcceso<Map<String, dynamic>>(
             descripcion: 'revisar el kit',
             requisito: Requisito.administracion,
@@ -507,7 +510,7 @@ class RevisionKitPantalla extends StatelessWidget {
             construir: (context, datos, _) => _EditorRevision(datos: datos),
           ),
         ),
-      );
+                                        );
 }
 
 class _LineaEditable {
@@ -749,9 +752,11 @@ class ActaInventarioPantalla extends StatelessWidget {
   final String id;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Acta de inventario periódico'), actions: const [BarraSesion()]),
-        body: Centrado(
+  Widget build(BuildContext context) => TmArmazon(
+                                          ruta: '/reportes',
+                                          titulo: 'Acta de inventario periódico',
+                                          conRegresar: true,
+                                          child: Centrado(
           child: CargaConAcceso<(Encabezado, Map<String, dynamic>)>(
             descripcion: 'preparar el acta',
             requisito: Requisito.administracion,
@@ -771,7 +776,7 @@ class ActaInventarioPantalla extends StatelessWidget {
             ),
           ),
         ),
-      );
+                                        );
 }
 
 class ActaEntregaPantalla extends ConsumerStatefulWidget {
@@ -795,9 +800,11 @@ class _ActaEntregaPantallaState extends ConsumerState<ActaEntregaPantalla> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Acta de entrega-recepción'), actions: const [BarraSesion()]),
-        body: Centrado(
+  Widget build(BuildContext context) => TmArmazon(
+                                          ruta: '/reportes',
+                                          titulo: 'Acta de entrega-recepción',
+                                          conRegresar: true,
+                                          child: Centrado(
           child: CargaConAcceso<Encabezado>(
             descripcion: 'preparar el acta',
             requisito: Requisito.subadministracion,
@@ -833,7 +840,7 @@ class _ActaEntregaPantallaState extends ConsumerState<ActaEntregaPantalla> {
             ),
           ),
         ),
-      );
+                                        );
 }
 
 class _FormActa extends ConsumerStatefulWidget {

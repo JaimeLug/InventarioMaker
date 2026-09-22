@@ -101,6 +101,8 @@ void refrescarArticuloEn(ProviderContainer c, String id) {
   c.invalidate(historialProvider(id));
   c.invalidate(pendientesProvider(id));
   c.invalidate(vencidosProvider);
+  c.invalidate(prestamosAbiertosProvider);
+  c.invalidate(misPrestamosProvider);
   c.invalidate(porRevisarProvider);
   c.invalidate(solicitudesContarProvider);
   c.invalidate(avisosSinLeerProvider);

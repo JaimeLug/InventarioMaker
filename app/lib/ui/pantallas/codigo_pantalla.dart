@@ -1,3 +1,4 @@
+import '../armazon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -45,9 +46,11 @@ class _CodigoPantallaState extends ConsumerState<CodigoPantalla> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.codigo)),
-      body: Center(
+    return TmArmazon(
+             ruta: '/escanear',
+             titulo: widget.codigo,
+             conRegresar: true,
+             child: Center(
         child: _mensaje == null
             ? const CircularProgressIndicator()
             : Column(mainAxisSize: MainAxisSize.min, children: [
@@ -56,6 +59,6 @@ class _CodigoPantallaState extends ConsumerState<CodigoPantalla> {
                 FilledButton(onPressed: () => context.go('/'), child: const Text('Ir al inventario')),
               ]),
       ),
-    );
+           );
   }
 }

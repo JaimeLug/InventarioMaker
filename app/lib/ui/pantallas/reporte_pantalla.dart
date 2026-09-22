@@ -1,3 +1,4 @@
+import '../armazon.dart';
 import '../diseno/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -124,9 +125,11 @@ class _ReportePantallaState extends ConsumerState<ReportePantalla> {
   @override
   Widget build(BuildContext context) {
     final articulo = ref.watch(articuloProvider(widget.articuloId));
-    return Scaffold(
-      appBar: AppBar(title: const Text('Reportar problema'), actions: const [BarraSesion()]),
-      body: Cargando<Articulo?>(
+    return TmArmazon(
+             ruta: '/inventario',
+             titulo: 'Reportar problema',
+             conRegresar: true,
+             child: Cargando<Articulo?>(
         valor: articulo,
         datos: (a) {
           if (a == null) return const Center(child: Text('El artículo no existe.'));
@@ -208,6 +211,6 @@ class _ReportePantallaState extends ConsumerState<ReportePantalla> {
           );
         },
       ),
-    );
+           );
   }
 }

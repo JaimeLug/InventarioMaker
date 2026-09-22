@@ -142,7 +142,27 @@ class _InventarioAppState extends ConsumerState<InventarioApp> with WidgetsBindi
       child: MaterialApp.router(
         scaffoldMessengerKey: _mensajes,
         scrollBehavior: const _Arrastrable(),
-        title: 'Inventario Maker',
+        title: Configuracion.esPruebas ? 'Maker PRUEBAS' : 'Inventario Maker',
+        // App de pruebas: una franja arriba que no tapa ningún botón.
+        builder: Configuracion.esPruebas
+            ? (context, hijo) => Column(children: [
+                  Material(
+                    color: const Color(0xFFC4571F),
+                    child: SafeArea(
+                      bottom: false,
+                      child: SizedBox(
+                        height: 20,
+                        width: double.infinity,
+                        child: Center(
+                          child: Text('${Configuracion.entorno.toUpperCase()} · no es el inventario real',
+                              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(child: MediaQuery.removePadding(context: context, removeTop: true, child: hijo ?? const SizedBox.shrink())),
+                ])
+            : null,
         theme: temaClaro(),
         darkTheme: temaOscuro(),
         themeMode: ref.watch(modoTemaProvider),

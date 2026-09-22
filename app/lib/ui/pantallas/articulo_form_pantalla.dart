@@ -198,12 +198,11 @@ class _ArticuloFormPantallaState extends ConsumerState<ArticuloFormPantalla> {
 
     return PopScope(
       canPop: !_guardando,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(_esAlta ? 'Nuevo artículo' : 'Editar ${_original!.codigo}'),
-          actions: const [BarraSesion(), SizedBox(width: Espacio.x2)],
-        ),
-        bottomNavigationBar: SafeArea(
+      child: TmArmazon(
+               ruta: '/inventario',
+               titulo: _esAlta ? 'Nuevo artículo' : 'Editar ${_original!.codigo}',
+               conRegresar: true,
+               barraInferior: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: FilledButton.icon(
@@ -215,7 +214,7 @@ class _ArticuloFormPantallaState extends ConsumerState<ArticuloFormPantalla> {
             ),
           ),
         ),
-        body: Centrado(
+               child: Centrado(
           child: Form(
             key: _form,
             child: ListView(
@@ -350,7 +349,7 @@ class _ArticuloFormPantallaState extends ConsumerState<ArticuloFormPantalla> {
             ),
           ),
         ),
-      ),
+             ),
     );
   }
 }

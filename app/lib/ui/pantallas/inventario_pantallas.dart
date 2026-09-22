@@ -15,7 +15,6 @@ import '../../modelos/contenedores.dart';
 import '../../modelos/pendientes.dart';
 import '../../util/texto.dart';
 import '../tema.dart';
-import '../widgets/comunes.dart';
 import '../widgets/formularios.dart';
 
 /// Inventarios periódicos (F-16): abrir, contar, revisar diferencias y cerrar.
@@ -179,17 +178,16 @@ class InventarioPeriodicoPantalla extends ConsumerWidget {
     final administra = ref.watch(sesionProvider).value?.administra ?? false;
     return DefaultTabController(
       length: administra ? 3 : 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Inventario'),
-          actions: const [BarraSesion()],
-          bottom: TabBar(tabs: [
+      child: TmArmazon(
+               ruta: '/inventarios',
+               titulo: 'Inventario',
+               conRegresar: true,
+               bajoTitulo: TabBar(tabs: [
             const Tab(text: 'Contar'),
             const Tab(text: 'Hallazgos'),
             if (administra) const Tab(text: 'Diferencias'),
           ]),
-        ),
-        body: TabBarView(children: [
+               child: TabBarView(children: [
           Centrado(
             child: CargaConAcceso<(List<ArticuloDeInventario>, List<InventarioResumen>)>(
               descripcion: 'contar en el inventario',
@@ -217,7 +215,7 @@ class InventarioPeriodicoPantalla extends ConsumerWidget {
               ),
             ),
         ]),
-      ),
+             ),
     );
   }
 }

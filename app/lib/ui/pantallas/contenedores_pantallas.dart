@@ -223,9 +223,11 @@ class _ContenedorPantallaState extends ConsumerState<ContenedorPantalla> {
     final c = contenedores.value?.where((x) => x.codigo == widget.codigo.toUpperCase()).firstOrNull;
 
     if (c == null) {
-      return Scaffold(
-        appBar: AppBar(title: Text(widget.codigo)),
-        body: contenedores.isLoading
+      return TmArmazon(
+               ruta: '/contenedores',
+               titulo: widget.codigo,
+               conRegresar: true,
+               child: contenedores.isLoading
             ? const Center(child: CircularProgressIndicator())
             : Center(
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -234,7 +236,7 @@ class _ContenedorPantallaState extends ConsumerState<ContenedorPantalla> {
                   FilledButton(onPressed: () => context.go('/contenedores'), child: const Text('Ver contenedores')),
                 ]),
               ),
-      );
+             );
     }
 
     final hijos = (contenedores.value ?? const <Contenedor>[]).where((h) => h.padreId == c.id && h.activo).toList()
@@ -245,11 +247,11 @@ class _ContenedorPantallaState extends ConsumerState<ContenedorPantalla> {
     final elegidosPrestables = aqui.where((a) => _elegidos.containsKey(a.id)).toList();
     final piezas = _elegidos.values.fold(0, (s, v) => s + v);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(c.codigo),
-        actions: [
-          if (administra)
+    return TmArmazon(
+             ruta: '/contenedores',
+             titulo: c.codigo,
+             conRegresar: true,
+             acciones: [if (administra)
             PopupMenuButton<String>(
               onSelected: (o) => switch (o) {
                 'editar' => context.push('/contenedor/${c.codigo}/editar'),
@@ -267,11 +269,8 @@ class _ContenedorPantallaState extends ConsumerState<ContenedorPantalla> {
                     value: 'activo',
                     child: ListTile(leading: Icon(c.activo ? Ico.desactivar : Ico.reactivar), title: Text(c.activo ? 'Desactivar' : 'Reactivar'))),
               ],
-            ),
-          const BarraSesion(),
-        ],
-      ),
-      bottomNavigationBar: !_seleccionando
+            )],
+             barraInferior: !_seleccionando
           ? null
           : SafeArea(
               child: Padding(
@@ -281,14 +280,23 @@ class _ContenedorPantallaState extends ConsumerState<ContenedorPantalla> {
                   FilledButton.icon(
                     onPressed: _elegidos.isEmpty
                         ? null
-                        : () => context.push('/prestar?lineas=${_elegidos.entries.map((e) => '${e.key}:${e.value}').join(',')}'),
+                        : () async {
+                            final prestado = await context.push<bool>('/prestar?lineas=${_elegidos.entries.map((e) => '${e.key}:${e.value}').join(',')}');
+                            // Ya prestado: se limpia la selección para no volver a prestar lo mismo.
+                            if (prestado == true && mounted) {
+                              setState(() {
+                                _seleccionando = false;
+                                _elegidos.clear();
+                              });
+                            }
+                          },
                     icon: const Icon(Ico.prestar),
                     label: const Text('Prestar'),
                   ),
                 ]),
               ),
             ),
-      body: Centrado(
+             child: Centrado(
         child: RefreshIndicator(
           onRefresh: () async => _refrescar(ref),
           child: ListView(padding: const EdgeInsets.only(bottom: 32), children: [
@@ -381,7 +389,7 @@ class _ContenedorPantallaState extends ConsumerState<ContenedorPantalla> {
           ]),
         ),
       ),
-    );
+           );
   }
 }
 
@@ -670,15 +678,17 @@ class _ContenedorFormPantallaState extends ConsumerState<ContenedorFormPantalla>
   @override
   Widget build(BuildContext context) {
     final contenedores = ref.watch(contenedoresProvider);
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.codigo == null ? 'Nuevo contenedor' : 'Editar ${widget.codigo}')),
-      bottomNavigationBar: SafeArea(
+    return TmArmazon(
+             ruta: '/contenedores',
+             titulo: widget.codigo == null ? 'Nuevo contenedor' : 'Editar ${widget.codigo}',
+             conRegresar: true,
+             barraInferior: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: FilledButton(onPressed: _guardando ? null : _guardar, child: const Text('Guardar')),
         ),
       ),
-      body: Centrado(
+             child: Centrado(
         child: Cargando<List<Contenedor>>(
           valor: contenedores,
           datos: (todos) {
@@ -748,7 +758,7 @@ class _ContenedorFormPantallaState extends ConsumerState<ContenedorFormPantalla>
           },
         ),
       ),
-    );
+           );
   }
 }
 
@@ -762,9 +772,11 @@ class DevolverVariosPantalla extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final c = ref.watch(contenedoresProvider).value?.where((x) => x.codigo == codigo).firstOrNull;
-    return Scaffold(
-      appBar: AppBar(title: Text('Devolver en $codigo'), actions: const [BarraSesion()]),
-      body: Centrado(
+    return TmArmazon(
+             ruta: '/contenedores',
+             titulo: 'Devolver en $codigo',
+             conRegresar: true,
+             child: Centrado(
         child: c == null
             ? const Center(child: CircularProgressIndicator())
             : CargaConAcceso<List<PrestamoListado>>(
@@ -774,7 +786,7 @@ class DevolverVariosPantalla extends ConsumerWidget {
                 construir: (context, lista, recargar) => _DevolverVarios(lista: lista, recargar: recargar),
               ),
       ),
-    );
+           );
   }
 }
 

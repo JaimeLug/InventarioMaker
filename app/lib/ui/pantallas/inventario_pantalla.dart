@@ -138,6 +138,8 @@ class _InventarioPantallaState extends ConsumerState<InventarioPantalla> {
                 ),
               ),
             ),
+            // Espacio para que el botón + no tape la última tarjeta.
+            if (administra && compacto) const SliverToBoxAdapter(child: SizedBox(height: 72)),
             const SliverToBoxAdapter(child: SizedBox(height: 88)),
           ]);
         },

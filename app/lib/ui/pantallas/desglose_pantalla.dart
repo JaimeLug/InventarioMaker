@@ -1,3 +1,4 @@
+import '../armazon.dart';
 import '../diseno/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -193,15 +194,13 @@ class _DesglosePantallaState extends ConsumerState<DesglosePantalla> {
         setState(() => _cambios = false);
         if (mounted) this.context.pop();
       },
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('Desglose ${articulo?.codigo ?? ''}'),
-          actions: [
-            if (d != null)
-              IconButton(icon: const Icon(Ico.guardar), tooltip: 'Guardar borrador', onPressed: _trabajando ? null : () => _guardar()),
-          ],
-        ),
-        bottomNavigationBar: d == null
+      child: TmArmazon(
+               ruta: '/pendientes',
+               titulo: 'Desglose ${articulo?.codigo ?? ''}',
+               conRegresar: true,
+               acciones: [if (d != null)
+              IconButton(icon: const Icon(Ico.guardar), tooltip: 'Guardar borrador', onPressed: _trabajando ? null : () => _guardar())],
+               barraInferior: d == null
             ? null
             : SafeArea(
                 child: Padding(
@@ -213,14 +212,14 @@ class _DesglosePantallaState extends ConsumerState<DesglosePantalla> {
                   ),
                 ),
               ),
-        body: Centrado(
+               child: Centrado(
           child: _cargando
               ? const Center(child: CircularProgressIndicator())
               : d == null
                   ? _inicio(context, articulo)
                   : _editor(context, d),
         ),
-      ),
+             ),
     );
   }
 

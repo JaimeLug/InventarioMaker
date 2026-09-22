@@ -52,16 +52,16 @@ class BarraSesion extends ConsumerWidget {
                 const PopupMenuItem(value: 'mis-reportes', child: ListTile(leading: Icon(Ico.reportar), title: Text('Mis reportes'))),
                 const PopupMenuItem(value: 'avisos', child: ListTile(leading: Icon(Ico.campana), title: Text('Avisos'))),
                 const PopupMenuItem(value: 'contenedores', child: ListTile(leading: Icon(Ico.caja), title: Text('Contenedores'))),
-                const PopupMenuItem(value: 'pendientes', child: ListTile(leading: Icon(Ico.reportar), title: Text('Pendientes'))),
+                const PopupMenuItem(value: 'pendientes', child: ListTile(leading: Icon(Ico.pendientes), title: Text('Pendientes'))),
                 const PopupMenuItem(value: 'conteos', child: ListTile(leading: Icon(Ico.conteo), title: Text('Conteos'))),
-                const PopupMenuItem(value: 'inventarios', child: ListTile(leading: Icon(Ico.revisar), title: Text('Inventarios'))),
+                const PopupMenuItem(value: 'inventarios', child: ListTile(leading: Icon(Ico.inventarios), title: Text('Inventarios'))),
                 if (s.administra) ...[
                   const PopupMenuItem(value: 'conflictos', child: ListTile(leading: Icon(Ico.problemaSincronia), title: Text('Conflictos sin conexión'))),
                   const PopupMenuItem(value: 'reportes', child: ListTile(leading: Icon(Ico.reportes), title: Text('Reportes'))),
                   const PopupMenuItem(value: 'solicitudes', child: ListTile(leading: Icon(Ico.solicitudes), title: Text('Solicitudes'))),
                   const PopupMenuItem(value: 'adeudos', child: ListTile(leading: Icon(Ico.adeudos), title: Text('Adeudos'))),
                   const PopupMenuItem(value: 'etiquetas', child: ListTile(leading: Icon(Ico.qr), title: Text('Imprimir etiquetas'))),
-                  const PopupMenuItem(value: 'por-revisar', child: ListTile(leading: Icon(Ico.revisar), title: Text('Por revisar'))),
+                  const PopupMenuItem(value: 'por-revisar', child: ListTile(leading: Icon(Ico.aviso), title: Text('Por revisar'))),
                   const PopupMenuItem(
                       value: 'prestamos-abiertos', child: ListTile(leading: Icon(Ico.reloj), title: Text('Préstamos abiertos'))),
                   const PopupMenuItem(value: 'cuentas', child: ListTile(leading: Icon(Ico.cuentas), title: Text('Cuentas'))),
@@ -76,9 +76,13 @@ class BarraSesion extends ConsumerWidget {
               ],
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
+                // En el celular solo el nombre (el icono ya dice si fue con PIN o contraseña): así no corta el título.
                 child: Chip(
-                  avatar: Icon(s.nivel == NivelSesion.pin ? Ico.pin : Ico.conContrasena, size: 18),
-                  label: Text('${s.nombreCorto} · ${s.nivel == NivelSesion.pin ? 'PIN' : 'Contraseña'}'),
+                  avatar: Icon(s.nivel == NivelSesion.pin ? Ico.pin : Ico.conContrasena, size: 18,
+                      semanticLabel: s.nivel == NivelSesion.pin ? 'Entraste con PIN' : 'Entraste con contraseña'),
+                  label: Text(MediaQuery.sizeOf(context).width < 480
+                      ? s.nombreCorto
+                      : '${s.nombreCorto} · ${s.nivel == NivelSesion.pin ? 'PIN' : 'Contraseña'}'),
                 ),
               ),
             ),

@@ -127,7 +127,8 @@ class _PrestamoPantallaState extends ConsumerState<PrestamoPantalla> {
       for (final l in _lineas) {
         refrescarArticuloEn(contenedor, l.articulo.id);
       }
-      context.pop();
+      // true: quien abrió el préstamo (por ejemplo el contenedor) sabe que sí se prestó.
+      context.pop(true);
       messenger.showSnackBar(SnackBar(
         duration: const Duration(seconds: 10),
         content: Text('Préstamo registrado: $piezas pieza${piezas == 1 ? '' : 's'}'
@@ -183,23 +184,29 @@ class _PrestamoPantallaState extends ConsumerState<PrestamoPantalla> {
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: Row(children: [
-                  Miniatura(ruta: l.articulo.fotoPrincipal, tamano: 48),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(l.articulo.nombre, style: tema.textTheme.titleSmall),
-                      Text('${l.articulo.codigo} · ${l.articulo.disponibilidad}', style: tema.textTheme.bodySmall),
-                    ]),
+                // El nombre ocupa todo el ancho y la cantidad va abajo: en el celular, al lado, partía las palabras.
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Miniatura(ruta: l.articulo.fotoPrincipal, tamano: 48),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(l.articulo.nombre, style: tema.textTheme.titleSmall),
+                        Text('${l.articulo.codigo} · ${l.articulo.disponibilidad}', style: tema.textTheme.bodySmall),
+                      ]),
+                    ),
+                    if (_lineas.length > 1)
+                      IconButton(icon: const Icon(Ico.cerrar), tooltip: 'Quitar', onPressed: () => setState(() => _lineas.remove(l))),
+                  ]),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: SelectorCantidad(
+                      valor: l.cantidad,
+                      minimo: 1,
+                      maximo: l.articulo.disponible,
+                      alCambiar: (v) => setState(() => l.cantidad = v),
+                    ),
                   ),
-                  SelectorCantidad(
-                    valor: l.cantidad,
-                    minimo: 1,
-                    maximo: l.articulo.disponible,
-                    alCambiar: (v) => setState(() => l.cantidad = v),
-                  ),
-                  if (_lineas.length > 1)
-                    IconButton(icon: const Icon(Ico.cerrar), tooltip: 'Quitar', onPressed: () => setState(() => _lineas.remove(l))),
                 ]),
               ),
             ),
@@ -346,9 +353,15 @@ class _BuscarPersonaState extends ConsumerState<_BuscarPersona> {
   }
 
   Future<void> _crear() async {
+    // El dominio sale de la configuración (el mismo que usa la solicitud pública); se espera a que cargue.
+    final config = await ref.read(configuracionProvider.future).catchError((_) => <String, dynamic>{});
+    if (!mounted) return;
     final datos = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (_) => _DialogoFicha(matricula: _matricula.text.trim()),
+      builder: (_) => _DialogoFicha(
+        matricula: _matricula.text.trim(),
+        dominio: (config['dominio_correo_alumnos'] as String?) ?? dominioCorreoAlumnos,
+      ),
     );
     if (datos == null || !mounted) return;
     try {
@@ -424,9 +437,10 @@ class _BuscarPersonaState extends ConsumerState<_BuscarPersona> {
 }
 
 class _DialogoFicha extends StatefulWidget {
-  const _DialogoFicha({required this.matricula});
+  const _DialogoFicha({required this.matricula, required this.dominio});
 
   final String matricula;
+  final String dominio;
 
   @override
   State<_DialogoFicha> createState() => _DialogoFichaState();
@@ -485,10 +499,10 @@ class _DialogoFichaState extends State<_DialogoFicha> {
             TextFormField(
               controller: _correo,
               keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(labelText: alumno ? 'Correo institucional *' : 'Correo', hintText: alumno ? 'nombre@$dominioCorreoAlumnos' : null),
+              decoration: InputDecoration(labelText: alumno ? 'Correo institucional *' : 'Correo', hintText: alumno ? 'nombre@${widget.dominio}' : null),
               validator: (v) {
                 final c = (v ?? '').trim().toLowerCase();
-                if (alumno && !c.endsWith('@$dominioCorreoAlumnos')) return 'Debe terminar en @$dominioCorreoAlumnos';
+                if (alumno && !c.endsWith('@${widget.dominio}')) return 'Debe terminar en @${widget.dominio}';
                 return null;
               },
             ),

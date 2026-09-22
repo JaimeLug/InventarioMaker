@@ -274,6 +274,32 @@ La app guarda en el celular el catálogo, contenedores, pendientes, préstamos a
 - Se envía a nombre de quien lo capturó: si la sesión venció, la app pide que entre esa misma persona.
 - Menú → **Conflictos sin conexión** (responsable y sub administración). Lo recibido más de 72 h después queda marcado "Registrado tarde".
 
+## Fase 8: pruebas completas sin tocar la base real
+
+Hay un **proyecto de Supabase aparte para pruebas** (`inventario-maker-pruebas`). Tiene la misma estructura que el real, el catálogo cargado de los mismos Excel y cuentas de prueba con el Gmail del responsable con `+` (todos los correos llegan a su bandeja). Ahí se puede prestar, dar de baja, ajustar y sacar actas sin gastar folios oficiales ni ensuciar la bitácora real.
+
+| Qué | Cómo |
+|---|---|
+| **Datos del proyecto** | `.env.pruebas` (no se sube a git). Las contraseñas y PIN de prueba están en `secretos/cuentas-pruebas.txt` |
+| **Cualquier script contra pruebas** | Antepón `INVENTARIO_ENTORNO=pruebas`; por ejemplo `INVENTARIO_ENTORNO=pruebas python scripts/db.py --nube migrar` |
+| **Dejarlo listo de cero** | `INVENTARIO_ENTORNO=pruebas python scripts/pruebas.py preparar` (migraciones, funciones, secretos, catálogo, cuentas). Se niega a correr si `.env.pruebas` apunta al real |
+| **Web de pruebas** | `INVENTARIO_ENTORNO=pruebas python scripts/desplegar.py web` → https://inventario-maker-pruebas.pages.dev |
+| **App de pruebas** | `INVENTARIO_ENTORNO=pruebas python scripts/desplegar.py apk` → «Maker PRUEBAS», que se instala **junto** a la real y lleva una franja naranja arriba |
+| **Recorridos** | `INVENTARIO_ENTORNO=pruebas python scripts/recorridos.py`: 71 pasos por rol (visitante, docente con PIN, responsable, sub administración, alumno sin cuenta) por la misma puerta que usa la app; imprime ✔ / ✘ y guarda el resultado en `salidas/` |
+
+Única diferencia a propósito con la real: en pruebas el dominio de correo de alumnos es `gmail.com`, para usar las cuentas con `+`.
+
+Lo que se corrigió en esta fase:
+- El préstamo tenía fijo el dominio del correo de alumnos (ahora lo lee de la configuración, igual que el servidor).
+- Al recibir una devolución, las listas de préstamos y los contadores del tablero no se refrescaban.
+- Después de «Prestar varios» desde un contenedor, la selección se quedaba marcada.
+- 22 subpantallas que se habían quedado con la barra vieja ya usan el armazón nuevo.
+- Iconos repetidos en el menú, tarjeta «Sin existencias» en rojo con cero, «Inicio» vs «Tablero», títulos cortados en el celular por la pastilla de sesión, el botón + tapando la última tarjeta, nombres partidos en el préstamo con varios artículos y la fecha repetida en «Mis préstamos».
+
+Resultado: 71 de 71 recorridos por el servidor bien, 204 pruebas del servidor y 50 de la app. En el celular se probó escanear, cámara, registrar alumno en persona, entrega de una solicitud con identificación, avisos, claro/oscuro y un préstamo sin señal (llegó con la hora del celular y marcado «sin conexión»).
+
+**Pendiente para la Fase 10 (sin conexión, segunda parte):** devolver sin señal no funcionó (la app pidió internet) al menos para un préstamo que también se hizo sin señal; y buscar a alguien por nombre cuando no se recuerda la matrícula, cuidando la regla de que a los alumnos solo se les busca por matrícula exacta.
+
 ## Icono de la app
 
 El icono es un cubo dentro de unas marcas de escaneo, en tinta `#16211F`, óxido `#C4571F` y papel `#F2EEE6`.

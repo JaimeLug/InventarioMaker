@@ -698,9 +698,11 @@ class _EntregaPantallaState extends ConsumerState<EntregaPantalla> {
   @override
   Widget build(BuildContext context) {
     final s = _s;
-    return Scaffold(
-      appBar: AppBar(title: Text(s == null ? 'Entregar' : 'Entregar ${s.folio}')),
-      body: Centrado(
+    return TmArmazon(
+             ruta: '/solicitudes',
+             titulo: s == null ? 'Entregar' : 'Entregar ${s.folio}',
+             conRegresar: true,
+             child: Centrado(
         child: s == null
             ? Center(
                 child: _error == null
@@ -713,7 +715,7 @@ class _EntregaPantallaState extends ConsumerState<EntregaPantalla> {
               )
             : _contenido(context, s),
       ),
-    );
+           );
   }
 
   Widget _contenido(BuildContext context, SolicitudDetalle s) {

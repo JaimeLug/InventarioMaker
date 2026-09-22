@@ -17,3 +17,6 @@ secretos/
 google-services.json
 # Caché de wrangler (Cloudflare)
 .wrangler/
+
+# Datos del proyecto de pruebas (Fase 8): mismos secretos que .env, otro Supabase
+.env.pruebas

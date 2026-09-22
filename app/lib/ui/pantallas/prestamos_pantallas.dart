@@ -93,7 +93,10 @@ class _ListaPrestamos extends ConsumerWidget {
           icono: Ico.prestamos,
           titulo: vacio,
           texto: 'Cuando salga material del taller, aparece aquí con su fecha de regreso.',
-          acciones: [TmBoton('Ir al inventario', icono: Ico.inventario, onTap: () => context.push('/inventario'))],
+          acciones: [
+            TmBoton('Prestar', tipo: TipoBoton.primario, icono: Ico.prestar, onTap: () => context.push('/prestar')),
+            TmBoton('Ir al inventario', icono: Ico.inventario, onTap: () => context.push('/inventario')),
+          ],
         ),
       ]);
     }
@@ -124,20 +127,24 @@ class _ListaPrestamos extends ConsumerWidget {
                         style: tema.textTheme.bodySmall),
                   ]),
                 ),
+              ]),
+              const SizedBox(height: Espacio.x2),
+              // Una sola vez la fecha, en una insignia debajo del nombre (al lado apretaba el nombre en el celular).
+              Wrap(spacing: Espacio.x2, runSpacing: Espacio.x1, crossAxisAlignment: WrapCrossAlignment.center, children: [
                 TmInsignia(
-                  p.vencido ? 'Vencido' : 'Vence ${fecha(p.venceEn)}',
+                  '${p.vencido ? 'Vencido desde' : 'Vence'} ${fechaHora(p.venceEn)}',
                   tono: p.vencido ? Tono.error : Tono.neutro,
                   icono: p.vencido ? Ico.alerta : Ico.reloj,
                 ),
+                if (p.extensiones > 0) Text('extendido ${p.extensiones} ${p.extensiones == 1 ? 'vez' : 'veces'}', style: tema.textTheme.bodySmall),
               ]),
               const SizedBox(height: Espacio.x2),
-              Text(
-                '${p.vencido ? 'Vencido desde' : 'Vence'} ${fechaHora(p.venceEn)}${p.extensiones > 0 ? ' · extendido ${p.extensiones} vez' : ''}',
-                style: tema.textTheme.bodySmall,
-              ),
-              const SizedBox(height: Espacio.x2),
               Wrap(spacing: Espacio.x2, runSpacing: Espacio.x2, children: [
-                TmBoton('Recibir devolución', tamano: TamanoBoton.chico, icono: Ico.devolver, onTap: () => context.push('/articulo/${p.articuloId}/devolver')),
+                TmBoton('Recibir devolución', tamano: TamanoBoton.chico, icono: Ico.devolver, onTap: () async {
+                  // Al regresar de la devolución, la lista se vuelve a leer.
+                  await context.push('/articulo/${p.articuloId}/devolver');
+                  await recargar();
+                }),
                 TmBoton('Extender', tipo: TipoBoton.fantasma, tamano: TamanoBoton.chico, icono: Ico.reloj, onTap: () => _extender(context, ref, p)),
                 if (p.autorizo != null)
                   TmBoton('Expediente', tipo: TipoBoton.fantasma, tamano: TamanoBoton.chico, onTap: () => context.push('/expediente/${p.id}')),

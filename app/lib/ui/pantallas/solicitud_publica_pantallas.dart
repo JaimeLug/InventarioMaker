@@ -1,3 +1,4 @@
+import '../armazon.dart';
 import '../diseno/iconos.dart';
 import 'dart:async';
 
@@ -140,9 +141,11 @@ class _SolicitudPantallaState extends ConsumerState<SolicitudPantalla> {
     final alumno = _tipo == TipoSolicitante.alumno;
     final vence = _fecha ?? DateTime.now().add(Duration(days: _plazoDefault(config)));
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Mi solicitud')),
-      bottomNavigationBar: SafeArea(
+    return TmArmazon(
+             ruta: '/solicitud',
+             titulo: 'Mi solicitud',
+             conRegresar: true,
+             barraInferior: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: FilledButton.icon(
@@ -154,7 +157,7 @@ class _SolicitudPantallaState extends ConsumerState<SolicitudPantalla> {
           ),
         ),
       ),
-      body: Centrado(
+             child: Centrado(
         child: Form(
           key: _form,
           // Columna y no lista: así se validan también los campos que no están a la vista.
@@ -324,7 +327,7 @@ class _SolicitudPantallaState extends ConsumerState<SolicitudPantalla> {
           ),
         ),
       ),
-    );
+           );
   }
 }
 
@@ -767,9 +770,11 @@ class MisSolicitudesPantalla extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final guardadas = ref.watch(solicitudesGuardadasProvider);
-    return Scaffold(
-      appBar: AppBar(title: const Text('Mis solicitudes')),
-      body: Centrado(
+    return TmArmazon(
+             ruta: '/mis-solicitudes',
+             titulo: 'Mis solicitudes',
+             conRegresar: true,
+             child: Centrado(
         child: Cargando<List<SolicitudGuardada>>(
           valor: guardadas,
           datos: (lista) => ListView(padding: const EdgeInsets.all(12), children: [
@@ -804,6 +809,6 @@ class MisSolicitudesPantalla extends ConsumerWidget {
           ]),
         ),
       ),
-    );
+           );
   }
 }
