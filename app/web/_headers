@@ -1,0 +1,10 @@
+/*
+  Cache-Control: no-cache, no-store, must-revalidate
+
+# Una hora: aquí viven las fuentes y el listado de recursos. Si algún día cambia uno,
+# nadie se queda un año con el viejo guardado en su navegador.
+/assets/*
+  Cache-Control: public, max-age=3600
+
+/canvaskit/*
+  Cache-Control: public, max-age=31536000, immutable

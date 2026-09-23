@@ -59,6 +59,9 @@ class _ArticuloFormPantallaState extends ConsumerState<ArticuloFormPantalla> {
 
   bool get _esAlta => widget.id == null;
 
+  /// La selección de robótica no da de alta ni edita: propone, y el responsable decide.
+  bool get _propone => ref.watch(sesionProvider).value?.esSeleccion ?? false;
+
   @override
   void initState() {
     super.initState();
@@ -122,6 +125,40 @@ class _ArticuloFormPantallaState extends ConsumerState<ArticuloFormPantalla> {
         'es_consumible': _consumible,
       };
 
+  /// Manda lo capturado como propuesta (selección de robótica).
+  Future<void> _enviarPropuesta() async {
+    final repo = ref.read(repositorioProvider);
+    final id = _esAlta ? _idNuevo : const Uuid().v4();
+    final rutas = <Map<String, String>>[];
+    for (final f in _fotos) {
+      rutas.add({'ruta': await repo.subirFotoArticulo(_esAlta ? _idNuevo : widget.id!, f)});
+    }
+    if (!mounted) return;
+    final hecho = await conAcceso<bool>(
+      context,
+      ref,
+      descripcion: _esAlta ? 'proponer "${_nombre.text.trim()}"' : 'proponer una corrección',
+      requisito: Requisito.cualquiera,
+      accion: () async {
+        await repo.proponer(
+          id: id,
+          tipo: _esAlta ? 'ALTA' : 'CORRECCION',
+          datos: _datos(),
+          articuloId: _esAlta ? null : widget.id,
+          cantidad: _esAlta ? (_sinConteo ? null : int.tryParse(_cantidad.text)) : null,
+          fotos: rutas,
+          nota: _justificacion.text.trim().isEmpty ? null : _justificacion.text.trim(),
+        );
+        return true;
+      },
+    );
+    if (hecho == true && mounted) {
+      ref.invalidate(propuestasProvider);
+      avisar(context, 'Listo: tu propuesta le llegó al responsable. Te avisamos en cuanto la revise.');
+      context.pop();
+    }
+  }
+
   Future<void> _guardar() async {
     if (_esAlta && _fotos.isEmpty) {
       avisar(context, 'Agrega al menos una foto: sin foto no se sabe de qué objeto se trata.');
@@ -131,7 +168,9 @@ class _ArticuloFormPantallaState extends ConsumerState<ArticuloFormPantalla> {
 
     setState(() => _guardando = true);
     try {
-      if (_esAlta) {
+      if (_propone) {
+        await _enviarPropuesta();
+      } else if (_esAlta) {
         final codigo = await conAcceso<String>(
           context,
           ref,
@@ -200,7 +239,9 @@ class _ArticuloFormPantallaState extends ConsumerState<ArticuloFormPantalla> {
       canPop: !_guardando,
       child: TmArmazon(
                ruta: '/inventario',
-               titulo: _esAlta ? 'Nuevo artículo' : 'Editar ${_original!.codigo}',
+               titulo: _propone
+                   ? (_esAlta ? 'Proponer artículo' : 'Proponer corrección')
+                   : (_esAlta ? 'Nuevo artículo' : 'Editar ${_original!.codigo}'),
                conRegresar: true,
                barraInferior: SafeArea(
           child: Padding(
@@ -210,7 +251,9 @@ class _ArticuloFormPantallaState extends ConsumerState<ArticuloFormPantalla> {
               icon: _guardando
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Ico.listo),
-              label: Text(_esAlta ? 'Dar de alta' : 'Guardar cambios'),
+              label: Text(_propone
+                  ? 'Enviar propuesta'
+                  : (_esAlta ? 'Dar de alta' : 'Guardar cambios')),
             ),
           ),
         ),

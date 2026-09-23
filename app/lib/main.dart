@@ -58,7 +58,10 @@ class _InventarioAppState extends ConsumerState<InventarioApp> with WidgetsBindi
       final usuario = cambio.session?.user.id;
       if (usuario != null && usuario != _registradoPara) {
         _registradoPara = usuario;
-        AvisosCelular.registrar(ref.read(repositorioProvider));
+        // La selección de robótica no recibe avisos al celular: ni se le pide el permiso.
+        ref.read(sesionProvider.future).then((s) {
+          if (s != null && !s.esSeleccion) AvisosCelular.registrar(ref.read(repositorioProvider));
+        });
       }
       if (cambio.event == AuthChangeEvent.signedOut) _registradoPara = null;
     });

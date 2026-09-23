@@ -134,8 +134,8 @@ def cierto(condicion: bool, mensaje: str):
 def cuentas_de_prueba() -> dict[str, dict]:
     texto = pruebas.ARCHIVO_CUENTAS.read_text(encoding="utf-8")
     cuentas = {}
-    for rol, correo, clave, pin in re.findall(r"^(\w+)\s+(\S+@\S+)\s+contraseña: (\S+)\s+PIN: (\d+)", texto, re.M):
-        cuentas[rol] = {"correo": correo, "clave": clave, "pin": pin}
+    for rol, correo, clave, pin in re.findall(r"^(\w+)\s+(\S+@\S+)\s+contraseña: (\S+)\s+PIN: (.+)$", texto, re.M):
+        cuentas[rol] = {"correo": correo, "clave": clave, "pin": pin.strip() if pin.strip().isdigit() else None}
     return cuentas
 
 
@@ -165,7 +165,7 @@ def main() -> None:
     prestables = [str(r[0]) for r in sql("select id from public.v_inventario where activo and prestable and not es_consumible "
                                          "and not coalesce(no_se_presta, false) and disponible >= 2 order by codigo")]
     multimetro, brocas = prestables[0], prestables[1]
-    consumible = str(sql("select id from public.v_inventario where activo and es_consumible and disponible >= 5 order by codigo limit 1")[0][0])
+    consumible = str(sql("select id from public.v_inventario where activo and es_consumible order by disponible desc, codigo limit 1")[0][0])
 
     # ------------------------------------------------------------------ visitante
     seccion("Visitante sin sesión")
@@ -334,6 +334,65 @@ def main() -> None:
         paso("respuesta con folio", lambda: cierto(envio.get("ok") is True and bool(envio.get("folio")), f"respuesta: {envio}"))
         paso("el correo de confirmación queda en la cola", lambda: cierto(sql(
             "select count(*) from public.envio where creado_en > now() - interval '5 minutes'")[0][0] > 0, "no hay envío en cola"))
+
+    # ------------------------------------------------------------------ selección de robótica
+    seccion("Selección de robótica (Fase 11)")
+    SEL = paso("entra con su correo y contraseña", lambda: api.entrar_contrasena(cuentas["SELECCION"]["correo"], cuentas["SELECCION"]["clave"]))
+    paso("no aparece en la lista de PIN", lambda: cierto(
+        not any("Selección" in (u.get("nombre") or "") for u in (api.rpc(None, "pin_usuarios") or [])), "aparece en la lista de PIN"))
+    if SEL:
+        paso("NO puede prestar", lambda: api.rpc(SEL, "prestamo_registrar", p_lineas=[{"articulo_id": brocas, "cantidad": 1}],
+                                                 p_responsable_usuario=None, p_responsable_solicitante=None,
+                                                 p_fecha_compromiso=None, p_nota=None, p_comando=str(uuid.uuid4())),
+             debe_fallar=r"ROL|PT40|40[13]")
+        paso("NO puede ver a los alumnos", lambda: api.rpc(SEL, "solicitante_buscar", p_matricula=matricula), debe_fallar=r"ROL|PT40|40[13]")
+        paso("NO puede dar de baja", lambda: api.rpc(SEL, "baja_registrar", p_articulo=brocas, p_cantidad=1, p_de_fuera_de_servicio=False,
+                                                     p_motivo="OTRO", p_justificacion="No debería poder hacerlo", p_oficio=None),
+             debe_fallar=r"ROL|PT40|40[13]")
+        paso("NO puede ajustar conteos", lambda: api.rpc(SEL, "ajuste_conteo", p_articulo=consumible, p_en_taller=1,
+                                                         p_motivo="CONTEO_FISICO", p_nota=None), debe_fallar=r"ROL|PT40|40[13]")
+        paso("ve el catálogo", lambda: cierto(len(api.leer(SEL, "articulo?select=id&limit=3")) == 3, "no ve el catálogo"))
+        paso("propone un conteo", lambda: api.rpc(SEL, "conteo_proponer", p_articulo=consumible, p_en_taller=7, p_nota="Conté yo"))
+        paso("avisa de artículos parecidos", lambda: cierto(isinstance(api.rpc(SEL, "articulos_parecidos", p_texto="multimetro"), list), "no responde"))
+
+        foto_sel = paso("sube una foto, que queda sin verificar", lambda: api.rpc(SEL, "foto_agregar",
+            p_articulo=brocas, p_ruta=api.subir(SEL, "fotos", f"articulos/{brocas}/{uuid.uuid4()}.png"),
+            p_tipo="GENERAL", p_principal=False))
+        if foto_sel:
+            paso("la foto aparece en la bandeja del responsable", lambda: cierto(
+                any(f["id"] == foto_sel for f in api.rpc(R, "fotos_por_verificar")), "no aparece"))
+            paso("el responsable la verifica", lambda: api.rpc(R, "foto_verificar", p_foto=foto_sel, p_aceptar=True, p_motivo=None))
+
+        prop = str(uuid.uuid4())
+        paso("propone un artículo nuevo", lambda: api.rpc(SEL, "propuesta_crear", p_id=prop, p_tipo="ALTA",
+            p_datos={"nombre": f"Propuesta de prueba {MARCA}", "categoria": "FTC", "unidad": "pieza"}, p_articulo=None,
+            p_cantidad=2, p_fotos=[{"ruta": api.subir(SEL, "fotos", f"articulos/{prop}/{uuid.uuid4()}.png")}],
+            p_nota="Llegó en la caja nueva"))
+        paso("ve solo sus propuestas", lambda: cierto(all(x["creada_por"].startswith("Prueba · Selección")
+                                                          for x in api.rpc(SEL, "propuestas_listar", p_estado="PENDIENTE")), "ve de otros"))
+        paso("NO puede aprobar la suya", lambda: api.rpc(SEL, "propuesta_aprobar", p_id=prop, p_datos=None), debe_fallar=r"ROL|PT40|40[13]")
+        paso("el responsable la acepta y entra al inventario", lambda: confirmar(R, "RESPONSABLE") and api.rpc(R, "propuesta_aprobar", p_id=prop, p_datos=None))
+        paso("el artículo ya existe con su código", lambda: cierto(
+            len(sql("select codigo from public.articulo where id = %s", prop)) == 1, "no se creó"))
+
+        prop2 = str(uuid.uuid4())
+        paso("propone una corrección", lambda: api.rpc(SEL, "propuesta_crear", p_id=prop2, p_tipo="CORRECCION",
+            p_datos={"marca_modelo": f"Revisado {MARCA}"}, p_articulo=brocas, p_cantidad=None, p_fotos=[], p_nota=None))
+        paso("el responsable la descarta con motivo", lambda: api.rpc(R, "propuesta_descartar", p_id=prop2,
+                                                                      p_motivo="Ya lo habíamos corregido"))
+        paso("descartar sin motivo se rechaza", lambda: api.rpc(R, "propuesta_descartar", p_id=prop2, p_motivo=""),
+             debe_fallar=r"por qué|resuelto")
+
+        # Solicitudes desde la cuenta de selección
+        ficha_sel = paso("consulta su ficha de alumno", lambda: api.rpc(SEL, "seleccion_mi_ficha"))
+        if ficha_sel:
+            sid_sel = str(uuid.uuid4())
+            sol_res = paso("pide material desde su cuenta", lambda: api.rpc(SEL, "solicitud_crear_sesion",
+                p_id=sid_sel, p_lineas=[{"articulo_id": brocas, "cantidad": 1}],
+                p_motivo="Práctica de selección", p_fecha_devolucion=None, p_nota="Para el robot"))
+            paso("ve su solicitud en mis_solicitudes_sesion", lambda: cierto(
+                any(s["id"] == sid_sel for s in (api.rpc(SEL, "mis_solicitudes_sesion") or [])), "no aparece en sus solicitudes"))
+            paso("cancela su solicitud de prueba", lambda: api.rpc(SEL, "solicitud_cancelar_sesion", p_id=sid_sel))
 
     # La solicitud que el alumno ya confirmó desde su correo (el enlace lo abre una persona) se aprueba aquí.
     seccion("Aprobar solicitudes confirmadas por correo")

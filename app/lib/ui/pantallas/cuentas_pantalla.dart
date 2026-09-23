@@ -133,7 +133,7 @@ class _CuentasPantallaState extends ConsumerState<CuentasPantalla> {
                         else
                           c.tienePin ? 'Con PIN' : 'Sin PIN',
                       ].join(' · ')),
-                      trailing: yo == null || c.id == yo.id || (yo.rol == Rol.responsable && c.rol != Rol.docente)
+                      trailing: yo == null || c.id == yo.id || (yo.rol == Rol.responsable && c.rol != Rol.docente && c.rol != Rol.seleccion)
                           ? null
                           : PopupMenuButton<String>(
                               onSelected: (opcion) => switch (opcion) {
@@ -145,7 +145,7 @@ class _CuentasPantallaState extends ConsumerState<CuentasPantalla> {
                                     {'accion': 'REACTIVAR', 'usuario_id': c.id}, 'Cuenta reactivada.'),
                               },
                               itemBuilder: (_) => [
-                                if (c.activo) const PopupMenuItem(value: 'pin', child: Text('Asignar PIN')),
+                                if (c.activo && c.rol != Rol.seleccion) const PopupMenuItem(value: 'pin', child: Text('Asignar PIN')),
                                 if (c.activo && c.correo != null) const PopupMenuItem(value: 'contrasena', child: Text('Cambiar contraseña')),
                                 PopupMenuItem(value: c.activo ? 'desactivar' : 'reactivar', child: Text(c.activo ? 'Desactivar' : 'Reactivar')),
                               ],
@@ -172,6 +172,9 @@ class _DialogoNuevaCuentaState extends State<_DialogoNuevaCuenta> {
   final _nombre = TextEditingController();
   final _correo = TextEditingController();
   final _contrasena = TextEditingController();
+  final _matricula = TextEditingController();
+  final _nombreAlumno = TextEditingController();
+  final _grupo = TextEditingController();
   Rol _rol = Rol.docente;
 
   @override
@@ -179,12 +182,15 @@ class _DialogoNuevaCuentaState extends State<_DialogoNuevaCuenta> {
     _nombre.dispose();
     _correo.dispose();
     _contrasena.dispose();
+    _matricula.dispose();
+    _nombreAlumno.dispose();
+    _grupo.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final roles = widget.yo.rol == Rol.subadmin ? Rol.values : const [Rol.docente];
+    final roles = widget.yo.rol == Rol.subadmin ? Rol.values : const [Rol.docente, Rol.seleccion];
     return AlertDialog(
       title: const Text('Nueva cuenta'),
       content: Form(
@@ -204,14 +210,54 @@ class _DialogoNuevaCuentaState extends State<_DialogoNuevaCuenta> {
               items: [for (final r in roles) DropdownMenuItem(value: r, child: Text(r.nombre))],
               onChanged: (r) => setState(() => _rol = r ?? Rol.docente),
             ),
+            if (_rol == Rol.seleccion) ...[
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _matricula,
+                decoration: const InputDecoration(
+                  labelText: 'Matrícula del alumno *',
+                  helperText: 'Vincula la cuenta a su ficha de alumno para pedir material.',
+                ),
+                textCapitalization: TextCapitalization.characters,
+                validator: (v) => _rol == Rol.seleccion && (v == null || v.trim().isEmpty)
+                    ? 'Escribe la matrícula del alumno.'
+                    : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _nombreAlumno,
+                decoration: const InputDecoration(
+                  labelText: 'Nombre del alumno en la ficha',
+                  helperText: 'Opcional. Si se deja vacío, se usa el nombre completo de arriba.',
+                ),
+                textCapitalization: TextCapitalization.words,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _grupo,
+                decoration: const InputDecoration(
+                  labelText: 'Grupo / área',
+                  helperText: 'Opcional (ej: 4-B, FTC, VEX).',
+                ),
+                textCapitalization: TextCapitalization.characters,
+              ),
+            ],
             const SizedBox(height: 12),
             TextFormField(
               controller: _correo,
-              decoration: const InputDecoration(labelText: 'Correo', helperText: 'Opcional. Sin correo, solo entra con PIN.'),
+              decoration: InputDecoration(
+                labelText: _rol == Rol.seleccion ? 'Correo institucional *' : 'Correo',
+                helperText: _rol == Rol.seleccion
+                    ? 'La selección de robótica entra solo con su correo y su contraseña, sin PIN.'
+                    : 'Opcional. Sin correo, solo entra con PIN.',
+              ),
               keyboardType: TextInputType.emailAddress,
-              validator: (v) => v == null || v.trim().isEmpty || RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(v.trim())
-                  ? null
-                  : 'El correo no parece válido.',
+              validator: (v) {
+                final correo = (v ?? '').trim();
+                if (_rol == Rol.seleccion && correo.isEmpty) return 'La selección de robótica necesita su correo.';
+                if (correo.isEmpty || RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(correo)) return null;
+                return 'El correo no parece válido.';
+              },
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -237,6 +283,11 @@ class _DialogoNuevaCuentaState extends State<_DialogoNuevaCuenta> {
               'rol': _rol.codigo,
               if (_correo.text.trim().isNotEmpty) 'correo': _correo.text.trim(),
               if (_contrasena.text.isNotEmpty) 'contrasena': _contrasena.text,
+              if (_rol == Rol.seleccion) ...{
+                'matricula': _matricula.text.trim(),
+                if (_nombreAlumno.text.trim().isNotEmpty) 'nombre_alumno': _nombreAlumno.text.trim(),
+                if (_grupo.text.trim().isNotEmpty) 'grupo': _grupo.text.trim(),
+              },
             });
           },
           child: const Text('Crear'),

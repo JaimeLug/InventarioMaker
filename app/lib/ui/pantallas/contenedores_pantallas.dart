@@ -168,7 +168,7 @@ class _ContenedorPantallaState extends ConsumerState<ContenedorPantalla> {
             accion: () => ref.read(repositorioProvider).acomodar([for (final a in elegidos) a.id], c.id));
         if (n != null && mounted) avisar(context, 'Listo: $n artículo${n == 1 ? '' : 's'} en ${c.nombre}.');
       } else {
-        final hecho = await conAcceso<bool>(context, ref, descripcion: 'proponer que están en ${c.codigo}', requisito: Requisito.docente,
+        final hecho = await conAcceso<bool>(context, ref, descripcion: 'proponer que están en ${c.codigo}', requisito: Requisito.cualquiera,
             accion: () async {
           for (final a in elegidos) {
             await ref.read(repositorioProvider).proponerUbicacion(a.id, c.id, null);

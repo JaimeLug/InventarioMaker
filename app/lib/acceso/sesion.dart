@@ -40,6 +40,12 @@ class Sesion {
 
   bool get administra => rol == Rol.responsable || rol == Rol.subadmin;
 
+  /// La selección de robótica: ve el catálogo y propone, no mueve el inventario.
+  bool get esSeleccion => rol == Rol.seleccion;
+
+  /// Personal del taller (docentes y administración).
+  bool get esDelTaller => !esSeleccion;
+
   String get nombreCorto => nombre.split(' ').firstWhere((p) => !p.endsWith('.'), orElse: () => nombre);
 }
 
@@ -55,8 +61,13 @@ class Requisito {
   /// Nivel N3: reconfirmar la contraseña justo antes de la acción.
   final bool confirmar;
 
-  /// N1: cualquier cuenta, con PIN o contraseña (agregar fotos y notas).
-  static const docente = Requisito(Nivel.sesion);
+  /// N1 del personal del taller, con PIN o contraseña (prestar, devolver, notas).
+  /// La selección de robótica no entra aquí: solo propone.
+  static const docente = Requisito(Nivel.sesion, roles: {Rol.docente, Rol.responsable, Rol.subadmin});
+
+  /// N1 de cualquier cuenta, incluida la selección de robótica: fotos, conteos,
+  /// reportes de daño y propuestas.
+  static const cualquiera = Requisito(Nivel.sesion);
 
   /// N2: responsable o sub administración con contraseña (alta, edición).
   static const administracion = Requisito(Nivel.contrasena, roles: {Rol.responsable, Rol.subadmin});

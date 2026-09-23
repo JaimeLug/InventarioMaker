@@ -14,6 +14,7 @@ import '../modelos/contenedores.dart';
 import '../modelos/movimientos.dart';
 import '../modelos/otros.dart';
 import '../modelos/pendientes.dart';
+import '../modelos/propuestas.dart';
 import '../modelos/solicitudes.dart';
 import '../sin_conexion/cola.dart';
 import 'errores.dart';
@@ -76,8 +77,9 @@ class Repositorio {
   Future<List<Foto>> fotos(String articuloId) async {
     final filas = await _guardadas('fotos_$articuloId', () => _c
         .from('foto')
-        .select('id, url, es_principal, tipo, tomada_en')
+        .select('id, url, es_principal, tipo, tomada_en, verificada_en')
         .eq('articulo_id', articuloId)
+        .isFilter('borrada_en', null)
         .order('es_principal', ascending: false)
         .order('tomada_en', ascending: false));
     return filas
@@ -88,6 +90,7 @@ class Repositorio {
               esPrincipal: m['es_principal'] as bool,
               tipo: TipoFoto.desde(m['tipo'] as String),
               tomadaEn: DateTime.parse(m['tomada_en'] as String),
+              verificada: m['verificada_en'] != null,
             ))
         .toList();
   }
@@ -506,7 +509,85 @@ class Repositorio {
 
   Future<List<Incidencia>> porRevisar() async => _filas(await _c.rpc('por_revisar')).map(Incidencia.desdeMapa).toList();
 
+  // --- Propuestas de la selección de robótica (Fase 11) ------------------------------------------
+
+  /// Manda una propuesta: un artículo nuevo (ALTA) o una corrección de uno que ya existe.
+  Future<String> proponer({
+    required String id,
+    required String tipo,
+    required Map<String, dynamic> datos,
+    String? articuloId,
+    int? cantidad,
+    List<Map<String, String>> fotos = const [],
+    String? nota,
+  }) async =>
+      await _c.rpc('propuesta_crear', params: {
+        'p_id': id,
+        'p_tipo': tipo,
+        'p_datos': datos,
+        'p_articulo': articuloId,
+        'p_cantidad': cantidad,
+        'p_fotos': fotos,
+        'p_nota': nota,
+      }) as String;
+
+  /// Las propuestas: el responsable ve todas, quien propone ve solo las suyas.
+  Future<List<Propuesta>> propuestas({String? estado = 'PENDIENTE'}) async =>
+      _filas(await _c.rpc('propuestas_listar', params: {'p_estado': estado})).map(Propuesta.desdeMapa).toList();
+
+  Future<void> aprobarPropuesta(String id, {Map<String, dynamic>? datos}) =>
+      _c.rpc('propuesta_aprobar', params: {'p_id': id, 'p_datos': datos});
+
+  Future<void> descartarPropuesta(String id, String motivo) =>
+      _c.rpc('propuesta_descartar', params: {'p_id': id, 'p_motivo': motivo});
+
+  /// Antes de dar de alta algo, se revisa si ya existe algo parecido.
+  Future<List<ArticuloParecido>> articulosParecidos(String texto) async =>
+      _filas(await _c.rpc('articulos_parecidos', params: {'p_texto': texto})).map(ArticuloParecido.desdeMapa).toList();
+
+  /// Fotos que subió la selección y esperan el visto bueno.
+  Future<List<FotoPorVerificar>> fotosPorVerificar() async =>
+      _filas(await _c.rpc('fotos_por_verificar')).map(FotoPorVerificar.desdeMapa).toList();
+
+  Future<void> verificarFoto(String id, {required bool aceptar, String? motivo}) =>
+      _c.rpc('foto_verificar', params: {'p_foto': id, 'p_aceptar': aceptar, 'p_motivo': motivo});
+
   Future<List<Incidencia>> misReportes() async => _filas(await _c.rpc('mis_reportes')).map(Incidencia.desdeMapa).toList();
+
+  /// Ficha del alumno de la selección y su posible impedimento.
+  Future<Map<String, dynamic>?> seleccionMiFicha() async {
+    final r = await _c.rpc('seleccion_mi_ficha');
+    if (r is List && r.isNotEmpty) return Map<String, dynamic>.from(r.first as Map);
+    return null;
+  }
+
+  /// Crea una solicitud desde la cuenta de la selección (nace confirmada en persona).
+  Future<({String folio, String id})> crearSolicitudSeleccion({
+    required List<({String articuloId, int cantidad})> lineas,
+    required String motivo,
+    DateTime? fechaDevolucion,
+    String? nota,
+  }) async {
+    final id = _uuid.v4();
+    final r = await _c.rpc('solicitud_crear_sesion', params: {
+      'p_id': id,
+      'p_lineas': [for (final l in lineas) {'articulo_id': l.articuloId, 'cantidad': l.cantidad}],
+      'p_motivo': motivo,
+      'p_fecha_devolucion': fechaDevolucion == null
+          ? null
+          : '${fechaDevolucion.year}-${fechaDevolucion.month.toString().padLeft(2, '0')}-${fechaDevolucion.day.toString().padLeft(2, '0')}',
+      'p_nota': nota,
+    }) as Map;
+    return (folio: r['folio'] as String, id: id);
+  }
+
+  /// Lista las solicitudes hechas por la cuenta de selección.
+  Future<List<Map<String, dynamic>>> misSolicitudesSeleccion([String? estado]) async =>
+      _filas(await _c.rpc('mis_solicitudes_sesion', params: {'p_estado': estado}));
+
+  /// Cancela una solicitud pendiente de la selección.
+  Future<void> cancelarSolicitudSeleccion(String id) =>
+      _c.rpc('solicitud_cancelar_sesion', params: {'p_id': id});
 
   Future<void> resolverIncidencias(List<String> ids, {required bool confirmar, String? motivo}) => _c.rpc('incidencia_resolver',
       params: {'p_ids': ids, 'p_decision': confirmar ? 'CONFIRMAR' : 'DESCARTAR', 'p_motivo': motivo});

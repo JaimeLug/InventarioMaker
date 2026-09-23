@@ -17,10 +17,17 @@ enum _Vista { tabla, tarjetas }
 
 /// Consulta del inventario (F-01): cualquiera, con o sin cuenta.
 class InventarioPantalla extends ConsumerStatefulWidget {
-  const InventarioPantalla({super.key, this.enTablero = false});
+  const InventarioPantalla({
+    super.key,
+    this.enTablero = false,
+    this.filtroInicial,
+    this.categoriaInicial,
+  });
 
   /// Cuando el catálogo se muestra dentro de otra pantalla (sin sesión) no repite el armazón.
   final bool enTablero;
+  final String? filtroInicial;
+  final String? categoriaInicial;
 
   @override
   ConsumerState<InventarioPantalla> createState() => _InventarioPantallaState();
@@ -31,12 +38,65 @@ class _InventarioPantallaState extends ConsumerState<InventarioPantalla> {
   Categoria? _categoria;
   String? _rama;
   bool _disponibles = false;
+  bool _sinExistencias = false;
+  bool _enMinimo = false;
   bool _conPendientes = false;
   bool _porContar = false;
   bool _sinUbicacion = false;
   bool _sinFoto = false;
-  bool _enMinimo = false;
   _Vista _vista = _Vista.tabla;
+
+  @override
+  void initState() {
+    super.initState();
+    _aplicarParametrosIniciales();
+  }
+
+  @override
+  void didUpdateWidget(covariant InventarioPantalla oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.filtroInicial != oldWidget.filtroInicial || widget.categoriaInicial != oldWidget.categoriaInicial) {
+      setState(_aplicarParametrosIniciales);
+    }
+  }
+
+  void _aplicarParametrosIniciales() {
+    if (widget.categoriaInicial != null) {
+      _categoria = Categoria.values.cast<Categoria?>().firstWhere(
+            (c) => c?.nombre.toLowerCase() == widget.categoriaInicial?.toLowerCase() ||
+                   c?.name.toLowerCase() == widget.categoriaInicial?.toLowerCase(),
+            orElse: () => null,
+          );
+    }
+    switch (widget.filtroInicial) {
+      case 'disponibles':
+        _disponibles = true;
+        break;
+      case 'sin-existencias':
+        _sinExistencias = true;
+        break;
+      case 'minimo':
+        _enMinimo = true;
+        break;
+      case 'sin-existencias-o-minimo':
+      case 'minimo-o-agotado':
+        _sinExistencias = true;
+        _enMinimo = true;
+        break;
+      case 'pendientes':
+        _conPendientes = true;
+        break;
+      case 'contar':
+        _porContar = true;
+        break;
+      case 'sin-ubicacion':
+        _sinUbicacion = true;
+        break;
+      case 'sin-foto':
+        _sinFoto = true;
+        break;
+    }
+  }
 
   @override
   void dispose() {
@@ -45,13 +105,22 @@ class _InventarioPantallaState extends ConsumerState<InventarioPantalla> {
   }
 
   bool get _hayFiltros =>
-      _busqueda.text.isNotEmpty || _categoria != null || _rama != null || _disponibles || _conPendientes || _porContar || _sinUbicacion || _sinFoto || _enMinimo;
+      _busqueda.text.isNotEmpty ||
+      _categoria != null ||
+      _rama != null ||
+      _disponibles ||
+      _sinExistencias ||
+      _enMinimo ||
+      _conPendientes ||
+      _porContar ||
+      _sinUbicacion ||
+      _sinFoto;
 
   void _limpiar() => setState(() {
         _busqueda.clear();
         _categoria = null;
         _rama = null;
-        _disponibles = _conPendientes = _porContar = _sinUbicacion = _sinFoto = _enMinimo = false;
+        _disponibles = _sinExistencias = _enMinimo = _conPendientes = _porContar = _sinUbicacion = _sinFoto = false;
       });
 
   List<Articulo> _filtrar(List<Articulo> todos) {
@@ -61,7 +130,20 @@ class _InventarioPantallaState extends ConsumerState<InventarioPantalla> {
       if (_rama != null && a.subcategoria != _rama) return false;
       if (_conPendientes && a.pendientesAbiertos == 0) return false;
       if (_disponibles && (!a.prestable || a.disponible <= 0)) return false;
-      if (_enMinimo && SituacionStock.de(a) != SituacionStock.enMinimo && SituacionStock.de(a) != SituacionStock.agotado) return false;
+      if (_sinExistencias && !_enMinimo &&
+          SituacionStock.de(a) != SituacionStock.agotado &&
+          SituacionStock.de(a) != SituacionStock.ningunoDisponible) {
+        return false;
+      }
+      if (_enMinimo && !_sinExistencias && SituacionStock.de(a) != SituacionStock.enMinimo) {
+        return false;
+      }
+      if (_sinExistencias && _enMinimo &&
+          SituacionStock.de(a) != SituacionStock.agotado &&
+          SituacionStock.de(a) != SituacionStock.ningunoDisponible &&
+          SituacionStock.de(a) != SituacionStock.enMinimo) {
+        return false;
+      }
       if (_sinFoto && a.fotoPrincipal != null) return false;
       if (_sinUbicacion && a.contenedorId != null) return false;
       if (_porContar && !(a.cantidadEstimada || a.conteoDesconocido)) return false;
@@ -156,6 +238,7 @@ class _InventarioPantallaState extends ConsumerState<InventarioPantalla> {
                   todos: articulos.value ?? const [],
                   categoria: _categoria,
                   disponibles: _disponibles,
+                  sinExistencias: _sinExistencias,
                   enMinimo: _enMinimo,
                   conPendientes: _conPendientes,
                   porContar: _porContar,
@@ -167,6 +250,7 @@ class _InventarioPantallaState extends ConsumerState<InventarioPantalla> {
                   }),
                   onFiltro: (cual, valor) => setState(() => switch (cual) {
                         'disponibles' => _disponibles = valor,
+                        'sin-existencias' => _sinExistencias = valor,
                         'minimo' => _enMinimo = valor,
                         'pendientes' => _conPendientes = valor,
                         'contar' => _porContar = valor,
@@ -267,7 +351,8 @@ class _InventarioPantallaState extends ConsumerState<InventarioPantalla> {
           const SizedBox(height: Espacio.x2),
           Wrap(spacing: Espacio.x2, runSpacing: Espacio.x2, children: [
             TmChip('Disponible ahora', icono: Ico.ok, seleccionado: _disponibles, onTap: () => setState(() => _disponibles = !_disponibles)),
-            TmChip('Mínimo o agotado', icono: Ico.aviso, seleccionado: _enMinimo, onTap: () => setState(() => _enMinimo = !_enMinimo)),
+            TmChip('Sin existencias', icono: Ico.error, seleccionado: _sinExistencias, onTap: () => setState(() => _sinExistencias = !_sinExistencias)),
+            TmChip('En su mínimo', icono: Ico.aviso, seleccionado: _enMinimo, onTap: () => setState(() => _enMinimo = !_enMinimo)),
             TmChip('Con pendientes', icono: Ico.pendientes, seleccionado: _conPendientes, onTap: () => setState(() => _conPendientes = !_conPendientes)),
             TmChip('Por contar', icono: Ico.contar, seleccionado: _porContar, onTap: () => setState(() => _porContar = !_porContar)),
             TmChip('Sin ubicación', icono: Ico.ubicacion, seleccionado: _sinUbicacion, onTap: () => setState(() => _sinUbicacion = !_sinUbicacion)),
@@ -308,7 +393,8 @@ class _InventarioPantallaState extends ConsumerState<InventarioPantalla> {
                 const SizedBox(height: Espacio.x4),
                 Wrap(spacing: Espacio.x2, runSpacing: Espacio.x2, children: [
                   TmChip('Disponible ahora', icono: Ico.ok, seleccionado: _disponibles, onTap: () => cambiar(() => _disponibles = !_disponibles)),
-                  TmChip('Mínimo o agotado', icono: Ico.aviso, seleccionado: _enMinimo, onTap: () => cambiar(() => _enMinimo = !_enMinimo)),
+                  TmChip('Sin existencias', icono: Ico.error, seleccionado: _sinExistencias, onTap: () => cambiar(() => _sinExistencias = !_sinExistencias)),
+                  TmChip('En su mínimo', icono: Ico.aviso, seleccionado: _enMinimo, onTap: () => cambiar(() => _enMinimo = !_enMinimo)),
                   TmChip('Con pendientes', icono: Ico.pendientes, seleccionado: _conPendientes, onTap: () => cambiar(() => _conPendientes = !_conPendientes)),
                   TmChip('Por contar', icono: Ico.contar, seleccionado: _porContar, onTap: () => cambiar(() => _porContar = !_porContar)),
                   TmChip('Sin ubicación', icono: Ico.ubicacion, seleccionado: _sinUbicacion, onTap: () => cambiar(() => _sinUbicacion = !_sinUbicacion)),
@@ -338,6 +424,7 @@ class _RielFiltros extends StatelessWidget {
     required this.todos,
     required this.categoria,
     required this.disponibles,
+    required this.sinExistencias,
     required this.enMinimo,
     required this.conPendientes,
     required this.porContar,
@@ -350,7 +437,7 @@ class _RielFiltros extends StatelessWidget {
 
   final List<Articulo> todos;
   final Categoria? categoria;
-  final bool disponibles, enMinimo, conPendientes, porContar, sinUbicacion, sinFoto;
+  final bool disponibles, sinExistencias, enMinimo, conPendientes, porContar, sinUbicacion, sinFoto;
   final ValueChanged<Categoria?> onCategoria;
   final void Function(String cual, bool valor) onFiltro;
   final VoidCallback? onLimpiar;
@@ -413,10 +500,17 @@ class _RielFiltros extends StatelessWidget {
             activo: disponibles,
             conteo: todos.where((a) => a.prestable && a.disponible > 0).length,
             onTap: () => onFiltro('disponibles', !disponibles)),
-        item('Mínimo o agotado',
+        item('Sin existencias',
+            icono: Ico.error,
+            color: c.error,
+            activo: sinExistencias,
+            conteo: todos.where((a) => [SituacionStock.agotado, SituacionStock.ningunoDisponible].contains(SituacionStock.de(a))).length,
+            onTap: () => onFiltro('sin-existencias', !sinExistencias)),
+        item('En su mínimo',
             icono: Ico.aviso,
+            color: c.aviso,
             activo: enMinimo,
-            conteo: todos.where((a) => [SituacionStock.enMinimo, SituacionStock.agotado].contains(SituacionStock.de(a))).length,
+            conteo: todos.where((a) => SituacionStock.de(a) == SituacionStock.enMinimo).length,
             onTap: () => onFiltro('minimo', !enMinimo)),
         item('Con pendientes',
             icono: Ico.pendientes,

@@ -6,7 +6,7 @@
 import { clienteAdmin, clienteDeUsuario, CORS, rechazo, respuesta } from "../_compartido/comun.ts";
 
 type Accion = "CREAR" | "DESACTIVAR" | "REACTIVAR" | "CONTRASENA";
-const ROLES = ["DOCENTE", "RESPONSABLE", "SUBADMIN"];
+const ROLES = ["DOCENTE", "RESPONSABLE", "SUBADMIN", "SELECCION"];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SIEMPRE = "876000h"; // "desactivada" en Supabase Auth: bloqueo por 100 años
@@ -18,6 +18,9 @@ interface Solicitud {
   rol?: string;
   contrasena?: string;
   usuario_id?: string;
+  matricula?: string;
+  nombre_alumno?: string;
+  grupo?: string;
 }
 
 function validar(s: Solicitud): string | null {
@@ -27,6 +30,9 @@ function validar(s: Solicitud): string | null {
       if (!s.rol || !ROLES.includes(s.rol)) return "Elige el rol de la cuenta.";
       if (s.correo && !CORREO.test(s.correo.trim())) return "El correo no parece válido.";
       if (s.contrasena && s.contrasena.length < 8) return "La contraseña debe tener al menos 8 caracteres.";
+      if (s.rol === "SELECCION" && (!s.matricula || s.matricula.trim().length === 0)) {
+        return "Escribe la matrícula del alumno de la selección.";
+      }
       return null;
     case "CONTRASENA":
       if (!s.contrasena || s.contrasena.length < 8) return "La contraseña debe tener al menos 8 caracteres.";
@@ -88,6 +94,9 @@ Deno.serve(async (req) => {
         p_rol: s.rol,
         p_correo: correoReal,
         p_creada_por: autorizadoPor,
+        p_matricula: s.matricula?.trim() || null,
+        p_nombre_alumno: s.nombre_alumno?.trim() || null,
+        p_grupo: s.grupo?.trim() || null,
       });
       if (e3) {
         console.error("cuenta_registrar", e3);

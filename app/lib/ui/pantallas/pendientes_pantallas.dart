@@ -427,7 +427,7 @@ Future<void> contarArticulo(BuildContext context, WidgetRef ref, Articulo a) asy
   try {
     final r = await conAcceso<({int sistema, int diferencia})>(context, ref,
         descripcion: 'contar "${a.nombre}"',
-        requisito: Requisito.docente,
+        requisito: Requisito.cualquiera,
         accion: () => ref.read(repositorioProvider).proponerConteo(a.id, n, textoNota.isEmpty ? null : textoNota));
     if (r == null || !context.mounted) return;
     avisar(context,

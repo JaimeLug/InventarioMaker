@@ -120,6 +120,9 @@ def aplicar_migraciones(conn: psycopg.Connection, local: bool, hasta: str | None
             conn.execute(sql)
             conn.execute("insert into supabase_migrations.schema_migrations (version, statements, name) values (%s, %s, %s)",
                          (version, [sql], nombre))
+        # Se confirma antes de seguir: hay cambios (por ejemplo un valor nuevo de enum) que
+        # Postgres no deja usar hasta que la migración que los creó quedó guardada.
+        conn.commit()
         aplicadas.append(archivo.name)
     return aplicadas
 

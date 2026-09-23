@@ -4,6 +4,7 @@ import '../acceso/sesion.dart';
 import '../modelos/articulo.dart';
 import '../modelos/contenedores.dart';
 import '../modelos/movimientos.dart';
+import '../modelos/propuestas.dart';
 import '../modelos/otros.dart';
 import '../modelos/pendientes.dart';
 import 'repositorio.dart';
@@ -86,6 +87,27 @@ final misPrestamosProvider = FutureProvider<List<PrestamoListado>>((ref) async {
   }
 });
 
+/// Propuestas pendientes (Fase 11). El responsable ve todas; la selección, las suyas.
+final propuestasProvider = FutureProvider<List<Propuesta>>((ref) async {
+  final sesion = await ref.watch(sesionProvider.future);
+  if (sesion == null || !sesion.vigente) return const [];
+  return ref.watch(repositorioProvider).propuestas();
+});
+
+/// Fotos esperando visto bueno: el responsable ve todas; la selección, las suyas.
+final fotosPorVerificarProvider = FutureProvider<List<FotoPorVerificar>>((ref) async {
+  final sesion = await ref.watch(sesionProvider.future);
+  if (sesion == null || !(sesion.administra || sesion.esSeleccion)) return const [];
+  return ref.watch(repositorioProvider).fotosPorVerificar();
+});
+
+/// Solicitudes de la selección de robótica desde su cuenta.
+final misSolicitudesSelProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final sesion = await ref.watch(sesionProvider.future);
+  if (sesion == null || !sesion.esSeleccion) return const [];
+  return ref.watch(repositorioProvider).misSolicitudesSeleccion();
+});
+
 /// Configuración pública (plazos, hora de fin de jornada, dominio de correo).
 final configuracionProvider = FutureProvider<Map<String, dynamic>>((ref) => ref.watch(repositorioProvider).configuracion());
 
@@ -104,6 +126,8 @@ void refrescarArticuloEn(ProviderContainer c, String id) {
   c.invalidate(prestamosAbiertosProvider);
   c.invalidate(misPrestamosProvider);
   c.invalidate(porRevisarProvider);
+  c.invalidate(propuestasProvider);
+  c.invalidate(fotosPorVerificarProvider);
   c.invalidate(solicitudesContarProvider);
   c.invalidate(avisosSinLeerProvider);
 }

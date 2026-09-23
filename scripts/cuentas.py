@@ -22,7 +22,7 @@ import psycopg
 
 import db
 
-ROLES = ("DOCENTE", "RESPONSABLE", "SUBADMIN")
+ROLES = ("DOCENTE", "RESPONSABLE", "SUBADMIN", "SELECCION")
 
 
 def auth_admin(metodo: str, ruta: str, cuerpo: dict | None = None) -> dict:
@@ -58,8 +58,10 @@ def pedir_secreto(etiqueta: str, *, minimo: int, opcional: bool = False) -> str 
 def crear(args) -> None:
     if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", args.correo.strip()):
         sys.exit(f'"{args.correo}" no es un correo válido. Escribe tu correo real, por ejemplo: --correo jaime@ejemplo.com')
+    if args.rol == "SELECCION" and not getattr(args, "matricula", None):
+        sys.exit("Las cuentas de rol SELECCION necesitan --matricula.")
     contrasena = pedir_secreto("Contraseña", minimo=8)
-    pin = pedir_secreto("PIN de 4 a 6 números", minimo=4, opcional=True)
+    pin = None if args.rol == "SELECCION" else pedir_secreto("PIN de 4 a 6 números", minimo=4, opcional=True)
 
     with db.conectar(nube=True) as conn:
         if pin is not None:
@@ -73,8 +75,9 @@ def crear(args) -> None:
                                                 "email_confirm": True, "user_metadata": {"nombre": args.nombre}})
         try:
             with conn.transaction():
-                conn.execute("select public.cuenta_registrar(%s, %s, %s, %s, null)",
-                             (creado["id"], args.nombre, args.rol, args.correo.strip().lower()))
+                conn.execute("select public.cuenta_registrar(%s, %s, %s, %s, null, %s, %s, %s)",
+                             (creado["id"], args.nombre, args.rol, args.correo.strip().lower(),
+                              getattr(args, "matricula", None), getattr(args, "alumno", None), getattr(args, "grupo", None)))
                 if pin is not None:
                     conn.execute("update public.usuario set pin_hash = extensions.crypt(%s, extensions.gen_salt('bf', 8)) "
                                  "where id = %s", (pin, creado["id"]))
@@ -102,6 +105,9 @@ def main() -> None:
     c.add_argument("--nombre", required=True)
     c.add_argument("--correo", required=True)
     c.add_argument("--rol", required=True, choices=ROLES)
+    c.add_argument("--matricula", help="Matrícula del alumno (obligatoria para SELECCION)")
+    c.add_argument("--alumno", help="Nombre completo del alumno si difiere")
+    c.add_argument("--grupo", help="Grupo o área del alumno")
     sub.add_parser("listar")
     args = p.parse_args()
     {"crear": crear, "listar": listar}[args.accion](args)

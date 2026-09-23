@@ -85,7 +85,8 @@ enum TipoFoto {
 enum Rol {
   docente('DOCENTE', 'Docente'),
   responsable('RESPONSABLE', 'Responsable del laboratorio'),
-  subadmin('SUBADMIN', 'Sub administración');
+  subadmin('SUBADMIN', 'Sub administración'),
+  seleccion('SELECCION', 'Selección de robótica');
 
   const Rol(this.codigo, this.nombre);
   final String codigo;

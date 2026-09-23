@@ -266,7 +266,7 @@ class _ContarState extends ConsumerState<_Contar> {
     cantidad.dispose();
     if (valor == null || !mounted) return;
     try {
-      await conAcceso<bool>(context, ref, descripcion: 'contar "${a.nombre}"', requisito: Requisito.docente, accion: () async {
+      await conAcceso<bool>(context, ref, descripcion: 'contar "${a.nombre}"', requisito: Requisito.cualquiera, accion: () async {
         await ref.read(repositorioProvider).contarEnInventario(widget.inventarioId, a.articuloId, valor, contenedorId: a.contenedorId);
         return true;
       });

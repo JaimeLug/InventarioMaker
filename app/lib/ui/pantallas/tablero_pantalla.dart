@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../acceso/sesion.dart';
 import '../../datos/proveedores.dart';
 import '../../modelos/articulo.dart';
+import '../../modelos/propuestas.dart';
 import '../../modelos/catalogos.dart';
 import '../../modelos/movimientos.dart';
 import '../../sin_conexion/cola.dart';
@@ -52,6 +53,7 @@ class _Tablero extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.tm;
+    if (sesion.esSeleccion) return _TableroSeleccion(sesion: sesion);
     final administra = sesion.administra;
     final articulos = ref.watch(articulosProvider);
     final pendientes = ref.watch(pendientesAbiertosProvider).value?.length ?? 0;
@@ -119,7 +121,7 @@ class _Tablero extends ConsumerWidget {
                         valor: '$disponibles',
                         pie: 'listos para prestar',
                         iconoPie: Ico.ok,
-                        onTap: () => context.push('/inventario'),
+                        onTap: () => context.push('/inventario?filtro=disponibles'),
                       ),
                       TmKpi(
                         etiqueta: 'En su mínimo',
@@ -127,7 +129,7 @@ class _Tablero extends ConsumerWidget {
                         pie: 'consumibles por reponer',
                         iconoPie: Ico.aviso,
                         tono: (situaciones[SituacionStock.enMinimo] ?? 0) > 0 ? TonoKpi.atencion : TonoKpi.normal,
-                        onTap: () => context.push('/inventario'),
+                        onTap: () => context.push('/inventario?filtro=minimo'),
                       ),
                       TmKpi(
                         etiqueta: 'Sin existencias',
@@ -136,14 +138,14 @@ class _Tablero extends ConsumerWidget {
                         iconoPie: Ico.error,
                         // En rojo solo cuando de verdad hay algo agotado.
                         tono: sinExistencias > 0 ? TonoKpi.critico : TonoKpi.normal,
-                        onTap: () => context.push('/inventario'),
+                        onTap: () => context.push('/inventario?filtro=sin-existencias'),
                       ),
                       TmKpi(
                         etiqueta: 'Herramientas',
                         valor: '${herramientas.where((a) => a.disponible > 0).length}',
                         pie: 'de ${herramientas.length} en su lugar',
                         iconoPie: Ico.herramientas,
-                        onTap: () => context.push('/inventario'),
+                        onTap: () => context.push('/herramientas'),
                       ),
                       if (administra)
                         TmKpi(
@@ -172,7 +174,10 @@ class _Tablero extends ConsumerWidget {
                     solicitudes: solicitudes,
                     pendientes: pendientes,
                     bajoMinimo: todos
-                        .where((a) => SituacionStock.de(a) == SituacionStock.enMinimo || SituacionStock.de(a) == SituacionStock.agotado)
+                        .where((a) =>
+                            SituacionStock.de(a) == SituacionStock.enMinimo ||
+                            SituacionStock.de(a) == SituacionStock.agotado ||
+                            SituacionStock.de(a) == SituacionStock.ningunoDisponible)
                         .toList(),
                     administra: administra,
                   ),
@@ -259,7 +264,7 @@ class _AtenderHoy extends StatelessWidget {
           texto: bajoMinimo.take(3).map((a) => a.nombre).join(', '),
           tono: Tono.aviso,
           icono: Ico.aviso,
-          accion: TmBoton('Ver', tamano: TamanoBoton.chico, onTap: () => context.push('/inventario')),
+          accion: TmBoton('Ver', tamano: TamanoBoton.chico, onTap: () => context.push('/inventario?filtro=sin-existencias-o-minimo')),
         ),
       if (administra && porRevisar > 0)
         TmAlerta(
@@ -461,6 +466,94 @@ class _Proximos extends StatelessWidget {
                 const SizedBox(height: Espacio.x2),
               ],
             ),
+    );
+  }
+}
+
+/// Tablero de la selección de robótica: el mismo estilo, con lo que sí les toca.
+class _TableroSeleccion extends ConsumerWidget {
+  const _TableroSeleccion({required this.sesion});
+
+  final Sesion sesion;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.tm;
+    final articulos = ref.watch(articulosProvider);
+    final propuestas = ref.watch(propuestasProvider).value ?? const <Propuesta>[];
+    final pendientes = propuestas.where((p) => p.estado == 'PENDIENTE').length;
+    final anchoKpi = MediaQuery.sizeOf(context).width < Quiebre.rieles ? 2 : 3;
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(articulosProvider);
+        ref.invalidate(propuestasProvider);
+        await ref.read(articulosProvider.future);
+      },
+      child: ListView(
+        padding: const EdgeInsets.all(Espacio.x4),
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          Text('Hola, ${sesion.nombreCorto}', style: Tipografia.display.copyWith(color: c.texto)),
+          Text('Selección de robótica · lo que propongas lo revisa el responsable',
+              style: Tipografia.cuerpo.copyWith(color: c.textoSecundario)),
+          const SizedBox(height: Espacio.x4),
+          articulos.when(
+            loading: () => const TmCargandoLista(renglones: 3),
+            error: (e, _) => TmErrorCarga(
+              mensaje: 'No se pudo leer el catálogo. Revisa la conexión.',
+              onReintentar: () => ref.invalidate(articulosProvider),
+            ),
+            data: (todos) {
+              final sinFoto = todos.where((a) => a.fotoPrincipal == null).length;
+              return GridView.count(
+                crossAxisCount: anchoKpi,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: Espacio.x3,
+                crossAxisSpacing: Espacio.x3,
+                childAspectRatio: 1.5,
+                children: [
+                  TmKpi(
+                    etiqueta: 'Artículos',
+                    valor: '${todos.length}',
+                    pie: 'en el catálogo',
+                    icono: Ico.inventario,
+                    onTap: () => context.push('/inventario'),
+                  ),
+                  TmKpi(
+                    etiqueta: 'Sin foto',
+                    valor: '$sinFoto',
+                    pie: 'les falta su foto',
+                    iconoPie: Ico.foto,
+                    tono: sinFoto > 0 ? TonoKpi.atencion : TonoKpi.normal,
+                    onTap: () => context.push('/inventario?filtro=sin-foto'),
+                  ),
+                  TmKpi(
+                    etiqueta: 'Mis propuestas',
+                    valor: '$pendientes',
+                    pie: 'esperando revisión',
+                    iconoPie: Ico.enEspera,
+                    onTap: () => context.push('/propuestas'),
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: Espacio.x4),
+          TmTarjeta(
+            titulo: 'Qué puedes hacer',
+            icono: Ico.articuloNuevo,
+            child: Wrap(spacing: Espacio.x2, runSpacing: Espacio.x2, children: [
+              TmBoton('Escanear', icono: Ico.escanear, tamano: TamanoBoton.grande, onTap: () => context.push('/escanear')),
+              TmBoton('Proponer artículo', icono: Ico.articuloNuevo, tamano: TamanoBoton.grande,
+                  onTap: () => context.push('/articulo/nuevo')),
+              TmBoton('Catálogo', icono: Ico.inventario, tamano: TamanoBoton.grande, onTap: () => context.push('/inventario')),
+              TmBoton('Mis propuestas', icono: Ico.revisar, tamano: TamanoBoton.grande, onTap: () => context.push('/propuestas')),
+            ]),
+          ),
+        ],
+      ),
     );
   }
 }

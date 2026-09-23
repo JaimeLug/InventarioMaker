@@ -274,6 +274,21 @@ La app guarda en el celular el catálogo, contenedores, pendientes, préstamos a
 - Se envía a nombre de quien lo capturó: si la sesión venció, la app pide que entre esa misma persona.
 - Menú → **Conflictos sin conexión** (responsable y sub administración). Lo recibido más de 72 h después queda marcado "Registrado tarde".
 
+## Fase 11: selección de robótica
+
+Un rol nuevo para los alumnos de la selección: **ven el taller y proponen; el responsable decide**.
+
+| | |
+|---|---|
+| **Cómo entran** | Solo con su correo institucional y su contraseña. No llevan PIN y **no aparecen** en la lista de «¿Quién eres?» |
+| **Qué ven** | Tablero propio (artículos, cuántos faltan de foto, sus propuestas), catálogo, herramientas, contenedores y escanear |
+| **Qué proponen** | Fotos, artículos nuevos, correcciones de datos, ubicación, conteos (sueltos y dentro del inventario periódico) y reportes de daño o pérdida |
+| **Qué no pueden** | Prestar, devolver, dar de baja, ajustar conteos, ver datos de alumnos, reportes, actas, bitácora, cuentas ni ajustes |
+| **Cómo se revisa** | Todo cae en **Propuestas** (y en los avisos). Aceptar mete el artículo o aplica la corrección; descartar pide un motivo, que le llega a quien propuso |
+| **Fotos** | Las suyas se ven marcadas **«Sin verificar»** hasta tu visto bueno; las del personal del taller nacen verificadas |
+
+Por dentro: el rol se **niega por omisión** (`app.exigir` solo lo deja pasar donde se le nombra), así que cualquier función que no se abrió a propósito le queda cerrada sola. Las cuentas las crea el responsable desde *Cuentas*, y ahí el correo es obligatorio.
+
 ## Fase 9: optimización
 
 | Qué | Antes | Ahora |

@@ -20,15 +20,15 @@ def insertar(conn, tabla: str, **campos):
 CONTRASENA_PRUEBA = "secreta-de-prueba"
 
 
-def usuario(conn, rol="RESPONSABLE", nombre=None, pin=None):
-    """Cuenta con contraseña CONTRASENA_PRUEBA y, si se indica, PIN."""
+def usuario(conn, rol="RESPONSABLE", nombre=None, pin=None, solicitante_id=None):
+    """Cuenta con contraseña CONTRASENA_PRUEBA y, si se indica, PIN y solicitante."""
     uid = uuid.uuid4()
     conn.execute("insert into auth.users (id, email, encrypted_password) "
                  "values (%s, %s, extensions.crypt(%s, extensions.gen_salt('bf', 4)))",
                  (uid, f"{uid.hex[:8]}@prueba.local", CONTRASENA_PRUEBA))
-    conn.execute("insert into public.usuario (id, nombre, rol, pin_hash) values (%s, %s, %s, "
-                 "case when %s::text is null then null else extensions.crypt(%s, extensions.gen_salt('bf', 4)) end)",
-                 (uid, nombre or f"Usuario {rol}", rol, pin, pin))
+    conn.execute("insert into public.usuario (id, nombre, rol, pin_hash, solicitante_id) values (%s, %s, %s, "
+                 "case when %s::text is null then null else extensions.crypt(%s, extensions.gen_salt('bf', 4)) end, %s)",
+                 (uid, nombre or f"Usuario {rol}", rol, pin, pin, solicitante_id))
     return uid
 
 

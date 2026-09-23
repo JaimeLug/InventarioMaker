@@ -95,7 +95,7 @@ class _ReportePantallaState extends ConsumerState<ReportePantalla> {
         context,
         ref,
         descripcion: 'reportar ${_tipo == 'DANO' ? 'un daño' : 'una pérdida'} de "${a.nombre}"',
-        requisito: Requisito.docente,
+        requisito: Requisito.cualquiera,
         accion: () async {
           await ref.read(repositorioProvider).reportar(
                 id: _id,

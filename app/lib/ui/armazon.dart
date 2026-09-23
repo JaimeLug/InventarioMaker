@@ -58,13 +58,32 @@ class TmArmazon extends ConsumerWidget {
     final c = context.tm;
     final sesion = ref.watch(sesionProvider).value;
     final administra = sesion?.administra ?? false;
+    // La selección de robótica ve el catálogo y sus propuestas, nada de préstamos ni personas.
+    final seleccion = sesion?.esSeleccion ?? false;
+    final propuestas = ref.watch(propuestasProvider).value?.length ?? 0;
     final subadmin = sesion?.rol == Rol.subadmin;
     final vencidos = ref.watch(vencidosProvider).value ?? 0;
     final porRevisar = ref.watch(porRevisarProvider).value ?? 0;
     final solicitudes = ref.watch(solicitudesContarProvider).value ?? 0;
     final pendientes = ref.watch(pendientesAbiertosProvider).value?.length ?? 0;
 
-    final grupos = <TmGrupoNav>[
+    final grupos = seleccion
+        ? <TmGrupoNav>[
+            // La selección de robótica: ver el taller y proponer. Nada de préstamos ni de personas.
+            TmGrupoNav('Taller', [
+              TmDestino('/', 'Tablero', Ico.tablero),
+              TmDestino('/inventario', 'Catálogo', Ico.inventario),
+              TmDestino('/herramientas', 'Herramientas', Ico.herramientas),
+              TmDestino('/escanear', 'Escanear', Ico.escanear),
+              TmDestino('/contenedores', 'Contenedores', Ico.contenedores),
+            ]),
+            TmGrupoNav('Lo mío', [
+              TmDestino('/propuestas', 'Mis propuestas', Ico.articuloNuevo, conteo: propuestas),
+              TmDestino('/mis-reportes', 'Mis reportes', Ico.reportar),
+              TmDestino('/mis-solicitudes-sel', 'Mis solicitudes', Ico.solicitudes),
+            ]),
+          ]
+        : <TmGrupoNav>[
       TmGrupoNav('Operación', [
         TmDestino('/', sesion == null ? 'Catálogo' : 'Tablero', Ico.tablero),
         if (sesion != null) TmDestino('/inventario', 'Inventario', Ico.inventario),
@@ -84,6 +103,7 @@ class TmArmazon extends ConsumerWidget {
           if (administra) TmDestino('/revisiones-kit', 'Kits y revisiones', Ico.kits),
           TmDestino('/contenedores', 'Contenedores', Ico.contenedores),
           if (administra) TmDestino('/por-revisar', 'Por revisar', Ico.aviso, conteo: porRevisar, urgente: porRevisar > 0),
+          if (administra) TmDestino('/propuestas', 'Propuestas', Ico.articuloNuevo, conteo: propuestas),
           if (administra) TmDestino('/conflictos', 'Conflictos', Ico.sinConexion),
         ]),
       if (administra)
@@ -97,7 +117,15 @@ class TmArmazon extends ConsumerWidget {
         ]),
     ];
 
-    final barra = <TmDestino>[
+    final barra = seleccion
+        ? <TmDestino>[
+            const TmDestino('/', 'Tablero', Ico.tablero),
+            const TmDestino('/inventario', 'Catálogo', Ico.inventario),
+            const TmDestino('/escanear', 'Escanear', Ico.escanear),
+            TmDestino('/propuestas', 'Propuestas', Ico.articuloNuevo, conteo: propuestas),
+            const TmDestino('mas', 'Más', Ico.menu),
+          ]
+        : <TmDestino>[
       TmDestino('/', sesion == null ? 'Catálogo' : 'Tablero', Ico.tablero),
       if (sesion != null)
         TmDestino('/inventario', 'Inventario', Ico.inventario)
@@ -149,7 +177,8 @@ class TmArmazon extends ConsumerWidget {
         ]),
         actions: [
           ...acciones,
-          const _BotonAvisos(),
+          // La selección de robótica no recibe avisos: ve cómo va lo suyo en "Mis propuestas".
+          if (!seleccion) const _BotonAvisos(),
           const BarraSesion(),
           const SizedBox(width: Espacio.x2),
         ],

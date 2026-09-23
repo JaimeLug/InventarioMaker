@@ -25,11 +25,13 @@ import 'pantallas/mi_cuenta_pantalla.dart';
 import 'pantallas/prestamo_pantalla.dart';
 import 'pantallas/prestamos_pantallas.dart';
 import 'pantallas/reporte_pantalla.dart';
+import 'pantallas/propuestas_pantallas.dart';
 import 'pantallas/reportes_pantallas.dart';
 import 'pantallas/sin_conexion_pantallas.dart';
 import 'pantallas/revision_pantallas.dart';
 import 'pantallas/solicitud_publica_pantallas.dart';
 import 'pantallas/solicitudes_pantallas.dart';
+import 'pantallas/mis_solicitudes_sel_pantalla.dart';
 
 /// Todas las pantallas entran con la misma transición corta: se desvanecen y suben un poco.
 /// Rápida a propósito: en el taller se navega con una mano y con prisa.
@@ -54,7 +56,13 @@ final rutasProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     routes: [
       GoRoute(path: '/', pageBuilder: (_, _) => _pagina(const TableroPantalla())),
-      GoRoute(path: '/inventario', pageBuilder: (_, _) => _pagina(const InventarioPantalla())),
+      GoRoute(
+        path: '/inventario',
+        pageBuilder: (_, e) => _pagina(InventarioPantalla(
+          filtroInicial: e.uri.queryParameters['filtro'],
+          categoriaInicial: e.uri.queryParameters['categoria'],
+        )),
+      ),
       GoRoute(path: '/herramientas', pageBuilder: (_, _) => _pagina(const HerramientasPantalla())),
       GoRoute(path: '/articulo/nuevo', pageBuilder: (_, _) => _pagina(const ArticuloFormPantalla())),
       GoRoute(path: '/articulo/:id', pageBuilder: (_, e) => _pagina(FichaPantalla(id: e.pathParameters['id']!))),
@@ -99,12 +107,14 @@ final rutasProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/mis-prestamos', pageBuilder: (_, _) => _pagina(const MisPrestamosPantalla())),
       GoRoute(path: '/mis-reportes', pageBuilder: (_, _) => _pagina(const MisReportesPantalla())),
       GoRoute(path: '/por-revisar', pageBuilder: (_, _) => _pagina(const PorRevisarPantalla())),
+      GoRoute(path: '/propuestas', pageBuilder: (_, _) => _pagina(const PropuestasPantalla())),
       GoRoute(path: '/prestamos-abiertos', pageBuilder: (_, _) => _pagina(const PrestamosAbiertosPantalla())),
       GoRoute(path: '/bitacora', pageBuilder: (_, _) => _pagina(const BitacoraPantalla())),
       // Sin cuenta (Fase 3b). /s/<enlace> es la dirección que llega por correo.
       GoRoute(path: '/solicitud', pageBuilder: (_, _) => _pagina(const SolicitudPantalla())),
       GoRoute(path: '/s/:token', pageBuilder: (_, e) => _pagina(EstadoSolicitudPantalla(token: e.pathParameters['token']!))),
       GoRoute(path: '/mis-solicitudes', pageBuilder: (_, _) => _pagina(const MisSolicitudesPantalla())),
+      GoRoute(path: '/mis-solicitudes-sel', pageBuilder: (_, _) => _pagina(const MisSolicitudesSelPantalla())),
       // Responsable y sub administración
       GoRoute(path: '/solicitudes', pageBuilder: (_, _) => _pagina(const BandejaPantalla())),
       GoRoute(path: '/solicitudes/:id', pageBuilder: (_, e) => _pagina(SolicitudDetallePantalla(id: e.pathParameters['id']!))),

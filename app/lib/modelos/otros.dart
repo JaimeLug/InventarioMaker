@@ -1,7 +1,8 @@
 import 'catalogos.dart';
 
 class Foto {
-  const Foto({required this.id, required this.ruta, required this.url, required this.esPrincipal, required this.tipo, required this.tomadaEn});
+  const Foto({required this.id, required this.ruta, required this.url, required this.esPrincipal, required this.tipo,
+      required this.tomadaEn, this.verificada = true});
 
   final String id;
   final String ruta;
@@ -9,6 +10,9 @@ class Foto {
   final bool esPrincipal;
   final TipoFoto tipo;
   final DateTime tomadaEn;
+
+  /// Falso mientras el responsable no le da el visto bueno (fotos de la selección de robótica).
+  final bool verificada;
 }
 
 class MovimientoPublico {

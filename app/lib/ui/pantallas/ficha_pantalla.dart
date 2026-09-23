@@ -279,7 +279,7 @@ class _GaleriaState extends ConsumerState<_Galeria> {
         context,
         ref,
         descripcion: 'agregar una foto a "${widget.articulo.nombre}"',
-        requisito: Requisito.docente,
+        requisito: Requisito.cualquiera,
         accion: () async {
           await ref.read(repositorioProvider).agregarFoto(widget.articulo.id, foto);
           return true;
@@ -369,6 +369,11 @@ class _GaleriaState extends ConsumerState<_Galeria> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
             child: Row(children: [
+              // Las fotos de la selección de robótica se ven, pero marcadas hasta el visto bueno.
+              if (!actual.verificada) ...[
+                const TmInsignia('Sin verificar', tono: Tono.aviso, icono: Ico.enEspera),
+                const SizedBox(width: Espacio.x2),
+              ],
               Expanded(
                 child: Text(
                   [if (actual.esPrincipal) 'Principal', actual.tipo.nombre, fecha(actual.tomadaEn), '${_actual + 1} de ${lista.length}']
@@ -511,7 +516,7 @@ class _Ubicacion extends ConsumerWidget {
             requisito: Requisito.administracion,
             accion: () => ref.read(repositorioProvider).acomodar([a.id], destino.id.isEmpty ? null : destino.id));
       } else {
-        final hecho = await conAcceso<bool>(context, ref, descripcion: 'proponer otra ubicación', requisito: Requisito.docente, accion: () async {
+        final hecho = await conAcceso<bool>(context, ref, descripcion: 'proponer otra ubicación', requisito: Requisito.cualquiera, accion: () async {
           await ref.read(repositorioProvider).proponerUbicacion(a.id, destino.id, null);
           return true;
         });
@@ -645,6 +650,32 @@ class _Acciones extends ConsumerWidget {
         ]),
       );
     }
+
+    final esSel = sesion.value?.esSeleccion ?? false;
+    if (esSel) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Wrap(spacing: 8, runSpacing: 8, children: [
+          if (a.prestable && a.disponible > 0 && !a.esConsumible)
+            FilledButton.icon(
+              onPressed: () => _pedirPrestadoSeleccion(context, ref, a),
+              icon: const Icon(Ico.carrito),
+              label: const Text('Pedir prestado'),
+            ),
+          OutlinedButton.icon(
+            onPressed: () => context.push('/articulo/${a.id}/reportar'),
+            icon: const Icon(Ico.reportar),
+            label: const Text('Reportar problema'),
+          ),
+          OutlinedButton.icon(
+            onPressed: () => contarArticulo(context, ref, a),
+            icon: const Icon(Ico.conteo),
+            label: const Text('Contar'),
+          ),
+        ]),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Wrap(spacing: 8, runSpacing: 8, children: [
@@ -678,6 +709,147 @@ class _Acciones extends ConsumerWidget {
         ),
       ]),
     );
+  }
+}
+
+Future<void> _pedirPrestadoSeleccion(BuildContext context, WidgetRef ref, Articulo a) async {
+  final repo = ref.read(repositorioProvider);
+  final ficha = await repo.seleccionMiFicha();
+  if (!context.mounted) return;
+  if (ficha == null) {
+    avisar(context, 'Tu cuenta no está vinculada a una ficha de alumno. Habla con el responsable.');
+    return;
+  }
+  final impedimento = ficha['impedimento'] as String?;
+  if (impedimento != null) {
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('No puedes pedir material'),
+        content: Text(impedimento),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Entendido')),
+        ],
+      ),
+    );
+    return;
+  }
+
+  final form = GlobalKey<FormState>();
+  final motivoCtrl = TextEditingController();
+  final notaCtrl = TextEditingController();
+  int cantidad = 1;
+  // Los plazos los pone la configuración: si el calendario deja elegir de más, el servidor lo rechaza.
+  final config = await ref.read(configuracionProvider.future).catchError((_) => <String, dynamic>{});
+  if (!context.mounted) return;
+  final diasMax = (config['plazo_max_alumno_dias'] as num?)?.toInt() ?? 14;
+  final diasDefault = ((config['plazo_default_dias'] as num?)?.toInt() ?? 7).clamp(1, diasMax);
+  DateTime fechaDevolucion = DateTime.now().add(Duration(days: diasDefault));
+
+  final confirmado = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setDialogState) => AlertDialog(
+        title: Text('Pedir prestado: ${a.nombre}'),
+        content: Form(
+          key: form,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Disponible: ${a.disponible} ${a.unidad}'),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: motivoCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Para qué lo necesitas *',
+                    hintText: 'Ej. Proyecto de robótica, práctica',
+                  ),
+                  validator: (v) => v == null || v.trim().isEmpty ? 'Escribe el motivo.' : null,
+                ),
+                const SizedBox(height: 12),
+                SelectorCantidad(
+                  etiqueta: 'Cantidad:',
+                  valor: cantidad,
+                  minimo: 1,
+                  maximo: a.disponible,
+                  alCambiar: (v) => setDialogState(() => cantidad = v),
+                ),
+                if (a.disponible <= 1)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Solo hay 1 ${a.unidad} disponible en el taller.',
+                      style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(ctx).colorScheme.outline,
+                          ),
+                    ),
+                  ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text('Devolver el: ${fechaDevolucion.day}/${fechaDevolucion.month}/${fechaDevolucion.year}'
+                          ' · máximo $diasMax días'),
+                    ),
+                    TextButton(
+                      child: const Text('Cambiar fecha'),
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: ctx,
+                          initialDate: fechaDevolucion,
+                          firstDate: DateTime.now().add(const Duration(days: 1)),
+                          lastDate: DateTime.now().add(Duration(days: diasMax)),
+                        );
+                        if (picked != null) {
+                          setDialogState(() => fechaDevolucion = picked);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: notaCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Notas adicionales',
+                    hintText: 'Opcional',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () {
+              if (!form.currentState!.validate()) return;
+              Navigator.pop(ctx, true);
+            },
+            child: const Text('Enviar solicitud'),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  if (confirmado != true || !context.mounted) return;
+  try {
+    final res = await repo.crearSolicitudSeleccion(
+      lineas: [(articuloId: a.id, cantidad: cantidad)],
+      motivo: motivoCtrl.text.trim(),
+      fechaDevolucion: fechaDevolucion,
+      nota: notaCtrl.text.trim().isEmpty ? null : notaCtrl.text.trim(),
+    );
+    ref.invalidate(misSolicitudesSelProvider);
+    if (context.mounted) {
+      avisar(context, 'Solicitud ${res.folio} enviada. El responsable la revisará.');
+      context.push('/mis-solicitudes-sel');
+    }
+  } catch (e) {
+    if (context.mounted) avisarError(context, e);
   }
 }
 

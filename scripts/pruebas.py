@@ -30,6 +30,7 @@ CUENTAS = (
     ("Prueba · Responsable", "responsable", "RESPONSABLE"),
     ("Prueba · Sub administración", "subadmin", "SUBADMIN"),
     ("Prueba · Docente", "docente", "DOCENTE"),
+    ("Prueba · Selección de robótica", "seleccion", "SELECCION"),
 )
 # Textos de la configuración que se copian de la real (las direcciones las pone cada despliegue).
 NO_COPIAR = {"url_app", "url_funciones"}
@@ -114,14 +115,18 @@ def cuentas(_args=None) -> None:
             if conn.execute("select 1 from public.usuario where lower(correo) = %s", (correo,)).fetchone():
                 print(f"Ya existe: {correo}")
                 continue
-            clave, pin = _clave(), _pin(conn)
+            clave = _clave()
+            pin = None if rol == "SELECCION" else _pin(conn)
             creado = auth_admin("POST", "users", {"email": correo, "password": clave, "email_confirm": True,
                                                    "user_metadata": {"nombre": nombre}})
+            matricula = "24-SEL01" if rol == "SELECCION" else None
             try:
                 with conn.transaction():
-                    conn.execute("select public.cuenta_registrar(%s, %s, %s, %s, null)", (creado["id"], nombre, rol, correo))
-                    conn.execute("update public.usuario set pin_hash = extensions.crypt(%s, extensions.gen_salt('bf', 8)) "
-                                 "where id = %s", (pin, creado["id"]))
+                    conn.execute("select public.cuenta_registrar(%s, %s, %s, %s, null, %s, %s, %s)",
+                                 (creado["id"], nombre, rol, correo, matricula, nombre if matricula else None, "Robótica" if matricula else None))
+                    if pin is not None:
+                        conn.execute("update public.usuario set pin_hash = extensions.crypt(%s, extensions.gen_salt('bf', 8)) "
+                                     "where id = %s", (pin, creado["id"]))
             except Exception as e:  # noqa: BLE001
                 auth_admin("DELETE", f"users/{creado['id']}")
                 sys.exit(f"No se registró {correo} (se deshizo): {e}")
