@@ -2,14 +2,14 @@ import '../armazon.dart';
 import '../diseno/iconos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:printing/printing.dart';
 
 import '../../acceso/gate.dart';
 import '../../datos/proveedores.dart';
 import '../../modelos/articulo.dart';
 import '../../modelos/catalogos.dart';
 import '../../modelos/contenedores.dart';
-import '../../util/etiquetas_pdf.dart';
+import '../../util/etiquetas.dart';
+import '../../util/etiquetas_pdf.dart' deferred as hoja;
 import '../../util/texto.dart';
 import '../tema.dart';
 import '../widgets/formularios.dart';
@@ -35,8 +35,8 @@ class _EtiquetasPantallaState extends ConsumerState<EtiquetasPantalla> {
   Future<void> _imprimir(List<EtiquetaDatos> etiquetas, String urlApp) async {
     setState(() => _generando = true);
     try {
-      final bytes = await generarEtiquetas(etiquetas, _formato, urlApp, empezarEn: _empezarEn);
-      await Printing.layoutPdf(onLayout: (_) async => bytes, name: 'Etiquetas Laboratorio Maker');
+      await hoja.loadLibrary();
+      await hoja.imprimirEtiquetas(etiquetas, _formato, urlApp, empezarEn: _empezarEn);
     } on Object catch (e) {
       if (mounted) avisarError(context, e);
     } finally {

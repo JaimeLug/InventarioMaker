@@ -147,6 +147,15 @@ def test_docente_cuenta_y_el_responsable_aplica_en_lote(taller):
     assert (ajuste["autorizado_por"], ajuste["registrado_por"]) == (r, d) and "Ruth Canché" in ajuste["nota"]
 
 
+def test_conteo_viejo_pide_contar_de_nuevo(taller):
+    bd, r, d, llaves = taller["bd"], taller["r"], taller["d"], taller["llaves"]
+    c = admin(bd, d, "conteo_proponer", nivel="PIN", p_articulo=llaves, p_en_taller=4, p_nota="Faltan seis")   # 10 → 4
+    mov(bd, llaves, "PRESTAMO", 8, r)                                        # después del conteo salen 8: quedan 2
+    with rechazo("P0001", contiene="desde que se contó (al contar había 10 en el taller y ahora hay 2); cuéntalo de nuevo"):
+        admin(bd, r, "conteos_aplicar", confirmada=True, p_ids=[uuid.UUID(c["id"])], p_notas=Jsonb({}))
+    assert existencias(bd, llaves)["en_taller"] == 2
+
+
 # --- Desglose de kits ----------------------------------------------------------------
 @pytest.fixture
 def kit(taller):
@@ -288,6 +297,18 @@ def test_faltante_del_inventario_como_reporte_de_perdida(taller):
     assert (inc["tipo"], inc["cantidad"], inc["estado"], inc["en_taller"]) == ("PERDIDA", 2, "PENDIENTE", True)
     assert admin(bd, r, "inventario_cerrar", confirmada=True, p_inventario=inv) == {"contados": 1, "ajustes": 0, "reportes": 1, "no_contados": 0}
     assert existencias(bd, pinzas)["existencia"] == 5                         # la pérdida se aplica al confirmar el reporte
+
+
+def test_inventario_con_conteo_viejo_pide_contar_de_nuevo(taller):
+    bd, r = taller["bd"], taller["r"]
+    pinzas = insertar(bd, "articulo", nombre="Pinzas", categoria="HERRAMIENTAS", contenedor_id=taller["cajon"])
+    mov(bd, pinzas, "ALTA", 5, r)
+    inv = admin(bd, r, "inventario_abrir", p_nombre="Por contenedor", p_alcance=Jsonb({"contenedores": [str(taller["cajon"])]}))
+    admin(bd, r, "inventario_contar", p_inventario=inv, p_articulo=pinzas, p_cantidad=2, p_contenedor=taller["cajon"], p_nota=None)
+    admin(bd, r, "inventario_decidir", p_inventario=inv, p_articulo=pinzas, p_decision="AJUSTE", p_nota="Se rompieron tres")
+    mov(bd, pinzas, "PRESTAMO", 4, r)                                        # 5 - 3 ya no cabe: solo queda 1
+    with rechazo("P0001", contiene="al contar había 5 en el taller y ahora hay 1); cuéntalo de nuevo"):
+        admin(bd, r, "inventario_cerrar", confirmada=True, p_inventario=inv)
 
 
 # --- "Avísame cuando regrese" ------------------------------------------------------------------

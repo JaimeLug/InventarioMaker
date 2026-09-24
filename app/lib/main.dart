@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -15,6 +14,7 @@ import 'datos/proveedores.dart';
 import 'datos/repositorio.dart';
 import 'sin_conexion/cola.dart';
 import 'ui/diseno/modo_tema.dart';
+import 'ui/idioma.dart';
 import 'ui/rutas.dart';
 import 'ui/tema.dart';
 
@@ -172,7 +172,7 @@ class _InventarioAppState extends ConsumerState<InventarioApp> with WidgetsBindi
         routerConfig: ref.watch(rutasProvider),
         locale: const Locale('es', 'MX'),
         supportedLocales: const [Locale('es', 'MX')],
-        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        localizationsDelegates: delegadosIdioma,
         debugShowCheckedModeBanner: false,
       ),
     );

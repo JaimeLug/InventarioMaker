@@ -5,7 +5,8 @@ import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:image/image.dart' as img;
+// Solo el celular hace miniaturas: la web no baja el paquete de imágenes.
+import 'package:image/image.dart' deferred as img;
 import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -245,7 +246,8 @@ class ColaSinConexion extends ChangeNotifier {
     }
   }
 
-  static Uint8List? _reducir(Uint8List bytes) {
+  static Future<Uint8List?> _reducir(Uint8List bytes) async {
+    await img.loadLibrary();
     final imagen = img.decodeImage(bytes);
     if (imagen == null) return null;
     return img.encodeJpg(img.copyResize(imagen, width: imagen.width >= imagen.height ? 240 : null, height: imagen.width < imagen.height ? 240 : null), quality: 70);

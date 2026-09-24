@@ -13,8 +13,9 @@ import '../../datos/reportes.dart';
 import '../../datos/repositorio.dart';
 import '../../modelos/catalogos.dart';
 import '../../util/documento.dart';
-import '../../util/documento_excel.dart';
-import '../../util/documento_pdf.dart';
+// PDF y Excel se bajan en la web solo al generar el primer reporte.
+import '../../util/documento_excel.dart' deferred as como_excel;
+import '../../util/documento_pdf.dart' deferred as como_pdf;
 import '../../util/guardar_archivo.dart';
 import '../../util/texto.dart';
 import '../tema.dart';
@@ -41,13 +42,15 @@ Future<void> generarReporte(
       requisito: requisito,
       accion: () async {
         final repo = ref.read(repositorioProvider);
+        // Antes del folio: si no baja la parte del PDF o del Excel, no se gasta un folio.
+        await (pdf ? como_pdf.loadLibrary() : como_excel.loadLibrary());
         final folio = await repo.registrarReporte(tipo.codigo, pdf ? 'PDF' : 'EXCEL', parametros);
         final doc = await armar(Reportes(repo), folio);
         estado?.call(pdf ? 'Armando el PDF…' : 'Armando el Excel…');
         final bytes = pdf
-            ? await documentoAPdf(doc,
+            ? await como_pdf.documentoAPdf(doc,
                 conFotos: conFotos, urlFoto: repo.urlFoto, progreso: (h, t) => estado?.call('Bajando fotos: $h de $t…'))
-            : documentoAExcel(doc);
+            : como_excel.documentoAExcel(doc);
         return (doc.archivo, bytes);
       },
     );

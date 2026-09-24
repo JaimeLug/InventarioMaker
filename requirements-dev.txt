@@ -1,5 +1,6 @@
 openpyxl>=3.1
 psycopg[binary]>=3.2
 pytest>=8
+fonttools>=4.50
 # PostgreSQL local (sin instalar nada en el sistema):
 #   npm install --prefix .localpg @embedded-postgres/windows-x64@^17

@@ -258,6 +258,11 @@ class _GaleriaState extends ConsumerState<_Galeria> {
   }
 
   Future<void> _agregar() async {
+    final descripcion = 'agregar una foto a "${widget.articulo.nombre}"';
+    // Un visitante entra antes de elegir la foto, no después de tomarla.
+    final conSesion = await conAcceso<bool>(context, ref,
+        descripcion: descripcion, requisito: Requisito.cualquiera, accion: () async => true);
+    if (conSesion != true || !mounted) return;
     final foto = await elegirFoto(context);
     if (foto == null || !mounted) return;
     final tipo = await showDialog<TipoFoto>(
@@ -278,7 +283,7 @@ class _GaleriaState extends ConsumerState<_Galeria> {
       final hecho = await conAcceso<bool>(
         context,
         ref,
-        descripcion: 'agregar una foto a "${widget.articulo.nombre}"',
+        descripcion: descripcion,
         requisito: Requisito.cualquiera,
         accion: () async {
           await ref.read(repositorioProvider).agregarFoto(widget.articulo.id, foto);

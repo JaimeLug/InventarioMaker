@@ -299,6 +299,24 @@ Por dentro: el rol se **niega por omisión** (`app.exigir` solo lo deja pasar do
 
 El paquete `lucide_icons_flutter` ya no se usa: los iconos son constantes propias en `app/lib/ui/diseno/iconos.dart` con la misma fuente (licencia ISC, ver `app/assets/fuentes/LICENSE-lucide.txt`). Si se agrega un icono nuevo hay que sacar su código de la fuente.
 
+### Segunda vuelta: web más ligera
+
+| Qué | Antes | Ahora |
+|---|---|---|
+| **Programa de la web** (`main.dart.js`) | 6.2 MB | **4.6 MB**. El resto (PDF, Excel, imágenes: 1.1 MB) se baja solo al generar un reporte o imprimir etiquetas |
+| **Letras** (Barlow, Barlow Condensed, IBM Plex Mono) | 1.06 MB | **0.41 MB** |
+
+- **Idioma**: los textos propios de Flutter (calendario, copiar y pegar, lectores de pantalla) se cargan solo en español de México (`app/lib/ui/idioma.dart`); antes venían unos 80 idiomas. Una prueba compara que salgan igual que con los de Flutter.
+- **Partes bajo pedido**: `reportes_pantallas.dart` y `etiquetas_pantalla.dart` importan el PDF y el Excel con `deferred as`. En el celular no cambia nada.
+- **Letras recortadas**: sin cirílico, vietnamita, versalitas ni *hinting*; se quitó IBM Plex Mono Medium, que ningún estilo usaba. Si se cambian las letras, se vuelve a correr `python scripts/recortar_fuentes.py`. Un símbolo que no esté se dibuja con otra fuente, no desaparece.
+
+Medidas con Flutter 3.47 (con otra versión los números cambian un poco).
+
+## Mejoras chicas
+
+- **Conteos viejos**: si desde que se contó salieron piezas y el ajuste ya no cabe, al aplicarlo (o al cerrar un inventario) el aviso dice *«Hubo movimientos de A-0012 desde que se contó (al contar había 10 en el taller y ahora hay 2); cuéntalo de nuevo.»* en vez de *«el ajuste dejaría el taller en -5»*. Migración `20260928000021_conteos_viejos.sql`.
+- **Foto de un visitante**: en la ficha, *Agregar foto* pide entrar **antes** de abrir la cámara, no después de tomar la foto.
+
 ## Fase 10: trabajo sin conexión, segunda parte
 
 - **Devolver sin señal** lo que también se prestó sin señal. El celular no conoce el identificador del préstamo (todavía no llega al servidor), así que manda el del comando; el servidor lo reconoce porque es el mismo que guardó en `movimiento.comando_id`. En la pantalla de devolución aparecen también los préstamos que siguen en la cola.

@@ -104,11 +104,10 @@ flutter:
     - family: Lucide
       fonts:
         - asset: assets/fuentes/lucide.ttf
+    # Sin Medium (500): ningún estilo de cifras o códigos la pide.
     - family: IBMPlexMono
       fonts:
         - asset: assets/fuentes/IBMPlexMono-Regular.ttf
-        - asset: assets/fuentes/IBMPlexMono-Medium.ttf
-          weight: 500
         - asset: assets/fuentes/IBMPlexMono-SemiBold.ttf
           weight: 600
 
