@@ -182,6 +182,9 @@ def apk(_args) -> None:
     El de los celulares de hoy es el de arm64-v8a. Con el proyecto de pruebas sale como otra
     app ("Maker PRUEBAS") que se instala junto a la real.
     """
+    if not db.ENTORNO and not (db.RAIZ / "secretos" / "firma-android.properties").exists():
+        sys.exit("Falta la firma del APK (secretos/firma-android.properties y .jks). Cópiala de tu respaldo: "
+                 "firmado con otra llave, los celulares tendrían que desinstalar la app para actualizarla.")
     flutter = "flutter.bat" if os.name == "nt" else "flutter"
     extra = ["--android-project-arg", f"entorno={db.ENTORNO}"] if db.ENTORNO else []
     if subprocess.run([flutter, "build", "apk", "--release", "--split-per-abi", *definiciones_app(), *extra],

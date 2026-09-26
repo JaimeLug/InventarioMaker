@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -8,6 +10,12 @@ plugins {
 // Con -Pentorno=pruebas sale otra app ("Maker PRUEBAS") que se instala junto a la real
 // y apunta al proyecto de pruebas (ver scripts/desplegar.py apk).
 val entorno = (project.findProperty("entorno") as String?)?.trim().orEmpty()
+
+// Firma propia del proyecto (secretos/, fuera de git). Con la misma llave, una versión nueva se
+// instala encima de la anterior desde cualquier computadora. Sin ella se firma con la llave de
+// depuración de esta PC, que solo sirve para probar: scripts/desplegar.py apk exige la propia.
+val archivoFirma = rootProject.file("../../secretos/firma-android.properties")
+val firma = Properties().apply { if (archivoFirma.exists()) archivoFirma.inputStream().use { load(it) } }
 
 android {
     namespace = "mx.edu.prepa13.inventario_maker"
@@ -29,18 +37,27 @@ android {
         resValue("string", "app_name", if (entorno.isEmpty()) "Inventario Maker" else "Maker ${entorno.uppercase()}")
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        // Firebase (avisos al celular) pide Android 6.0 o más nuevo.
-        minSdk = 23
+        // Android 7.0 o más nuevo (lo que pide Flutter 3.35; Firebase pide 6.0).
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (archivoFirma.exists()) {
+            create("propia") {
+                storeFile = archivoFirma.parentFile.resolve(firma.getProperty("storeFile"))
+                storePassword = firma.getProperty("storePassword")
+                keyAlias = firma.getProperty("keyAlias")
+                keyPassword = firma.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(if (archivoFirma.exists()) "propia" else "debug")
         }
     }
 }

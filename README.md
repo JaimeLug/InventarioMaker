@@ -289,6 +289,15 @@ Un rol nuevo para los alumnos de la selección: **ven el taller y proponen; el r
 
 Por dentro: el rol se **niega por omisión** (`app.exigir` solo lo deja pasar donde se le nombra), así que cualquier función que no se abrió a propósito le queda cerrada sola. Las cuentas las crea el responsable desde *Cuentas*, y ahí el correo es obligatorio.
 
+## Firma del APK
+
+El APK de producción se firma con la llave del proyecto: `secretos/firma-android.jks` y `secretos/firma-android.properties` (fuera de git). Con la misma llave, una versión nueva se instala encima de la anterior desde cualquier computadora; con otra, Android exige desinstalar la app y se pierde lo que haya en la cola sin conexión.
+
+- **Respalda `secretos/`** fuera del proyecto (USB o Drive personal, nunca la carpeta que se comparte con alumnos).
+- Para compilar en otra computadora, copia esos dos archivos a su `secretos/`. Sin ellos, `desplegar.py apk` no compila el de producción.
+- Los APK repartidos antes del 25 de septiembre de 2026 se firmaron con la llave de depuración: hay que desinstalarlos una vez.
+- Desde Flutter 3.35 la app pide **Android 7.0** o más nuevo (`minSdk` 24).
+
 ## Fase 9: optimización
 
 | Qué | Antes | Ahora |
